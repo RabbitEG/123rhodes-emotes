@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f0e8">
+  <meta name="description" content="罗德岛表情簿：按角色与篇目查找《123罗德岛！？》人物表情，点击出处前往泰拉记事社阅读。">
+  <title>罗德岛表情簿 · 123罗德岛！？人物表情检索</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="罗德岛表情簿首页">
+      <span class="brand-mark" aria-hidden="true">123</span>
+      <span class="brand-copy"><strong>罗德岛表情簿</strong><small>123罗德岛！？人物表情检索</small></span>
+    </a>
+    <nav aria-label="主导航">
+      <a href="#expressions">找表情</a>
+      <a href="#episodes">找篇目</a>
+      <a href="#stats">小统计</a>
+      <a href="#guestbook">留言板</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow">RHODES ISLAND · FAN-MADE INDEX</p>
+        <h1 id="hero-title">罗德岛今天，<br><span>也有好多小表情。</span></h1>
+        <p class="hero-description">按角色或篇目找找喜欢的画面。每张图都标注官方出处，完整漫画请前往泰拉记事社阅读。</p>
+        <form id="search-form" class="search-form" role="search">
+          <label class="visually-hidden" for="site-search">搜索角色或篇目</label>
+          <input id="site-search" name="q" type="search" placeholder="搜索角色或篇目，例如：阿米娅、巡林者篇" autocomplete="off">
+          <button type="submit">开始找找</button>
+        </form>
+        <p id="search-status" class="search-status" aria-live="polite">公开图集正在准备中；现在可以先看站点介绍和来源。</p>
+      </div>
+      <div class="hero-doodle" aria-hidden="true">
+        <span class="doodle-spark">✳</span>
+        <span class="doodle-note">小小收集册<br>慢慢整理中</span>
+        <span class="doodle-stamp">RHODES<br>ISLAND</span>
+      </div>
+    </section>
+
+    <section id="featured" class="section featured-section" aria-labelledby="featured-title">
+      <div class="section-heading">
+        <div><p class="eyebrow">A LITTLE MOMENT</p><h2 id="featured-title">罗德岛一瞥</h2></div>
+        <div class="carousel-controls" aria-label="精选轮播控制">
+          <button id="carousel-mode" class="quiet-button" type="button" disabled>随机</button>
+          <button id="carousel-pause" class="quiet-button" type="button" disabled>暂停</button>
+        </div>
+      </div>
+      <div id="featured-track" class="featured-track" aria-live="polite">
+        <div class="empty-note featured-empty"><span class="empty-mark" aria-hidden="true">✿</span><p>精选表情会在公开图集整理完成后出现。</p></div>
+      </div>
+    </section>
+
+    <section id="expressions" class="section" aria-labelledby="expressions-title">
+      <div class="section-heading"><div><p class="eyebrow">CHARACTER GALLERY</p><h2 id="expressions-title">按角色找表情</h2></div><span class="section-note">收录后可搜索角色名与别名</span></div>
+      <div id="character-results" class="result-grid">
+        <div class="empty-note"><span class="empty-mark" aria-hidden="true">♡</span><p>公开角色图集尚未发布。</p><a href="about.html">了解本站如何整理和标注来源</a></div>
+      </div>
+      <div id="gallery-results" class="gallery-grid" aria-live="polite"></div>
+    </section>
+
+    <section id="episodes" class="section section-tint" aria-labelledby="episodes-title">
+      <div class="section-heading"><div><p class="eyebrow">COMIC EPISODES</p><h2 id="episodes-title">按篇目找找</h2></div><span class="section-note">完整阅读前往官方源站</span></div>
+      <div id="episode-results" class="result-grid">
+        <div class="empty-note"><span class="empty-mark" aria-hidden="true">⌁</span><p>篇目索引正在整理，核实出处后会逐步开放。</p><a class="text-link" href="https://comic.hypergryph.com/comic/6253" target="_blank" rel="noopener noreferrer">先去泰拉记事社看看 ↗</a></div>
+      </div>
+    </section>
+
+    <section id="stats" class="section" aria-labelledby="stats-title">
+      <div class="section-heading"><div><p class="eyebrow">A SMALL ISLAND AT A GLANCE</p><h2 id="stats-title">小小收录统计</h2></div><span id="release-date" class="section-note">等第一批公开索引发布</span></div>
+      <div id="overview-stats" class="stats-grid">
+        <article class="stat-card"><span>已收录表情</span><strong>—</strong><small>首批图集发布后统计</small></article>
+        <article class="stat-card"><span>收录角色</span><strong>—</strong><small>只计公开发布角色</small></article>
+        <article class="stat-card"><span>收录篇目</span><strong>—</strong><small>链接逐篇核实后发布</small></article>
+      </div>
+      <p class="stats-footnote">数字描述本站已整理并发布的内容，不代表官方漫画的完整出场统计。</p>
+    </section>
+
+    <section id="guestbook" class="section guestbook-section" aria-labelledby="guestbook-title">
+      <div class="guestbook-copy"><p class="eyebrow">SAY HELLO</p><h2 id="guestbook-title">留一句话给我们</h2><p>发现角色、篇目或出处信息有问题，也欢迎告诉我们。留言经人工查看后再公开。</p></div>
+      <div class="guestbook-placeholder"><span class="status-dot" aria-hidden="true"></span><p>留言板正在准备中，目前不会收集或发送任何留言。</p></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <a class="footer-brand" href="/">罗德岛表情簿</a>
+    <p>爱好者整理的非官方检索站。完整漫画请前往泰拉记事社。</p>
+    <div class="footer-links"><a href="about.html">关于与版权</a><a href="privacy.html">隐私说明</a><a href="https://comic.hypergryph.com/comic/6253" target="_blank" rel="noopener noreferrer">泰拉记事社 ↗</a></div>
+    <small>《明日方舟》及相关作品素材归其权利人所有。本页原创内容与第三方素材分别适用各自许可。</small>
+  </footer>
+</body>
+</html>

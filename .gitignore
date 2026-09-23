@@ -1,0 +1,16 @@
+# Private exports and generated public release bundles are deliberately kept out of Git.
+/data/release.json
+/data/characters/
+/data/episodes/
+/data/instances/
+/publish/
+/media/crops/
+/media/source-previews/
+
+# Local tooling
+.DS_Store
+.wrangler/
+node_modules/
+.env
+.env.*
+!.env.example
