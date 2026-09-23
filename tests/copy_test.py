@@ -19,12 +19,12 @@ with tempfile.TemporaryDirectory(prefix='rhodes-copy-test-') as directory:
     builder.ROOT = target
     path = target / 'content/copy.zh-CN.json'
     copy = json.loads(path.read_text(encoding='utf-8'))
-    copy['hero.line']['text'] = '今天想看谁？<b>&"'
+    copy['stats.title']['text'] = '今日数据<b>&"'
     copy['site.name']['text'] = '测试站</script><script>alert(1)</script>'
     path.write_text(json.dumps(copy, ensure_ascii=False), encoding='utf-8')
     builder.build()
     output = (target / 'index.html').read_text(encoding='utf-8')
-    assert '今天想看谁？&lt;b&gt;&amp;&quot;' in output
+    assert '今日数据&lt;b&gt;&amp;&quot;' in output
     assert '<script>alert(1)</script>' not in output
     assert '\\u003c/script\\u003e' in output
     builder.build(check=True)

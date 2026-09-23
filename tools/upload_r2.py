@@ -31,7 +31,7 @@ def files_for(bundle):
     if set(release) - allowed:
         raise ValueError('Unexpected manifest fields')
     allowed_rows = {
-        'characters': {'id', 'name', 'type', 'aliases'},
+        'characters': {'id', 'name', 'type', 'aliases', 'home_episode_ids'},
         'episodes': {'id', 'name', 'official_url', 'order', 'cast_character_ids'},
         'instances': {'id', 'character_id', 'episode_id', 'image_id', 'crop_url', 'source_preview_url', 'sort_key'},
         'images': {'id'}

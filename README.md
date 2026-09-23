@@ -25,9 +25,9 @@
 只改 **[content/copy.zh-CN.json](content/copy.zh-CN.json)**。每条包含：
 
 ```json
-"hero.line": {
-  "text": "想找谁的表情？",
-  "note": "搜索上方一句话"
+"site.name": {
+  "text": "罗德岛表情簿",
+  "note": "站名：导航、标题、页脚"
 }
 ```
 

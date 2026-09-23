@@ -33,6 +33,7 @@
     for (const c of release.characters) {
       if (c.type && c.type !== "canonical") throw new Error("Noncanonical public character");
       if (c.aliases !== undefined && (!Array.isArray(c.aliases) || c.aliases.some(x => typeof x !== "string"))) throw new Error("Invalid aliases");
+      if (c.home_episode_ids !== undefined && (!Array.isArray(c.home_episode_ids) || c.home_episode_ids.some(x => !episodes.has(id(x))))) throw new Error("Invalid home episodes");
     }
     for (const e of release.episodes) {
       if (!officialURL(e.official_url)) throw new Error("Missing verified official episode URL");
@@ -56,19 +57,32 @@
     return release;
   }
   function analyze(release) {
-    const rows = release.characters.map(c => ({ ...c, count: 0, episodes: new Set(), perEpisode: new Map(), cameo: 0, homes: 0, absence: 0 }));
+    const rows = release.characters.map(c => ({ ...c, count: 0, episodes: new Set(), perEpisode: new Map(), cameo: 0, cameoEpisodes: new Set(), homes: 0, homeEpisodes: new Set((c.home_episode_ids ?? []).map(id)), absence: 0 }));
     const characters = new Map(rows.map(c => [c.id, c]));
     const episodes = new Map(release.episodes.map(e => [e.id, { ...e, count: 0, characters: new Set(), cast: new Set(e.cast_character_ids ?? []) }]));
-    const castReady = release.cast_complete === true && release.episodes.every(e => Array.isArray(e.cast_character_ids));
+    const homeReady = release.characters.every(c => Array.isArray(c.home_episode_ids));
+    const legacyCastReady = release.cast_complete === true && release.episodes.every(e => Array.isArray(e.cast_character_ids));
+    const castReady = homeReady || legacyCastReady;
     const orderReady = release.episodes.length > 0 && release.episodes.every(e => Number.isFinite(e.order)) && new Set(release.episodes.map(e => e.order)).size === release.episodes.length;
     const sequence = [...episodes.values()].sort((a, b) => a.order - b.order);
     const orderIndex = new Map(sequence.map((e, i) => [e.id, i]));
-    for (const e of episodes.values()) for (const cid of e.cast) characters.get(cid).homes++;
+    if (homeReady) {
+      for (const c of rows) c.homes = c.homeEpisodes.size;
+    } else if (legacyCastReady) {
+      for (const e of episodes.values()) for (const cid of e.cast) {
+        const character = characters.get(cid);
+        character.homes++;
+        character.homeEpisodes.add(e.id);
+      }
+    }
     for (const item of release.instances) {
       const c = characters.get(item.character_id), e = episodes.get(item.episode_id);
       c.count++; c.episodes.add(e.id); e.count++; e.characters.add(c.id);
       c.perEpisode.set(e.id, (c.perEpisode.get(e.id) || 0) + 1);
-      if (!e.cast.has(c.id)) c.cameo++;
+      if (!(homeReady ? c.homeEpisodes.has(e.id) : e.cast.has(c.id))) {
+        c.cameo++;
+        c.cameoEpisodes.add(e.id);
+      }
     }
     const present = rows.filter(c => c.count > 0);
     for (const c of present) c.absence = orderReady ? sequence.length - 1 - Math.max(...[...c.episodes].map(eid => orderIndex.get(eid))) : 0;
@@ -102,20 +116,28 @@
         unionCount,
         firstRate: count / first.episodes.size,
         secondRate: count / second.episodes.size,
+        source: first.episodes.size <= second.episodes.size ? first.id : second.id,
+        target: first.episodes.size <= second.episodes.size ? second.id : first.id,
+        sourceRate: count / Math.min(first.episodes.size, second.episodes.size),
+        targetRate: count / Math.max(first.episodes.size, second.episodes.size),
         jaccard: unionCount ? count / unionCount : 0,
         name: first.name + " × " + second.name
       };
     });
     pairRows.forEach(pair => {
       pair.bidirectionalScore = pair.jaccard * pair.count;
-      pair.oneSidedScore = Math.abs(pair.firstRate - pair.secondRate) * Math.min(pair.firstEpisodes, pair.secondEpisodes) / Math.max(pair.firstEpisodes, pair.secondEpisodes);
+      pair.oneSidedScore = pair.sourceRate * (1 - pair.targetRate) * Math.log1p(pair.count) / Math.max(pair.firstEpisodes, pair.secondEpisodes);
     });
     const commonPairs = [...pairRows].sort((a, b) => b.bidirectionalScore - a.bidirectionalScore || b.count - a.count || byName(characters.get(a.first), characters.get(b.first)));
     const bidirectionalPairs = pairRows.filter(pair => pair.count >= 2)
       .sort((a, b) => b.bidirectionalScore - a.bidirectionalScore || b.count - a.count || byName(characters.get(a.first), characters.get(b.first)));
-    const oneSidedPairs = pairRows.filter(pair => pair.count >= 2 && Math.abs(pair.firstRate - pair.secondRate) >= 0.1)
+    const oneSidedPairs = pairRows.filter(pair => pair.count >= 2 && pair.sourceRate - pair.targetRate >= 0.1)
       .sort((a, b) => b.oneSidedScore - a.oneSidedScore || b.count - a.count || byName(characters.get(a.first), characters.get(b.first)));
     const records = present.flatMap(c => [...c.perEpisode].map(([eid, count]) => ({ character: c.id, episode: eid, count, name: c.name + " · " + episodes.get(eid).name }))).sort(desc("count"));
+    const guestRecords = castReady ? present.flatMap(c => [...c.perEpisode]
+      .filter(([eid]) => !c.homeEpisodes.has(eid))
+      .map(([eid, count]) => ({ character: c.id, episode: eid, count, name: c.name + " · " + episodes.get(eid).name })))
+      .sort(desc("count")) : [];
     let imageCount = null;
     if (Array.isArray(release.images)) imageCount = release.images.length;
     else if (Number.isInteger(release.overview?.images) && release.overview.images >= 0) imageCount = release.overview.images;
@@ -123,7 +145,7 @@
     const chart = rankings.appearances.slice(0, 10).map(c => ({ id: c.id, name: c.name, count: c.count }));
     const other = release.instances.length - chart.reduce((sum, c) => sum + c.count, 0);
     if (other > 0) chart.push({ id: null, name: null, count: other });
-    return { characters, episodes, rankings, commonPairs, bidirectionalPairs, oneSidedPairs, records, chart, imageCount, castReady, orderReady };
+    return { characters, episodes, rankings, commonPairs, bidirectionalPairs, oneSidedPairs, records, guestRecords, chart, imageCount, castReady, orderReady };
   }
   globalThis.RhodesStats = { validate, analyze, assetPath, officialURL };
 })();

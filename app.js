@@ -15,7 +15,7 @@
   let marqueePosition = 0, marqueeWidth = 0, lastFrame = 0, manualUntil = 0;
   let ribbonObserver;
   const publicAsset = path => dataBase ? new URL(path, dataBase).href : path;
-  let userPaused = false, ribbonHovered = false, ribbonFocused = false, carouselMode = "random";
+  let ribbonHovered = false, ribbonFocused = false, carouselMode = "random";
 
   function readState() {
     const p = new URLSearchParams(location.search);
@@ -63,7 +63,7 @@
     $("#site-search").placeholder = t(state.mode === "expressions" ? "search.placeholderExpressions" : "search.placeholderEpisodes");
     $$("[data-mode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode)));
     if (!release) return;
-    $("#search-status").textContent = t("search.crops", { count: number(release.instances.length) });
+    if (isSearchPage) $("#search-status").textContent = t("search.crops", { count: number(release.instances.length) });
     if (!isSearchPage) return;
     $("#results-section").hidden = false;
     const query = normalize(state.q);
@@ -93,7 +93,7 @@
     $("#load-more").hidden = visible >= matches.length;
   }
   function rankButton(label, value, attrs, index) {
-    return `<button class="rank-row" ${attrs}><span class="rank-number">${String(index + 1).padStart(2, "0")}</span><span class="rank-name">${escape(label)}</span><strong>${escape(value)}</strong><span class="rank-arrow" aria-hidden="true">↗</span></button>`;
+    return `<button class="rank-row" ${attrs}><span class="rank-number">${String(index + 1).padStart(2, "0")}</span><span class="rank-name">${escape(label)}</span><strong>${escape(value)}</strong></button>`;
   }
   function renderRanking() {
     if (!stats) return;
@@ -102,15 +102,12 @@
     const rows = stats.rankings[kind];
     $("#character-ranking").innerHTML = rows === null ? `<p class="empty-copy">${text(kind === "absence" ? "stats.orderMissing" : "stats.castMissing")}</p>` : rows.length ? rows.slice(0, 30).map((c, index) => {
       const value = kind === "coverage" ? c.episodes.size : kind === "cameo" ? c.cameo : kind === "absence" ? c.absence : c.count;
-      return rankButton(c.name, t(kind === "coverage" ? "rank.episodeValue" : kind === "absence" ? "rank.absenceValue" : "rank.cropValue", { count: number(value) }), `data-character="${escape(c.id)}"`, index);
+      const valueKey = kind === "coverage" ? "rank.episodeValue" : kind === "absence" ? "rank.absenceValue" : kind === "cameo" ? "rank.cropEpisodeValue" : "rank.cropValue";
+      return rankButton(c.name, t(valueKey, { count: number(value), episodes: number(c.cameoEpisodes.size) }), `data-character="${escape(c.id)}"`, index);
     }).join("") : `<p class="empty-copy">${text(release.instances.length ? "stats.noRank" : "stats.empty")}</p>`;
   }
   function renderStats() {
     $("#totals").innerHTML = [["episodes", release.episodes.length], ["instances", release.instances.length], ["characters", release.characters.length], ["images", stats.imageCount]].map(([key, value]) => `<article><strong>${value === null ? "—" : number(value)}</strong><span>${text("stats." + key)}</span></article>`).join("");
-    if (release.generated_at) {
-      const date = new Date(release.generated_at);
-      if (!Number.isNaN(date.getTime())) $("#release-date").textContent = t("stats.date", { date: new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(date) });
-    }
     if (stats.chart.length) {
       let offset = 0;
       const arcs = stats.chart.map((row, index) => {
@@ -123,8 +120,9 @@
     }
     renderRanking();
     $("#pair-ranking").innerHTML = stats.bidirectionalPairs.length ? stats.bidirectionalPairs.slice(0, 30).map((p, index) => rankButton(t("fun.pairName", { first: stats.characters.get(p.first).name, second: stats.characters.get(p.second).name }), t("fun.bidirectionalValue", { count: p.count, percent: (100 * p.jaccard).toFixed(0) }), `data-pair="${escape(p.first + "," + p.second)}"`, index)).join("") : `<p class="empty-copy">${text("stats.noRank")}</p>`;
-    $("#one-sided-ranking").innerHTML = stats.oneSidedPairs.length ? stats.oneSidedPairs.slice(0, 30).map((p, index) => rankButton(t("fun.pairName", { first: stats.characters.get(p.first).name, second: stats.characters.get(p.second).name }), t("fun.oneSidedValue", { firstPercent: (100 * p.firstRate).toFixed(0), secondPercent: (100 * p.secondRate).toFixed(0), count: p.count }), `data-pair="${escape(p.first + "," + p.second)}"`, index)).join("") : `<p class="empty-copy">${text("stats.noRank")}</p>`;
+    $("#one-sided-ranking").innerHTML = stats.oneSidedPairs.length ? stats.oneSidedPairs.slice(0, 30).map((p, index) => rankButton(t("fun.directionName", { source: stats.characters.get(p.source).name, target: stats.characters.get(p.target).name }), t("fun.oneSidedValue", { sourcePercent: (100 * p.sourceRate).toFixed(0), count: p.count }), `data-pair="${escape(p.first + "," + p.second)}"`, index)).join("") : `<p class="empty-copy">${text("stats.noRank")}</p>`;
     $("#record-ranking").innerHTML = stats.records.length ? stats.records.slice(0, 30).map((r, index) => rankButton(t("fun.recordName", { character: stats.characters.get(r.character).name, episode: stats.episodes.get(r.episode).name }), t("rank.cropValue", { count: number(r.count) }), `data-record-character="${escape(r.character)}" data-record-episode="${escape(r.episode)}"`, index)).join("") : `<p class="empty-copy">${text("stats.noRank")}</p>`;
+    $("#guest-record-ranking").innerHTML = stats.guestRecords.length ? stats.guestRecords.slice(0, 30).map((r, index) => rankButton(t("fun.recordName", { character: stats.characters.get(r.character).name, episode: stats.episodes.get(r.episode).name }), t("rank.cropValue", { count: number(r.count) }), `data-record-character="${escape(r.character)}" data-record-episode="${escape(r.episode)}"`, index)).join("") : `<p class="empty-copy">${text("stats.noRank")}</p>`;
   }
   function shuffle(items) {
     for (let i = items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [items[i], items[j]] = [items[j], items[i]]; }
@@ -164,26 +162,12 @@
       track.append(clone);
     }
     marqueePosition = 0; $("#ribbon").scrollLeft = 0;
-    $("#ribbon-note").textContent = t("ribbon.label");
-    $$(".ribbon-toolbar button").forEach(button => { button.disabled = false; });
-    $("#ribbon-mode").textContent = t("ribbon." + carouselMode); updatePause();
-  }
-  function updatePause() {
-    const paused = userPaused || motion.matches;
-    $("#ribbon-pause").textContent = t(paused ? "ribbon.play" : "ribbon.pause");
-    $("#ribbon-pause").setAttribute("aria-pressed", String(paused));
-    $("#ribbon-pause").disabled = motion.matches;
-  }
-  function nextRibbon() {
-    const ribbon = $("#ribbon");
-    marqueePosition = marqueeWidth ? (ribbon.scrollLeft + ribbon.clientWidth * .5) % marqueeWidth : 0;
-    ribbon.scrollLeft = marqueePosition;
   }
   function animateRibbon(now) {
     const elapsed = Math.min((now - lastFrame) / 1000 || 0, .05); lastFrame = now;
     const ribbon = $("#ribbon");
     if (ribbon && marqueeWidth) {
-      const paused = userPaused || motion.matches || ribbonHovered || ribbonFocused || document.hidden || now < manualUntil;
+      const paused = motion.matches || ribbonHovered || ribbonFocused || document.hidden || now < manualUntil;
       if (paused) marqueePosition = ribbon.scrollLeft;
       else {
         const speed = Math.max(5, Math.min(60, Number(config.carousel?.speedPixelsPerSecond) || 22));
@@ -265,10 +249,6 @@
     ribbon.addEventListener("touchcancel", () => { manualUntil = performance.now() + 1500; }, { passive: true });
     ribbon.addEventListener("mouseenter", () => { ribbonHovered = true; }); ribbon.addEventListener("mouseleave", () => { ribbonHovered = false; });
     ribbon.addEventListener("focusin", () => { ribbonFocused = true; }); ribbon.addEventListener("focusout", event => { ribbonFocused = ribbon.contains(event.relatedTarget); });
-    $("#ribbon-pause").addEventListener("click", () => { userPaused = !userPaused; updatePause(); });
-    $("#ribbon-next").addEventListener("click", nextRibbon);
-    $("#ribbon-mode").addEventListener("click", () => { carouselMode = carouselMode === "random" ? "sequential" : "random"; drawRibbon(); });
-    motion.addEventListener("change", () => { if (release?.instances.length && config.carousel?.enabled !== false) updatePause(); });
   }
   async function init() {
     state = readState();

@@ -4,7 +4,7 @@
 
 ## 必需内容
 
-- characters：`id`、`name`；可选 `aliases: string[]`、`type: "canonical"`。只含已发布的具名角色；不发布 NPC、临时身份、历史错误身份。id 稳定且不含逗号（组合分享链接使用逗号分隔）。
+- characters：`id`、`name`；可选 `aliases: string[]`、`type: "canonical"`，以及 `home_episode_ids: string[]`。本篇关系是角色与篇目的多对多映射；空数组表示当前没有登记本篇。只含已发布的具名角色；不发布 NPC、临时身份、历史错误身份。id 稳定且不含逗号（组合分享链接使用逗号分隔）。
 - episodes：`id`、`name`、`official_url`。链接必须核实为对应篇目；系列首页不代替具体篇目。前端仅允许 HTTPS comic.hypergryph.com / terra-historicus.hypergryph.com。
 - instances：`id`、`character_id`、`episode_id`、`crop_url`；可选 `image_id`、`source_preview_url`、`sort_key`。每一项是当前有效、人类 confirmed/trusted、经发布筛选的 canonical 实例。
 - 三个数组允许为空；重复 ID、未知角色/篇目关联、无效公开资源路径会让清单加载失败并显示重试，防止静默出现错误统计。
@@ -19,8 +19,8 @@ crop_url 和 source_preview_url 只接受 `/media/` 下 WebP/PNG/JPEG/AVIF 相�
 | images: [{id}] | 发布涉及的源图目录，仅 ID，不带原图地址 |
 | overview.images | 无 images 目录时的显式来源图总数 |
 | instance.image_id | 两项都缺失时，若每张 crop 都有 image_id，按它去重计来源图数；覆盖不全显示 — |
-| episode.cast_character_ids | 多对多本篇角色集合，角色必须在 characters 中；数组可空，缺失表示未知 |
-| cast_complete: true | 发布者确认所有篇目的本篇 cast 完整；只有同时具备每篇数组才启用两份客串榜 |
+| characters[].home_episode_ids | 多对多本篇关系；客串统计按某角色在不属于其本篇集合的 episode 中出现来计算。异格身份合并后的本篇关系并入同一个 canonical character |
+| episode.cast_character_ids / cast_complete | 仅为旧清单兼容字段；新清单优先使用 characters[].home_episode_ids |
 | episode.order | 已核实的时间先后顺序数值，所有篇目完整且唯一时启用久未出现榜 |
 | featured_instance_ids | 站长选定轮播实例，引用本发布包的 instance id |
 
@@ -28,7 +28,7 @@ crop_url 和 source_preview_url 只接受 `/media/` 下 WebP/PNG/JPEG/AVIF 相�
 
 `order` 不自动从文件名猜测；“相隔 N 篇”是本发布清单中位于最后收录篇目之后的篇目数，不是天数，也不声称官方漫画中一定没有其出场。
 
-“本篇 cast”不是所有实际出现角色的复制品。若内部 cast 自动混入全部已确认出现，应先梳理定义，再声明 cast_complete，否则客串统计会退化为零。缺失资料不要用空数组假装已经核实。
+导出只映射数据库已记录的 `home_episode`，不根据实际出场反推本篇。未登记本篇的角色，其现有出场全部计作客串；空数组与“已确认此角色没有本篇”遵循当前数据规则。
 
 ## 最小格式示意（不是可发布的数据）
 

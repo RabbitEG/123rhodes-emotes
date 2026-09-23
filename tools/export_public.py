@@ -44,7 +44,7 @@ def encoded(path, allowed_root, size, quality):
         canvas = Image.new('RGBA', image.size, 'white')
         canvas.alpha_composite(image)
         image = canvas.convert('RGB')
-        image.thumbnail(size, Image.Resampling.LANCZOS)
+        image.thumbnail(size, getattr(Image, 'Resampling', Image).LANCZOS)
         output = io.BytesIO()
         image.save(output, format='WEBP', quality=quality, method=4)
         return output.getvalue(), image.size
@@ -115,6 +115,36 @@ def export(database, raw_root, output):
         public_episodes.append({'id': e['episode_id'], 'name': e['episode_name'], **link})
     public_episodes.sort(key=lambda e: e['order'])
     episode_order = {e['id']: e['order'] for e in public_episodes}
+    episode_by_name = {}
+    episode_by_number = {}
+    for episode in public_episodes:
+        episode_by_name[episode['id']] = episode['id']
+        episode_by_name[episode['name']] = episode['id']
+        short_name = episode['name'].split('_', 1)[-1]
+        episode_by_name[short_name] = episode['id']
+        episode_by_number[str(episode['order'])] = episode['id']
+        prefix = re.match(r'^(\d+)_', episode['name'])
+        if prefix:
+            episode_by_number[str(int(prefix[1]))] = episode['id']
+
+    # Convert each existing home_episode hint to an episode ID. Merged canonical
+    # records are folded into their active canonical identity, allowing one
+    # person to retain multiple home episodes without publishing alter identities.
+    home_episodes = collections.defaultdict(set)
+    for cid, character in characters.items():
+        root = resolve(cid)
+        if root not in active or character['identity_kind'] != 'canonical':
+            continue
+        value = str(character.get('home_episode') or '').strip()
+        if not value:
+            continue
+        episode_id = episode_by_name.get(value)
+        if episode_id is None and value.isdigit():
+            episode_id = episode_by_number.get(str(int(value)))
+        if episode_id is None:
+            raise ValueError('Unmatched home_episode for %s: %s' % (character['canonical_name'], value))
+        home_episodes[root].add(episode_id)
+
     image_order = {}
     for e in public_episodes:
         source_images = [image for image in images if image['episode_id'] == e['id']]
@@ -161,7 +191,9 @@ def export(database, raw_root, output):
         raise ValueError('Asset export failed for %d instances; no release manifest published' % len(problems))
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
     public_characters = [{'id': cid, 'name': active[cid]['canonical_name'], 'type': 'canonical',
-                          'aliases': sorted(aliases[cid])} for cid in sorted(used_characters)]
+                          'aliases': sorted(aliases[cid]),
+                          'home_episode_ids': sorted(home_episodes[cid], key=lambda eid: episode_order[eid])}
+                         for cid in sorted(used_characters)]
     release = {
         'release_id': 'human-' + hashlib.sha256(json.dumps(instances, sort_keys=True).encode()).hexdigest()[:16],
         'generated_at': now, 'characters': public_characters, 'episodes': public_episodes,
