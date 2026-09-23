@@ -80,4 +80,4 @@ python tools/upload_r2.py
 
 ## 封面背景
 
-封面原图只在本地 `../123罗德岛_官方原图/封面图`。运行 `.venv-publish312/bin/python tools/publish_backgrounds.py --upload`，生成 1920×1080 原尺寸、高画质重新编码且不含原图元数据的 WebP 并上传到 R2；将输出的 `/media/backgrounds/...` 路径填入 `config/site.json` 的 `theme.backgroundImages`。每次 Pages 构建从该列表随机选一张，写入只存在于部署产物的 `config/selected-background.json`。页面以 38% 不透明度呈现，不更新人物发布清单，也不会把原始文件或重新编码文件提交到 GitHub。
+封面原图只在本地 `../123罗德岛_官方原图/封面图`。运行 `.venv-publish312/bin/python tools/publish_backgrounds.py --upload`，生成 1920×1080 原尺寸、高画质重新编码且不含原图元数据的 WebP 并上传到 R2；将输出的 `/media/backgrounds/...` 路径填入 `config/site.json` 的 `theme.backgroundImages`。每次运行 `python3 tools/build.py` 从该列表随机选一张；把只包含公开 R2 路径的 `config/selected-background.json` 和生成的 HTML 一起提交，Pages 才能在不同部署方式下保持一致。页面以 38% 不透明度呈现，不更新人物发布清单，也不会把原始文件或重新编码文件提交到 GitHub。
