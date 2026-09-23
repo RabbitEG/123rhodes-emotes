@@ -1,17 +1,15 @@
 {
-  "siteName": "罗德岛表情簿",
-  "subtitle": "123罗德岛！？人物表情检索",
-  "officialSeriesUrl": "https://comic.hypergryph.com/comic/6253",
   "releaseManifest": "/data/release.json",
+  "pageSize": 36,
   "theme": {
-    "accent": "#347F88",
-    "background": "#F4F0E8",
+    "accent": "#7860CB",
+    "background": "#F5F2FF",
     "backgroundImage": ""
   },
   "carousel": {
     "enabled": true,
     "mode": "random",
     "intervalMs": 5200,
-    "maxItems": 8
+    "maxItems": 16
   }
 }

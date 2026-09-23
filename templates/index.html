@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f2ff"><meta name="description" content="{{site.description}}">
+  <title>{{site.name}} · {{site.tagline}}</title>
+  <link rel="icon" href="/assets/star.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css?v={{asset_version}}">
+  <script src="/stats.js?v={{asset_version}}" defer></script><script src="/app.js?v={{asset_version}}" defer></script>
+</head>
+<body data-error="{{search.failed}}">
+  {{>header}}
+  <main id="main">
+    <section class="hero">
+      <div class="ribbon-shell" aria-label="{{ribbon.label}}">
+        <div class="ribbon" id="ribbon" tabindex="0"><div class="ribbon-track" id="ribbon-track" aria-hidden="true">
+          <div class="sticker dummy"><span>(｡•̀ᴗ-)✧</span><i>01</i></div><div class="sticker dummy"><span>Σ(°△°)</span><i>02</i></div><div class="sticker dummy"><span>( ˘ω˘ )</span><i>03</i></div><div class="sticker dummy"><span>٩(ˊᗜˋ*)و</span><i>04</i></div><div class="sticker dummy"><span>( •̀ ω •́ )✧</span><i>05</i></div><div class="sticker dummy"><span>(´･_･`)</span><i>06</i></div><div class="sticker dummy"><span>♡(◕ᴗ◕)</span><i>07</i></div>
+        </div></div>
+        <div class="ribbon-toolbar"><span id="ribbon-note">{{ribbon.empty}}</span><div><button id="ribbon-mode" class="text-button" type="button" disabled>{{ribbon.random}}</button><button id="ribbon-pause" class="text-button" type="button" disabled>{{ribbon.pause}}</button><button id="ribbon-next" class="text-button" type="button" disabled>{{ribbon.next}}</button></div></div>
+      </div>
+      <div class="hero-center wrap" id="search">
+        <p class="kicker">{{hero.kicker}}</p>
+        <h1>{{site.name}}<span class="title-star" aria-hidden="true">✦</span></h1>
+        <p class="hero-line">{{hero.line}}</p><p class="hero-note">{{hero.note}}</p>
+        <form id="search-form" class="search-box" role="search">
+          <div class="search-modes" role="group" aria-label="{{search.label}}"><button type="button" data-mode="expressions" aria-pressed="true">{{search.expressions}}</button><button type="button" data-mode="episodes" aria-pressed="false">{{search.episodes}}</button></div>
+          <div class="search-field"><span aria-hidden="true" class="search-icon"></span><label for="site-search" class="sr-only">{{search.label}}</label><input id="site-search" name="q" type="search" autocomplete="off" placeholder="{{search.placeholderExpressions}}"><button class="primary" type="submit">{{search.submit}} <span aria-hidden="true">↗</span></button></div>
+        </form>
+        <p class="search-hint">{{search.hint}}</p>
+        <p id="search-status" role="status">{{search.loading}}</p><button id="retry" class="pill" type="button" hidden>{{search.retry}}</button>
+      </div>
+    </section>
+    <section id="results-section" class="wrap results-section" hidden>
+      <div class="results-heading"><div><h2 id="results-title">{{search.browse}}</h2><p id="result-count"></p></div><button class="pill" id="clear-search" type="button">{{search.clear}} <span aria-hidden="true">×</span></button></div>
+      <div id="character-matches" class="character-matches"></div><div id="results-grid" class="gallery-grid"></div>
+      <div class="load-more"><p id="pagination-status"></p><button id="load-more" class="pill" type="button" hidden>{{search.more}} ↓</button></div>
+    </section>
+    <section id="stats" class="stats-section wrap">
+      <div class="section-title"><span class="section-stamp" aria-hidden="true">✦</span><p class="kicker">{{stats.kicker}}</p><h2>{{stats.title}}</h2><p>{{stats.note}} <span id="release-date"></span></p></div>
+      <div class="totals" id="totals"><article><strong>—</strong><span>{{stats.episodes}}</span></article><article><strong>—</strong><span>{{stats.instances}}</span></article><article><strong>—</strong><span>{{stats.characters}}</span></article><article><strong>—</strong><span>{{stats.images}}</span></article></div>
+      <div class="stat-panels">
+        <article class="paper-card chart-card"><div class="card-heading"><span class="mini-star" aria-hidden="true">✧</span><h3>{{stats.chartTitle}}</h3></div><p class="card-note">{{stats.chartNote}}</p><div id="distribution" class="distribution"><div class="donut-empty" aria-hidden="true"><span>…</span></div><p class="empty-copy">{{stats.empty}}</p></div></article>
+        <article class="paper-card ranking-card"><div class="card-heading"><h3>{{stats.rankTitle}}</h3><select id="ranking-kind" aria-label="{{stats.rankLabel}}"><option value="appearances">{{rank.appearances}}</option><option value="coverage">{{rank.coverage}}</option><option value="rare">{{rank.rare}}</option><option value="cameo">{{rank.cameo}}</option><option value="noHome">{{rank.noHome}}</option><option value="absence">{{rank.absence}}</option></select></div><p id="rank-note" class="card-note">{{rank.appearancesNote}}</p><div id="character-ranking" class="rank-list"><p class="empty-copy">{{stats.empty}}</p></div></article>
+      </div>
+      <div class="fun-heading"><span aria-hidden="true">✺</span><h3>{{fun.title}}</h3><span aria-hidden="true">✺</span></div>
+      <div class="stat-panels fun-panels"><article class="paper-card"><h3>{{fun.pairs}}</h3><p class="card-note">{{fun.pairNote}}</p><div id="pair-ranking" class="rank-list"><p class="empty-copy">{{stats.empty}}</p></div></article><article class="paper-card"><h3>{{fun.records}}</h3><p class="card-note">{{fun.recordNote}}</p><div id="record-ranking" class="rank-list"><p class="empty-copy">{{stats.empty}}</p></div></article></div>
+    </section>
+    <section class="guestbook wrap" id="guestbook"><span class="letter-mark" aria-hidden="true">♡</span><h2>{{guest.title}}</h2><p>{{guest.note}}</p><span class="status-pill">{{guest.status}}</span></section>
+    <noscript><p class="empty-copy">{{access.noScript}}</p></noscript>
+  </main>
+  {{>footer}}
+  <script id="site-copy" type="application/json">{{copy_json}}</script>
+</body>
+</html>

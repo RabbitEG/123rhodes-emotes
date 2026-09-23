@@ -14,3 +14,13 @@ node_modules/
 .env
 .env.*
 !.env.example
+
+# Private source data and local validation artifacts
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.db
+__pycache__/
+/test-results/
+/private/

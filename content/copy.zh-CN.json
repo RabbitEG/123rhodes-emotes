@@ -1,0 +1,540 @@
+{
+  "site.name": {
+    "text": "罗德岛表情簿",
+    "note": "站名：导航、标题、页脚"
+  },
+  "site.tagline": {
+    "text": "123罗德岛！？表情收藏册",
+    "note": "首页副标题"
+  },
+  "site.description": {
+    "text": "查找《123罗德岛！？》中的角色表情与篇目。",
+    "note": "浏览器搜索摘要"
+  },
+  "nav.search": {
+    "text": "检索",
+    "note": "顶部导航"
+  },
+  "nav.stats": {
+    "text": "收录统计",
+    "note": "顶部导航"
+  },
+  "nav.guestbook": {
+    "text": "留言",
+    "note": "顶部导航"
+  },
+  "nav.skip": {
+    "text": "跳到主要内容",
+    "note": "键盘辅助链接"
+  },
+  "hero.kicker": {
+    "text": "123 RHODES ISLAND · FAN COLLECTION",
+    "note": "标题上方小字"
+  },
+  "hero.line": {
+    "text": "想找谁的表情？",
+    "note": "搜索上方一句话"
+  },
+  "hero.note": {
+    "text": "选个角色，翻翻 TA 在漫画里的样子。",
+    "note": "首页标题说明"
+  },
+  "ribbon.label": {
+    "text": "随手翻几张",
+    "note": "顶部轮播的无障碍名称"
+  },
+  "ribbon.empty": {
+    "text": "表情图还在整理，先留个位置。",
+    "note": "尚无公开图片时"
+  },
+  "ribbon.pause": {
+    "text": "暂停",
+    "note": "轮播暂停"
+  },
+  "ribbon.play": {
+    "text": "播放",
+    "note": "轮播播放"
+  },
+  "ribbon.next": {
+    "text": "下一组",
+    "note": "减少动画时也可手动翻页"
+  },
+  "ribbon.random": {
+    "text": "随机",
+    "note": "轮播模式"
+  },
+  "ribbon.sequential": {
+    "text": "顺序",
+    "note": "轮播模式"
+  },
+  "search.label": {
+    "text": "搜索角色或篇目",
+    "note": "搜索框辅助名称"
+  },
+  "search.expressions": {
+    "text": "表情",
+    "note": "检索类型按钮"
+  },
+  "search.episodes": {
+    "text": "篇目",
+    "note": "检索类型按钮"
+  },
+  "search.placeholderExpressions": {
+    "text": "输入角色名，也可以搜篇目",
+    "note": "表情模式输入提示"
+  },
+  "search.placeholderEpisodes": {
+    "text": "输入篇目名、编号或角色名",
+    "note": "篇目模式输入提示"
+  },
+  "search.submit": {
+    "text": "搜索",
+    "note": "提交搜索按钮"
+  },
+  "search.clear": {
+    "text": "清除",
+    "note": "清空检索条件"
+  },
+  "search.all": {
+    "text": "全部收录",
+    "note": "无搜索条件时的结果标题"
+  },
+  "search.hint": {
+    "text": "角色名、别名、篇目编号都可以。",
+    "note": "搜索框下方提示"
+  },
+  "search.results": {
+    "text": "找到 {count} 项",
+    "note": "检索结果数量",
+    "slots": [
+      "count"
+    ]
+  },
+  "search.crops": {
+    "text": "{count} 张表情",
+    "note": "图片结果数量",
+    "slots": [
+      "count"
+    ]
+  },
+  "search.episodeCount": {
+    "text": "{count} 个篇目",
+    "note": "篇目结果数量",
+    "slots": [
+      "count"
+    ]
+  },
+  "search.loading": {
+    "text": "正在翻表情簿…",
+    "note": "数据加载状态"
+  },
+  "search.unpublished": {
+    "text": "图集还没上架，过阵子再来看看吧。",
+    "note": "公开数据未发布"
+  },
+  "search.failed": {
+    "text": "暂时没能打开图集，请稍后再试。",
+    "note": "网络错误或清单损坏"
+  },
+  "search.retry": {
+    "text": "重试",
+    "note": "重新加载公开清单"
+  },
+  "search.noResults": {
+    "text": "没找到，试试其他名字？",
+    "note": "有数据但搜索无结果"
+  },
+  "search.noCrops": {
+    "text": "这里还没有收录表情。",
+    "note": "选择无图角色或篇目"
+  },
+  "search.more": {
+    "text": "再看一些",
+    "note": "结果分页按钮"
+  },
+  "search.shown": {
+    "text": "已显示 {shown} / {total}",
+    "note": "分页计数",
+    "slots": [
+      "shown",
+      "total"
+    ]
+  },
+  "search.scope": {
+    "text": "当前：{name}",
+    "note": "选中角色或篇目的过滤条件",
+    "slots": [
+      "name"
+    ]
+  },
+  "search.browse": {
+    "text": "翻翻已收录的表情",
+    "note": "默认结果区标题"
+  },
+  "card.source": {
+    "text": "出处",
+    "note": "手机/键盘出处预览按钮"
+  },
+  "card.official": {
+    "text": "去泰拉记事社看这篇 ↗",
+    "note": "图片出处链接"
+  },
+  "card.unavailable": {
+    "text": "图片暂时走丢了",
+    "note": "图片请求失败"
+  },
+  "card.previewMissing": {
+    "text": "还没有出处缩略图",
+    "note": "低清预览缺失"
+  },
+  "card.previewAlt": {
+    "text": "{episode} · 出处缩略图",
+    "note": "出处图片替代文本",
+    "slots": [
+      "episode"
+    ]
+  },
+  "card.cropAlt": {
+    "text": "{character}的表情",
+    "note": "人物图片替代文本",
+    "slots": [
+      "character"
+    ]
+  },
+  "card.episodeMeta": {
+    "text": "{crops} 张表情 · {characters} 位角色",
+    "note": "篇目卡片收录信息",
+    "slots": [
+      "crops",
+      "characters"
+    ]
+  },
+  "card.open": {
+    "text": "查看这篇的表情",
+    "note": "篇目卡片主要操作"
+  },
+  "stats.kicker": {
+    "text": "ISLAND IN NUMBERS",
+    "note": "统计小标题"
+  },
+  "stats.title": {
+    "text": "这本表情簿有多厚？",
+    "note": "统计区标题"
+  },
+  "stats.note": {
+    "text": "只数本站已经收录的内容。",
+    "note": "统计区说明"
+  },
+  "stats.episodes": {
+    "text": "篇目",
+    "note": "基础统计名称"
+  },
+  "stats.instances": {
+    "text": "表情",
+    "note": "基础统计名称"
+  },
+  "stats.characters": {
+    "text": "角色",
+    "note": "基础统计名称"
+  },
+  "stats.images": {
+    "text": "来源图片",
+    "note": "基础统计名称"
+  },
+  "stats.date": {
+    "text": "更新于 {date}",
+    "note": "统计更新时间",
+    "slots": [
+      "date"
+    ]
+  },
+  "stats.pending": {
+    "text": "等待第一批收录",
+    "note": "未发布时统计状态"
+  },
+  "stats.chartTitle": {
+    "text": "谁的镜头最多",
+    "note": "环形图标题"
+  },
+  "stats.chartNote": {
+    "text": "按表情图数量，前五位 + 其他角色。",
+    "note": "环形图统计口径"
+  },
+  "stats.other": {
+    "text": "其他角色",
+    "note": "环形图合并项"
+  },
+  "stats.chartTotal": {
+    "text": "张表情",
+    "note": "环形图中心单位"
+  },
+  "stats.chartLabel": {
+    "text": "角色出场占比",
+    "note": "图表辅助名称"
+  },
+  "stats.chartValue": {
+    "text": "{count} 张 · {percent}%",
+    "note": "图例数值",
+    "slots": [
+      "count",
+      "percent"
+    ]
+  },
+  "stats.rankTitle": {
+    "text": "角色榜",
+    "note": "角色榜标题"
+  },
+  "stats.rankLabel": {
+    "text": "选择角色榜单",
+    "note": "榜单选择器辅助名称"
+  },
+  "stats.empty": {
+    "text": "有了收录，就能在这里看看排行。",
+    "note": "统计无数据时"
+  },
+  "stats.castMissing": {
+    "text": "本篇角色资料还没补齐，这两份客串榜先等等。",
+    "note": "cast 不完整时"
+  },
+  "stats.orderMissing": {
+    "text": "篇目顺序核实后，就能看看谁很久没露脸了。",
+    "note": "无可靠时间顺序时"
+  },
+  "stats.noRank": {
+    "text": "这一榜暂时没有符合条件的角色。",
+    "note": "有效数据但榜单结果为空"
+  },
+  "rank.appearances": {
+    "text": "出场次数榜",
+    "note": "榜单名称"
+  },
+  "rank.coverage": {
+    "text": "Episode 覆盖榜",
+    "note": "榜单名称"
+  },
+  "rank.rare": {
+    "text": "稀客榜",
+    "note": "榜单名称"
+  },
+  "rank.cameo": {
+    "text": "客串王",
+    "note": "榜单名称"
+  },
+  "rank.noHome": {
+    "text": "无本篇客串榜",
+    "note": "榜单名称"
+  },
+  "rank.absence": {
+    "text": "久未出现榜",
+    "note": "榜单名称"
+  },
+  "rank.appearancesNote": {
+    "text": "按收录表情数排序。",
+    "note": "榜单解释"
+  },
+  "rank.coverageNote": {
+    "text": "看看谁出现过的篇目最多。",
+    "note": "榜单解释"
+  },
+  "rank.rareNote": {
+    "text": "至少收录一次，按表情数从少到多。",
+    "note": "榜单解释"
+  },
+  "rank.cameoNote": {
+    "text": "在未登记为本篇角色的篇目里，出现了多少次。",
+    "note": "榜单解释"
+  },
+  "rank.noHomeNote": {
+    "text": "还没有本篇，但已经在其他篇目里露过脸的角色。",
+    "note": "榜单解释"
+  },
+  "rank.absenceNote": {
+    "text": "距最后一次收录，隔了多少个已发布篇目。",
+    "note": "榜单解释"
+  },
+  "rank.cropValue": {
+    "text": "{count} 张",
+    "note": "出场数单位",
+    "slots": [
+      "count"
+    ]
+  },
+  "rank.episodeValue": {
+    "text": "{count} 篇",
+    "note": "篇目数单位",
+    "slots": [
+      "count"
+    ]
+  },
+  "rank.absenceValue": {
+    "text": "相隔 {count} 篇",
+    "note": "久未出现单位",
+    "slots": [
+      "count"
+    ]
+  },
+  "fun.title": {
+    "text": "漫画里的小记录",
+    "note": "趣味榜标题"
+  },
+  "fun.pairs": {
+    "text": "最常见组合",
+    "note": "共现榜名称"
+  },
+  "fun.records": {
+    "text": "单篇出场记录",
+    "note": "单篇榜名称"
+  },
+  "fun.pairNote": {
+    "text": "一起出现在多少篇漫画中，不代表剧情里的亲密程度。",
+    "note": "共现说明"
+  },
+  "fun.recordNote": {
+    "text": "一个角色，在同一篇里留下了多少张表情。",
+    "note": "单篇记录说明"
+  },
+  "fun.pairName": {
+    "text": "{first} × {second}",
+    "note": "角色组合标题",
+    "slots": [
+      "first",
+      "second"
+    ]
+  },
+  "fun.recordName": {
+    "text": "{character} · {episode}",
+    "note": "单篇记录标题",
+    "slots": [
+      "character",
+      "episode"
+    ]
+  },
+  "guest.title": {
+    "text": "有话想说？",
+    "note": "留言区标题"
+  },
+  "guest.note": {
+    "text": "认错了人、链接不对，或是有个小建议，都可以告诉我。",
+    "note": "留言区说明"
+  },
+  "guest.status": {
+    "text": "留言板还在准备中",
+    "note": "留言尚未开通"
+  },
+  "footer.note": {
+    "text": "《123罗德岛！？》非官方粉丝站",
+    "note": "页脚项目说明"
+  },
+  "footer.about": {
+    "text": "关于与版权",
+    "note": "页脚链接"
+  },
+  "footer.privacy": {
+    "text": "隐私说明",
+    "note": "页脚链接"
+  },
+  "footer.official": {
+    "text": "泰拉记事社 ↗",
+    "note": "官方系列入口"
+  },
+  "footer.rights": {
+    "text": "《明日方舟》及相关漫画素材归各自权利人所有。",
+    "note": "页脚版权简述"
+  },
+  "info.back": {
+    "text": "回到表情簿",
+    "note": "说明页返回按钮"
+  },
+  "about.title": {
+    "text": "关于这本表情簿",
+    "note": "关于页面标题"
+  },
+  "about.intro": {
+    "text": "这里收集《123罗德岛！？》中已经人工整理的角色表情，方便按名字或篇目翻找。完整漫画请到泰拉记事社阅读。",
+    "note": "关于页介绍"
+  },
+  "about.status": {
+    "text": "当前公开图集与留言板尚在准备中。",
+    "note": "关于页当前状态，发布数据时同步修改"
+  },
+  "about.sourcesTitle": {
+    "text": "漫画出处",
+    "note": "来源标题"
+  },
+  "about.sources": {
+    "text": "表情旁的出处预览来自对应漫画原图的低清缩略图。本站不提供完整原图或漫画连续阅读。具体篇目的链接会随图集逐条核实。",
+    "note": "来源说明"
+  },
+  "about.copyrightTitle": {
+    "text": "版权说明",
+    "note": "版权段落标题"
+  },
+  "about.copyright1": {
+    "text": "本网站由《明日方舟》爱好者个人整理与维护，为非官方、非营利的粉丝项目。本站与上海鹰角网络科技有限公司及其关联公司不存在官方隶属、授权背书或代言关系。",
+    "note": "版权正文一"
+  },
+  "about.copyright2": {
+    "text": "本站涉及的公司名称、商标、作品名称和角色名称，其相关权利归各自权利人所有，使用目的为识别作品和资料来源。漫画画面、人物形象和原文的版权归上海鹰角网络科技有限公司及相关权利人所有。",
+    "note": "版权正文二"
+  },
+  "about.license": {
+    "text": "除另有声明外，维护者原创文字及享有相应权利的数据编排内容采用 CC BY-NC-SA 4.0。此许可不适用于官方漫画、人物图片、第三方素材和访客留言。",
+    "note": "原创内容许可"
+  },
+  "about.licenseLink": {
+    "text": "查看 CC BY-NC-SA 4.0",
+    "note": "许可链接文字"
+  },
+  "about.contactTitle": {
+    "text": "联系与纠错",
+    "note": "联系标题"
+  },
+  "about.contact": {
+    "text": "联系渠道和留言板还在准备中，开放后会在这里更新。请勿在公开留言或 issue 中提交个人信息。",
+    "note": "联系渠道说明"
+  },
+  "privacy.title": {
+    "text": "隐私说明",
+    "note": "隐私页面标题"
+  },
+  "privacy.intro": {
+    "text": "当前版本没有账号系统、留言接口或自建访问追踪脚本。",
+    "note": "隐私概述"
+  },
+  "privacy.requestsTitle": {
+    "text": "页面会加载哪些内容",
+    "note": "请求说明标题"
+  },
+  "privacy.requests": {
+    "text": "页面加载本站的网页、配置和公开图集。图集上线后会请求人物裁切图和低清出处缩略图；点击官方出处才会跳转泰拉记事社。搜索在你的浏览器内完成。",
+    "note": "页面请求说明"
+  },
+  "privacy.platformTitle": {
+    "text": "平台服务",
+    "note": "平台说明标题"
+  },
+  "privacy.platform": {
+    "text": "Cloudflare Pages 及其网络基础设施可能按其服务条款处理访问请求和安全日志。目前未启用 Cloudflare Web Analytics；如有变化会更新本页。",
+    "note": "平台隐私说明"
+  },
+  "privacy.messagesTitle": {
+    "text": "留言",
+    "note": "留言标题"
+  },
+  "privacy.messages": {
+    "text": "留言板尚未开放，当前不会收集留言。开放前会说明保存内容、人工审核方式和保存期限。",
+    "note": "留言隐私说明"
+  },
+  "notfound.title": {
+    "text": "这一页不在表情簿里",
+    "note": "404 页面标题"
+  },
+  "notfound.note": {
+    "text": "链接可能变了，回首页再找找吧。",
+    "note": "404 页面说明"
+  },
+  "access.noScript": {
+    "text": "请启用 JavaScript 使用搜索和统计。",
+    "note": "未启用脚本时提示"
+  }
+}

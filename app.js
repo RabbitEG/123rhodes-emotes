@@ -1,206 +1,242 @@
 (() => {
-  const $ = (selector, root = document) => root.querySelector(selector);
-  const escapeHTML = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
-  const normalize = (value) => String(value ?? "").trim().toLocaleLowerCase("zh-CN");
-  let release = null;
-  let config = null;
-  let carouselTimer = null;
-  let carouselIndex = 0;
-  let carouselPaused = false;
-  let carouselItems = [];
+  "use strict";
+  const $ = (s, root = document) => root.querySelector(s);
+  const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+  const copy = JSON.parse($("#site-copy").textContent);
+  const t = (key, values = {}) => (copy[key] ?? key).replace(/\{(\w+)\}/g, (_, name) => String(values[name] ?? ""));
+  const escape = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  const text = (key, values) => escape(t(key, values));
+  const normalize = value => String(value ?? "").trim().normalize("NFKC").toLocaleLowerCase("zh-CN");
+  const number = value => Number(value).toLocaleString("zh-CN");
+  const motion = matchMedia("(prefers-reduced-motion: reduce)");
+  const { validate, analyze, assetPath, officialURL } = RhodesStats;
+  let release, stats, config = {}, state, visible = 36, matches = [], carouselTimer;
+  let userPaused = false, ribbonHovered = false, ribbonFocused = false, carouselMode = "random";
 
-  function setStatus(message, isError = false) {
-    const status = $("#search-status");
-    if (!status) return;
-    status.textContent = message;
-    status.classList.toggle("error-copy", isError);
+  function readState() {
+    const p = new URLSearchParams(location.search);
+    return { mode: p.get("mode") === "episodes" ? "episodes" : "expressions", q: p.get("q") || "", character: p.get("character") || "", episode: p.get("episode") || "", pair: p.get("pair") || "", browse: p.get("browse") === "1" };
   }
-
-  function updateStats() {
-    if (!release?.overview) return;
-    const overview = release.overview;
-    const stats = $("#overview-stats");
-    const entries = [
-      ["已收录表情", overview.instances],
-      ["收录角色", overview.characters],
-      ["收录篇目", overview.episodes]
-    ];
-    stats.innerHTML = entries.map(([label, value]) => `<article class="stat-card"><span>${escapeHTML(label)}</span><strong>${Number.isFinite(Number(value)) ? Number(value).toLocaleString("zh-CN") : "—"}</strong><small>只统计当前公开版本</small></article>`).join("");
-    const date = $("#release-date");
-    if (date && release.generated_at) {
-      const parsed = new Date(release.generated_at);
-      date.textContent = Number.isNaN(parsed.getTime()) ? "公开索引" : `更新于 ${new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeZone: "Asia/Shanghai" }).format(parsed)}`;
+  function go(patch, scroll = false) {
+    state = { mode: state.mode, q: "", character: "", episode: "", pair: "", browse: false, ...patch };
+    const p = new URLSearchParams();
+    if (state.mode !== "expressions") p.set("mode", state.mode);
+    for (const key of ["q", "character", "episode", "pair"]) if (state[key]) p.set(key, state[key]);
+    if (state.browse) p.set("browse", "1");
+    history.pushState(null, "", "/" + (p.toString() ? "?" + p.toString() : "") + (scroll ? "#results-section" : "#search"));
+    visible = Number(config.pageSize) || 36;
+    renderSearch();
+    if (scroll && !$("#results-section").hidden) $("#results-section").scrollIntoView({ block: "start", behavior: motion.matches ? "instant" : "smooth" });
+  }
+  function matchesCharacter(c, query) {
+    return !query || [c.name, ...(c.aliases ?? [])].some(name => normalize(name).includes(query));
+  }
+  function matchesEpisode(e, query) {
+    if (!query || normalize(e.name).includes(query) || normalize(e.id).includes(query)) return true;
+    if (/^\d+$/.test(query)) {
+      const prefix = String(e.name).match(/^0*(\d+)(?:\D|$)/) || String(e.id).match(/^0*(\d+)(?:\D|$)/);
+      if (prefix && Number(prefix[1]) === Number(query)) return true;
     }
+    return false;
   }
-
-  function episodeById(id) { return release?.episodes?.find((episode) => episode.id === id); }
-  function characterById(id) { return release?.characters?.find((character) => character.id === id); }
-
-  function officialLink(episode) {
-    const value = episode?.official_url;
-    if (!value) return "";
-    try {
-      const url = new URL(value);
-      if (url.protocol !== "https:" || !["comic.hypergryph.com", "terra-historicus.hypergryph.com"].includes(url.hostname)) return "";
-      return url.href;
-    } catch { return ""; }
+  function image(path, alt) {
+    const url = assetPath(path);
+    return url ? `<img src="${escape(url)}" alt="${escape(alt)}" loading="lazy" decoding="async">` : `<span class="image-missing">${text("card.unavailable")}</span>`;
   }
-
-  function renderCharacters(query = "") {
-    const host = $("#character-results");
-    const term = normalize(query);
-    const characters = (release?.characters ?? []).filter((item) => !term || [item.name, ...(item.aliases ?? [])].some((value) => normalize(value).includes(term)));
-    if (!characters.length) {
-      host.innerHTML = `<div class="empty-note"><span class="empty-mark" aria-hidden="true">♡</span><p>${term ? "沒有找到符合的已收錄角色。" : "公開角色圖集尚未發布。"}</p><a href="about.html">了解本站如何整理和標注来源</a></div>`;
-      return;
+  function cropCard(item) {
+    const c = stats.characters.get(item.character_id), e = stats.episodes.get(item.episode_id);
+    const url = officialURL(e.official_url);
+    return `<article class="expression-card" data-instance="${escape(item.id)}"><a class="crop-wrap" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-label="${text("card.cropAlt", { character: c.name })} · ${text("card.official")}">${image(item.crop_url, t("card.cropAlt", { character: c.name }))}</a><div class="expression-caption"><button class="name-button" data-character="${escape(c.id)}">${escape(c.name)}</button><button class="episode-button" data-episode="${escape(e.id)}">${escape(e.name)}</button></div><div class="source-detail"><button type="button" class="source-toggle" aria-expanded="false" aria-controls="preview-${escape(item.id)}">${text("card.source")} ↗</button><div class="source-peek" id="preview-${escape(item.id)}">${item.source_preview_url ? image(item.source_preview_url, t("card.previewAlt", { episode: e.name })) : `<p>${text("card.previewMissing")}</p>`}<strong>${escape(e.name)}</strong><a href="${escape(url)}" target="_blank" rel="noopener noreferrer">${text("card.official")}</a></div></div></article>`;
+  }
+  function episodeCard(e) {
+    const first = release.instances.find(item => item.episode_id === e.id);
+    return `<article class="episode-card">${first ? `<button class="episode-cover" data-episode="${escape(e.id)}" aria-label="${text("card.open")} · ${escape(e.name)}">${image(first.crop_url, e.name)}</button>` : '<span class="episode-cover empty-cover" aria-hidden="true">✦</span>'}<div><h3><button class="name-button" data-episode="${escape(e.id)}">${escape(e.name)}</button></h3><p>${text("card.episodeMeta", { crops: e.count, characters: e.characters.size })}</p><div class="episode-characters">${[...e.characters].slice(0, 5).map(cid => `<button data-character="${escape(cid)}">${escape(stats.characters.get(cid).name)}</button>`).join("")}</div><a href="${escape(officialURL(e.official_url))}" target="_blank" rel="noopener noreferrer">${text("card.official")}</a></div></article>`;
+  }
+  function renderSearch() {
+    $("#site-search").value = state.q;
+    $("#site-search").placeholder = t(state.mode === "expressions" ? "search.placeholderExpressions" : "search.placeholderEpisodes");
+    $$("[data-mode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode)));
+    if (!release) return;
+    const active = Boolean(state.q || state.character || state.episode || state.pair || state.browse);
+    $("#results-section").hidden = !active;
+    $("#search-status").textContent = t("search.crops", { count: number(release.instances.length) });
+    if (!active) return;
+    const query = normalize(state.q);
+    const cids = new Set([...stats.characters.values()].filter(c => matchesCharacter(c, query)).map(c => c.id));
+    const eids = new Set([...stats.episodes.values()].filter(e => matchesEpisode(e, query)).map(e => e.id));
+    const pairIds = state.pair.split(",").filter(id => stats.characters.has(id));
+    const shared = pairIds.length === 2 ? new Set([...stats.episodes.values()].filter(e => pairIds.every(id => e.characters.has(id))).map(e => e.id)) : null;
+    if (state.mode === "episodes") {
+      matches = [...stats.episodes.values()].filter(e => !query || eids.has(e.id) || [...e.characters].some(cid => cids.has(cid))).sort((a, b) => a.name.localeCompare(b.name, "zh-CN", { numeric: true }));
+    } else {
+      matches = release.instances.filter(item => (!query || cids.has(item.character_id) || eids.has(item.episode_id)) && (!state.character || item.character_id === state.character) && (!state.episode || item.episode_id === state.episode) && (!state.pair || (shared?.has(item.episode_id) && pairIds.includes(item.character_id)))).sort((a, b) => String(a.sort_key ?? a.id).localeCompare(String(b.sort_key ?? b.id), "zh-CN", { numeric: true }));
     }
-    host.innerHTML = characters.slice(0, 48).map((item) => `<button class="result-card" type="button" data-character="${escapeHTML(item.id)}"><strong>${escapeHTML(item.name)}</strong><small>${Number(item.instance_count) || 0} 张表情 · ${Number(item.episode_count) || 0} 个篇目</small></button>`).join("");
+    let title = state.q || t("search.all");
+    const scopedNames = [stats.characters.get(state.character)?.name, stats.episodes.get(state.episode)?.name].filter(Boolean);
+    if (scopedNames.length) title = scopedNames.join(" · ");
+    if (pairIds.length === 2) title = t("fun.pairName", { first: stats.characters.get(pairIds[0]).name, second: stats.characters.get(pairIds[1]).name });
+    $("#results-title").textContent = title;
+    $("#result-count").textContent = t(state.mode === "expressions" ? "search.crops" : "search.episodeCount", { count: number(matches.length) });
+    $("#character-matches").innerHTML = query && state.mode === "expressions" && !state.character ? [...cids].slice(0, 12).map(cid => `<button class="pill" data-character="${escape(cid)}">${escape(stats.characters.get(cid).name)}</button>`).join("") : "";
+    renderMatches();
   }
-
-  function renderEpisodes(query = "") {
-    const host = $("#episode-results");
-    const term = normalize(query);
-    const episodes = (release?.episodes ?? []).filter((item) => !term || normalize(item.name).includes(term) || normalize(item.id).includes(term));
-    if (!episodes.length) {
-      host.innerHTML = `<div class="empty-note"><span class="empty-mark" aria-hidden="true">⌁</span><p>${term ? "没有找到符合的已收录篇目。" : "篇目索引正在整理，核实出处后会逐步开放。"}</p><a class="text-link" href="${escapeHTML(config?.officialSeriesUrl ?? "https://comic.hypergryph.com/comic/6253")}" target="_blank" rel="noopener noreferrer">前往泰拉记事社 ↗</a></div>`;
-      return;
+  function renderMatches() {
+    const grid = $("#results-grid");
+    grid.classList.toggle("episodes-grid", state.mode === "episodes");
+    grid.innerHTML = matches.length ? matches.slice(0, visible).map(state.mode === "episodes" ? episodeCard : cropCard).join("") : `<div class="empty-result"><span aria-hidden="true">(・_・?)</span><p>${text("search.noResults")}</p></div>`;
+    $("#pagination-status").textContent = matches.length ? t("search.shown", { shown: Math.min(visible, matches.length), total: matches.length }) : "";
+    $("#load-more").hidden = visible >= matches.length;
+  }
+  function rankButton(label, value, attrs, index) {
+    return `<button class="rank-row" ${attrs}><span class="rank-number">${String(index + 1).padStart(2, "0")}</span><span class="rank-name">${escape(label)}</span><strong>${escape(value)}</strong><span class="rank-arrow" aria-hidden="true">↗</span></button>`;
+  }
+  function renderRanking() {
+    if (!stats) return;
+    const kind = $("#ranking-kind").value;
+    $("#rank-note").textContent = t("rank." + kind + "Note");
+    const rows = stats.rankings[kind];
+    $("#character-ranking").innerHTML = rows === null ? `<p class="empty-copy">${text(kind === "absence" ? "stats.orderMissing" : "stats.castMissing")}</p>` : rows.length ? rows.slice(0, 10).map((c, index) => {
+      const value = kind === "coverage" ? c.episodes.size : kind === "cameo" ? c.cameo : kind === "absence" ? c.absence : c.count;
+      return rankButton(c.name, t(kind === "coverage" ? "rank.episodeValue" : kind === "absence" ? "rank.absenceValue" : "rank.cropValue", { count: number(value) }), `data-character="${escape(c.id)}"`, index);
+    }).join("") : `<p class="empty-copy">${text(release.instances.length ? "stats.noRank" : "stats.empty")}</p>`;
+  }
+  function renderStats() {
+    $("#totals").innerHTML = [["episodes", release.episodes.length], ["instances", release.instances.length], ["characters", release.characters.length], ["images", stats.imageCount]].map(([key, value]) => `<article><strong>${value === null ? "—" : number(value)}</strong><span>${text("stats." + key)}</span></article>`).join("");
+    if (release.generated_at) {
+      const date = new Date(release.generated_at);
+      if (!Number.isNaN(date.getTime())) $("#release-date").textContent = t("stats.date", { date: new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(date) });
     }
-    host.innerHTML = episodes.slice(0, 48).map((item) => {
-      const url = officialLink(item);
-      const label = url ? `<a class="text-link" href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">官方阅读 ↗</a>` : "出处链接待核实";
-      return `<article class="result-card"><strong>${escapeHTML(item.name)}</strong><small>${Number(item.instance_count) || 0} 张本站收录表情</small>${label}</article>`;
-    }).join("");
-  }
-
-  function renderGallery(characterId) {
-    const host = $("#gallery-results");
-    const character = characterById(characterId);
-    if (!character) return;
-    const instances = (release?.instances ?? []).filter((item) => item.character_id === characterId).sort((a, b) => String(a.sort_key ?? "").localeCompare(String(b.sort_key ?? ""), "zh-CN", { numeric: true }));
-    if (!instances.length) {
-      host.innerHTML = `<div class="empty-note"><p>${escapeHTML(character.name)}暂未收录可展示的表情图。</p></div>`;
-      return;
-    }
-    host.innerHTML = instances.map((item) => {
-      const episode = episodeById(item.episode_id);
-      const url = officialLink(episode);
-      const href = url || "about.html#sources";
-      const sourcePreview = item.source_preview_url ? `<span class="source-peek"><img src="${escapeHTML(item.source_preview_url)}" alt="${escapeHTML(episode?.name ?? "") }漫画出处缩略图" loading="lazy"><span>${escapeHTML(episode?.name ?? "出处预览")}</span></span>` : "";
-      return `<article class="expression-card"><a class="crop-wrap" href="${escapeHTML(href)}" ${url ? 'target="_blank" rel="noopener noreferrer"' : ""} aria-label="查看${escapeHTML(episode?.name ?? "") }官方出处">${item.crop_url ? `<img class="crop-image" src="${escapeHTML(item.crop_url)}" alt="${escapeHTML(character.name)}表情图" loading="lazy">` : `<span class="empty-mark" aria-hidden="true">♡</span>`}${sourcePreview}</a><div class="expression-caption"><strong>${escapeHTML(character.name)}</strong><span>${escapeHTML(episode?.name ?? "篇目待核实")}</span></div></article>`;
-    }).join("");
-    host.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "nearest" });
-  }
-
-  function setupCarousel() {
-    const controls = $("#carousel-mode");
-    const pause = $("#carousel-pause");
-    const host = $("#featured-track");
-    const enabled = config?.carousel?.enabled && (release?.instances?.length ?? 0) > 0;
-    if (!enabled) return;
-    const featuredIds = release.featured_instance_ids ?? [];
-    const byId = new Map(release.instances.map((item) => [item.id, item]));
-    carouselItems = (featuredIds.length ? featuredIds.map((id) => byId.get(id)).filter(Boolean) : [...release.instances]).slice(0, Number(config.carousel.maxItems) || 8);
-    if (!carouselItems.length) return;
-    if (config.carousel.mode === "random") carouselItems.sort(() => Math.random() - 0.5);
-    controls.disabled = false;
-    pause.disabled = false;
-    controls.textContent = config.carousel.mode === "random" ? "随机" : "顺序";
-
-    const draw = () => {
-      const visible = Array.from({ length: Math.min(4, carouselItems.length) }, (_, offset) => carouselItems[(carouselIndex + offset) % carouselItems.length]);
-      host.innerHTML = visible.map((item) => {
-        const character = characterById(item.character_id);
-        const episode = episodeById(item.episode_id);
-        const url = officialLink(episode);
-        if (!item.crop_url) return "";
-        return `<article class="expression-card"><a class="crop-wrap" href="${escapeHTML(url || "about.html#sources")}" ${url ? 'target="_blank" rel="noopener noreferrer"' : ""}><img class="crop-image" src="${escapeHTML(item.crop_url)}" alt="${escapeHTML(character?.name ?? "人物")}表情图" loading="lazy"></a><div class="expression-caption"><strong>${escapeHTML(character?.name ?? "人物待核实")}</strong><span>${escapeHTML(episode?.name ?? "篇目待核实")}</span></div></article>`;
+    if (stats.chart.length) {
+      let offset = 0;
+      const arcs = stats.chart.map((row, index) => {
+        const percent = row.count / release.instances.length * 100;
+        const arc = `<circle class="chart-color-${index}" cx="90" cy="90" r="66" pathLength="100" stroke-dasharray="${percent} ${100 - percent}" stroke-dashoffset="${-offset}" transform="rotate(-90 90 90)"/>`;
+        offset += percent; return arc;
       }).join("");
-    };
-    draw();
-    controls.addEventListener("click", () => {
-      config.carousel.mode = config.carousel.mode === "random" ? "sequential" : "random";
-      if (config.carousel.mode === "random") carouselItems.sort(() => Math.random() - 0.5);
-      controls.textContent = config.carousel.mode === "random" ? "随机" : "顺序";
-      carouselIndex = 0;
-      draw();
-    });
-    pause.addEventListener("click", () => {
-      carouselPaused = !carouselPaused;
-      pause.textContent = carouselPaused ? "继续" : "暂停";
-    });
-    const start = () => {
-      if (carouselTimer) clearInterval(carouselTimer);
-      carouselTimer = setInterval(() => {
-        if (carouselPaused || document.hidden || matchMedia("(prefers-reduced-motion: reduce)").matches || carouselItems.length < 5) return;
-        carouselIndex = (carouselIndex + 1) % carouselItems.length;
-        draw();
-      }, Math.max(4000, Number(config.carousel.intervalMs) || 5200));
-    };
-    host.addEventListener("mouseenter", () => { carouselPaused = true; });
-    host.addEventListener("mouseleave", () => { carouselPaused = false; });
-    host.addEventListener("focusin", () => { carouselPaused = true; });
-    host.addEventListener("focusout", () => { carouselPaused = false; });
-    start();
-  }
-
-  function runSearch(query) {
-    const term = query.trim();
-    if (!release) {
-      setStatus("公开索引尚未发布，暂时无法检索。", false);
-      return;
+      const legend = stats.chart.map((row, index) => `<${row.id ? "button" : "div"} class="legend-row" ${row.id ? `data-character="${escape(row.id)}"` : ""}><span class="legend-dot chart-color-${index}" aria-hidden="true"></span><span>${escape(row.name || t("stats.other"))}</span><small>${text("stats.chartValue", { count: number(row.count), percent: (100 * row.count / release.instances.length).toFixed(1) })}</small></${row.id ? "button" : "div"}>`).join("");
+      $("#distribution").innerHTML = `<div class="donut"><svg viewBox="0 0 180 180" role="img" aria-label="${text("stats.chartLabel")}"><title>${text("stats.chartLabel")}</title>${arcs}</svg><div class="donut-center"><strong>${number(release.instances.length)}</strong><span>${text("stats.chartTotal")}</span></div></div><div class="legend">${legend}</div>`;
     }
-    if (!term) {
-      setStatus("输入角色名、别名或篇目名开始搜索。", false);
-      renderCharacters();
-      renderEpisodes();
-      return;
-    }
-    renderCharacters(term);
-    renderEpisodes(term);
-    const matchedCharacters = (release.characters ?? []).filter((item) => [item.name, ...(item.aliases ?? [])].some((value) => normalize(value).includes(normalize(term)))).length;
-    const matchedEpisodes = (release.episodes ?? []).filter((item) => normalize(item.name).includes(normalize(term)) || normalize(item.id).includes(normalize(term))).length;
-    setStatus(`找到 ${matchedCharacters} 个角色、${matchedEpisodes} 个篇目。`, matchedCharacters + matchedEpisodes === 0);
-    document.querySelector("#expressions").scrollIntoView({ behavior: "smooth", block: "start" });
+    renderRanking();
+    $("#pair-ranking").innerHTML = stats.commonPairs.length ? stats.commonPairs.slice(0, 5).map((p, index) => rankButton(t("fun.pairName", { first: stats.characters.get(p.first).name, second: stats.characters.get(p.second).name }), t("rank.episodeValue", { count: p.count }), `data-pair="${escape(p.first + "," + p.second)}"`, index)).join("") : `<p class="empty-copy">${text("stats.noRank")}</p>`;
+    $("#record-ranking").innerHTML = stats.records.length ? stats.records.slice(0, 5).map((r, index) => rankButton(t("fun.recordName", { character: stats.characters.get(r.character).name, episode: stats.episodes.get(r.episode).name }), t("rank.cropValue", { count: r.count }), `data-record-character="${escape(r.character)}" data-record-episode="${escape(r.episode)}"`, index)).join("") : `<p class="empty-copy">${text("stats.noRank")}</p>`;
   }
-
-  async function init() {
-    const form = $("#search-form");
-    form?.addEventListener("submit", (event) => {
-      event.preventDefault();
-      runSearch($("#site-search").value);
-    });
-    $("#character-results")?.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-character]");
-      if (button) renderGallery(button.dataset.character);
-    });
-
+  function shuffle(items) {
+    for (let i = items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [items[i], items[j]] = [items[j], items[i]]; }
+    return items;
+  }
+  function drawRibbon() {
+    if (!release?.instances.length || config.carousel?.enabled === false) return;
+    const max = Math.max(4, Math.min(32, Number(config.carousel?.maxItems) || 16));
+    const byId = new Map(release.instances.map(item => [item.id, item]));
+    let items = (release.featured_instance_ids || []).map(id => byId.get(String(id))).filter(Boolean);
+    if (!items.length) {
+      const pool = carouselMode === "random" ? shuffle([...release.instances]) : [...release.instances];
+      const used = new Set(); items = pool.filter(item => { if (used.has(item.character_id)) return false; used.add(item.character_id); return true; });
+      const chosen = new Set(items.map(item => item.id)); items.push(...pool.filter(item => !chosen.has(item.id)));
+    } else if (carouselMode === "random") shuffle(items);
+    $("#ribbon-track").removeAttribute("aria-hidden");
+    $("#ribbon-track").innerHTML = items.slice(0, max).map(item => {
+      const c = stats.characters.get(item.character_id), e = stats.episodes.get(item.episode_id);
+      return `<a class="sticker" href="${escape(officialURL(e.official_url))}" target="_blank" rel="noopener noreferrer" aria-label="${text("card.cropAlt", { character: c.name })} · ${text("card.official")}">${image(item.crop_url, t("card.cropAlt", { character: c.name }))}<span class="sticker-label">${escape(c.name)}</span></a>`;
+    }).join("");
+    $("#ribbon").scrollLeft = 0;
+    $("#ribbon-note").textContent = t("ribbon.label");
+    $$(".ribbon-toolbar button").forEach(button => { button.disabled = false; });
+    $("#ribbon-mode").textContent = t("ribbon." + carouselMode); updatePause();
+  }
+  function updatePause() {
+    const paused = userPaused || motion.matches;
+    $("#ribbon-pause").textContent = t(paused ? "ribbon.play" : "ribbon.pause");
+    $("#ribbon-pause").setAttribute("aria-pressed", String(paused));
+    $("#ribbon-pause").disabled = motion.matches;
+  }
+  function nextRibbon() {
+    const ribbon = $("#ribbon");
+    ribbon.scrollTo({ left: ribbon.scrollLeft + ribbon.clientWidth >= ribbon.scrollWidth - 8 ? 0 : ribbon.scrollLeft + ribbon.clientWidth * .55, behavior: motion.matches ? "instant" : "smooth" });
+  }
+  async function load() {
+    $("#retry").hidden = true; $("#search-status").textContent = t("search.loading");
     try {
-      const configResponse = await fetch("/config/site.json", { cache: "no-cache" });
-      if (!configResponse.ok) throw new Error("配置文件暂不可用");
-      config = await configResponse.json();
-      document.documentElement.style.setProperty("--accent", config.theme?.accent || "#347f88");
-      document.documentElement.style.setProperty("--paper", config.theme?.background || "#f4f0e8");
-      if (config.theme?.backgroundImage) {
-        const safePath = new URL(config.theme.backgroundImage, location.origin);
-        if (safePath.origin === location.origin) document.documentElement.style.setProperty("--site-bg-image", `url("${safePath.href}")`);
+      const url = new URL(config.releaseManifest || "/data/release.json", location.origin);
+      if (url.origin !== location.origin) throw new Error("Release must be same-origin");
+      const response = await fetch(url, { cache: "no-cache" });
+      if (response.status === 404) { $("#search-status").textContent = t("search.unpublished"); return; }
+      if (!response.ok) throw new Error("Release unavailable");
+      release = validate(await response.json()); stats = analyze(release);
+      renderSearch(); renderStats(); drawRibbon();
+    } catch (error) {
+      release = undefined; stats = undefined;
+      $("#search-status").textContent = t("search.failed"); $("#retry").hidden = false;
+      console.warn("Public release unavailable:", error.message);
+    }
+  }
+  function setupEvents() {
+    $("#search-form").addEventListener("submit", event => { event.preventDefault(); go({ q: $("#site-search").value.trim(), browse: !$("#site-search").value.trim() }, true); });
+    $$("[data-mode]").forEach(b => b.addEventListener("click", () => go({ mode: b.dataset.mode, q: $("#site-search").value.trim(), browse: state.browse })));
+    $("#clear-search").addEventListener("click", () => go({}));
+    $("#load-more").addEventListener("click", () => { visible += Number(config.pageSize) || 36; renderMatches(); });
+    $("#ranking-kind").addEventListener("change", renderRanking); $("#retry").addEventListener("click", load);
+    window.addEventListener("popstate", () => { state = readState(); visible = Number(config.pageSize) || 36; renderSearch(); });
+    document.addEventListener("click", event => {
+      const toggle = event.target.closest(".source-toggle");
+      if (toggle) {
+        const card = toggle.closest(".expression-card");
+        const opened = !card.classList.contains("preview-open");
+        card.classList.toggle("preview-open", opened);
+        card.classList.toggle("preview-suppressed", !opened);
+        toggle.setAttribute("aria-expanded", String(opened));
+        return;
       }
-    } catch {
-      config = { carousel: { enabled: false }, officialSeriesUrl: "https://comic.hypergryph.com/comic/6253" };
+      const b = event.target.closest("[data-character], [data-episode], [data-pair], [data-record-character]");
+      if (!b) return;
+      if (b.dataset.recordCharacter) go({ mode: "expressions", character: b.dataset.recordCharacter, episode: b.dataset.recordEpisode }, true);
+      else if (b.dataset.character) go({ mode: "expressions", character: b.dataset.character }, true);
+      else if (b.dataset.episode) go({ mode: "expressions", episode: b.dataset.episode }, true);
+      else if (b.dataset.pair) go({ mode: "expressions", pair: b.dataset.pair }, true);
+    });
+    document.addEventListener("error", event => {
+      if (event.target.tagName !== "IMG") return;
+      const fallback = document.createElement("span"); fallback.className = "image-missing"; fallback.textContent = t("card.unavailable"); event.target.replaceWith(fallback);
+    }, true);
+    function positionPreview(event) {
+      const card = event.target.closest(".expression-card");
+      if (card) card.classList.toggle("preview-left", card.getBoundingClientRect().right + 212 > innerWidth);
     }
-
-    try {
-      const response = await fetch(config.releaseManifest || "/data/release.json", { cache: "no-cache" });
-      if (!response.ok) throw new Error("还没有公开发布清单");
-      release = await response.json();
-      updateStats();
-      renderCharacters();
-      renderEpisodes();
-      setupCarousel();
-      setStatus("输入角色名、别名或篇目名开始搜索。", false);
-    } catch {
-      setStatus("公开图集正在准备中；现在可以先看站点介绍和来源。", false);
-    }
+    document.addEventListener("pointerover", positionPreview); document.addEventListener("focusin", positionPreview);
+    document.addEventListener("keydown", event => {
+      if (event.key !== "Escape") return;
+      $$(".expression-card").filter(card => card.matches(":hover, :focus-within") || card.classList.contains("preview-open")).forEach(card => {
+        card.classList.remove("preview-open"); card.classList.add("preview-suppressed");
+        $(".source-toggle", card).setAttribute("aria-expanded", "false");
+      });
+    });
+    for (const eventName of ["pointerout", "focusout"]) document.addEventListener(eventName, event => {
+      const card = event.target.closest(".expression-card");
+      if (card && !card.contains(event.relatedTarget)) card.classList.remove("preview-suppressed");
+    });
+    const ribbon = $("#ribbon");
+    ribbon.addEventListener("mouseenter", () => { ribbonHovered = true; }); ribbon.addEventListener("mouseleave", () => { ribbonHovered = false; });
+    ribbon.addEventListener("focusin", () => { ribbonFocused = true; }); ribbon.addEventListener("focusout", event => { ribbonFocused = ribbon.contains(event.relatedTarget); });
+    $("#ribbon-pause").addEventListener("click", () => { userPaused = !userPaused; updatePause(); });
+    $("#ribbon-next").addEventListener("click", nextRibbon);
+    $("#ribbon-mode").addEventListener("click", () => { carouselMode = carouselMode === "random" ? "sequential" : "random"; drawRibbon(); });
+    motion.addEventListener("change", () => { if (release?.instances.length && config.carousel?.enabled !== false) updatePause(); });
   }
-
-  init();
+  async function init() {
+    state = readState(); setupEvents(); renderSearch();
+    try {
+      const response = await fetch("/config/site.json", { cache: "no-cache" });
+      if (response.ok) config = await response.json();
+      for (const [key, variable] of Object.entries({ accent: "--accent", background: "--background" })) if (/^#[0-9a-f]{6}$/i.test(config.theme?.[key] || "")) document.documentElement.style.setProperty(variable, config.theme[key]);
+      if (config.theme?.backgroundImage) {
+        const url = new URL(config.theme.backgroundImage, location.origin);
+        if (url.origin === location.origin && url.pathname.startsWith("/assets/") && /\.(webp|png|jpe?g|svg)$/i.test(url.pathname)) document.documentElement.style.setProperty("--site-background", 'url("' + encodeURI(url.href).replace(/"/g, "%22") + '")');
+      }
+    } catch { config = {}; }
+    carouselMode = config.carousel?.mode === "sequential" ? "sequential" : "random";
+    visible = Number(config.pageSize) || 36; await load();
+    clearInterval(carouselTimer);
+    carouselTimer = setInterval(() => { if (release?.instances.length && config.carousel?.enabled !== false && !userPaused && !motion.matches && !ribbonHovered && !ribbonFocused && !document.hidden) nextRibbon(); }, Math.max(4000, Number(config.carousel?.intervalMs) || 5200));
+  }
+  init().catch(() => { $("#search-status").textContent = document.body.dataset.error; });
 })();
