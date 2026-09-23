@@ -12,6 +12,8 @@
 .wrangler/
 node_modules/
 .venv/
+.venv-publish/
+.venv-publish312/
 .env
 .env.*
 !.env.example

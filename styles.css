@@ -65,7 +65,7 @@ body[data-page="search"] #results-section { min-height: 45vh; }
 .sticker-label { position: absolute; bottom: 5px; left: 0; width: 100%; text-align: center; font-size: 12px; font-weight: 700; color: #6f667c; }
 .dummy { font-size: 22px; color: #947ca8; letter-spacing: -.04em; padding-bottom: 13px; user-select: none; }
 .dummy i { position: absolute; bottom: 5px; right: 9px; font-size: 11px; color: #ad9cbc; font-style: normal; }
-.hero-center { position: relative; margin-block: auto; padding: 12px 0 25px; text-align: center; }
+.hero-center { position: absolute; top: calc(50% - 42px); left: 50%; z-index: 1; margin: 0; padding: 12px 0 25px; text-align: center; transform: translate(-50%, -50%); }
 .kicker { color: #9285aa; font-size: 12px; letter-spacing: .2em; font-weight: 750; }
 .hero h1 { position: relative; display: inline-block; margin: 5px 0 15px; font-size: clamp(34px, 4.4vw, 56px); letter-spacing: .07em; font-weight: 900; color: #4b3d6c; text-shadow: 2px 3px 0 #fff, 3px 5px 0 #dfd4f0; }
 .hero h1::after { content: ""; position: absolute; z-index: -1; height: 14px; left: 0; right: 0; bottom: 3px; background: #ebcbdc; transform: rotate(-2deg); }
@@ -223,7 +223,7 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
   .sticker { flex-basis: 140px; height: 135px; padding: 11px 9px 22px; border-radius: 10px; }
   .dummy { font-size: 18px; }
   .hero { min-height: calc(100svh - 70px); padding-bottom: 22px; }
-  .hero-center { margin-block: auto; padding: 10px 0 20px; }
+  .hero-center { top: calc(50% - 35px); padding: 10px 0 20px; }
   .hero h1 { font-size: 36px; letter-spacing: .025em; }
   .title-star { font-size: 23px; right: -22px; top: -7px; }
   .kicker { font-size: 10px; letter-spacing: .13em; }

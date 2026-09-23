@@ -265,7 +265,7 @@
     "note": "榜单名称"
   },
   "rank.coverage": {
-    "text": "Episode 覆盖榜",
+    "text": "篇目覆盖榜",
     "note": "榜单名称"
   },
   "rank.rare": {
@@ -289,7 +289,7 @@
     "note": "统计公式"
   },
   "rank.coverageNote": {
-    "text": "Episode 数 = 角色出现过的不同篇目数",
+    "text": "篇目数 = 角色出现过的不同篇目数",
     "note": "统计公式"
   },
   "rank.rareNote": {
@@ -297,11 +297,11 @@
     "note": "统计公式"
   },
   "rank.cameoNote": {
-    "text": "客串实例数 = 非本篇 crop 数；客串篇数 = 非本篇 Episode 去重数",
+    "text": "客串实例数 = 非本篇 crop 数；客串篇数 = 非本篇篇目数（去重）",
     "note": "统计公式"
   },
   "rank.noHomeNote": {
-    "text": "无本篇 Episode 的角色，按有效 crop 数降序",
+    "text": "没有本篇的角色，按有效 crop 数降序",
     "note": "统计公式"
   },
   "rank.absenceNote": {
@@ -382,11 +382,11 @@
     ]
   },
   "fun.recordNote": {
-    "text": "实例数 = 角色 × Episode 的有效 crop 数",
+    "text": "实例数 = 角色 × 篇目的有效 crop 数",
     "note": "统计公式"
   },
   "fun.guestRecordNote": {
-    "text": "实例数 = 角色 × 非本篇 Episode 的有效 crop 数",
+    "text": "实例数 = 角色 × 非本篇篇目的有效 crop 数",
     "note": "统计公式"
   },
   "fun.pairName": {
