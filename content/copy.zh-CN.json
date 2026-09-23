@@ -84,11 +84,11 @@
     "note": "检索类型按钮"
   },
   "search.placeholderExpressions": {
-    "text": "输入角色名或别名",
+    "text": "输入角色名",
     "note": "表情模式输入提示"
   },
   "search.placeholderEpisodes": {
-    "text": "输入篇目名、编号或角色名",
+    "text": "输入角色名",
     "note": "篇目模式输入提示"
   },
   "search.submit": {
