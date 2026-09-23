@@ -6,7 +6,10 @@
   Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'
 
 /config/*
-  Cache-Control: public, max-age=300
+  Cache-Control: public, max-age=0, must-revalidate
+
+/config/selected-background.json
+  Cache-Control: public, max-age=0, must-revalidate
 
 /data/*
   Cache-Control: public, max-age=300, must-revalidate

@@ -16,8 +16,7 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { scroll-behavior: smooth; scroll-padding-top: 28px; }
-body { margin: 0; color: var(--ink); background: var(--background); line-height: 1.7; font-weight: 600; }
-body::before { position: fixed; inset: 0; z-index: -1; content: ""; background-image: var(--site-background); background-size: cover; background-position: center; opacity: .15; pointer-events: none; }
+body { margin: 0; color: var(--ink); background-color: var(--background); background-image: linear-gradient(#f5f2ff9e, #f5f2ff9e), var(--site-background); background-size: cover; background-position: center; background-attachment: fixed; line-height: 1.7; font-weight: 600; }
 a { color: var(--accent); text-underline-offset: 4px; }
 a:hover { color: #5b43a6; }
 button, input, select { font: inherit; }
@@ -178,7 +177,8 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
 .chart-color-5 { --chart-color: #d27f8f; } .chart-color-6 { --chart-color: #8c9d55; } .chart-color-7 { --chart-color: #a774b1; } .chart-color-8 { --chart-color: #5b9db4; } .chart-color-9 { --chart-color: #ce8a51; } .chart-color-10 { --chart-color: #ded5e6; }
 .empty-copy { color: #93879e; font-size: 14px; text-align: center; padding: 30px 10px; line-height: 1.9; }
 .rank-list { margin-top: 12px; }
-.ranking-card .rank-list { max-height: 220px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #dfd2ed transparent; }
+.ranking-card { display: flex; flex-direction: column; min-height: 0; }
+.ranking-card .rank-list { flex: 1 1 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #dfd2ed transparent; }
 .rank-row { width: 100%; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 7px; min-height: 42px; padding: 7px 3px; background: transparent; text-align: left; border-bottom: 1px dashed #eee6f3; }
 .rank-row:last-child { border-bottom: 0; }
 .rank-row:hover { background: #f8f1fc; border-radius: 6px; }
@@ -255,6 +255,7 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
   .totals span { font-size: 12px; }
   .totals article + article::before { top: 20px; bottom: 20px; }
   .stat-panels { grid-template-columns: 1fr; gap: 20px; }
+  .ranking-card { min-height: 360px; }
   .paper-card { padding: 20px; border-radius: 14px; }
   .paper-card h3 { font-size: 18px; }
   .distribution { flex-direction: row; gap: 14px; min-height: 0; padding-top: 12px; }

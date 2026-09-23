@@ -1,6 +1,6 @@
 # 真实图库发布到 R2
 
-GitHub 只放代码。SQLite、原漫画、后台 panel 与审核历史不上传。R2 存放经过筛选的索引、人物裁切展示图和整列低清预览。
+GitHub 只放代码。SQLite、原漫画、后台 panel 与审核历史不上传。R2 存放经过筛选的索引、人物裁切展示图、整列低清预览和高清重新编码的封面背景。
 
 当前本地包：4,803 张 crop + 683 张预览，共 5,486 个 WebP，约 76.2 MB；清单约 1.66 MB。339 个篇目全部匹配官方具体篇目链接，368 位角色。不含 120 个 NPC 实例。
 
@@ -19,7 +19,7 @@ python3 tools/preview.py --port 4174
 
 使用现有私有 Bucket `123rhodes-db`。在 Pages 项目的 Settings → Bindings 配置 R2 bucket：变量名 `media`，Bucket `123rhodes-db`。Production 和 Preview 分别检查；添加后重新部署才能生效。不需要开启 r2.dev、自定义素材域名或 CORS。[官方 binding 说明](https://developers.cloudflare.com/pages/functions/bindings/)
 
-Pages Function 通过 `env.media` 读取；浏览器访问本站 `/data/release.json` 和 `/media/...`。只开放公开清单及两个展示图目录下符合内容哈希格式的 WebP，不提供任意 bucket key 查询或目录列表。仅支持 GET/HEAD，带 ETag；索引缓存60秒，哈希图片长期缓存。读取失败返回简短错误，不泄露内部信息。`_routes.json` 限定 Function 路径，其余页面保持静态服务。
+Pages Function 通过 `env.media` 读取；浏览器访问本站 `/data/release.json` 和 `/media/...`。只开放公开清单及 crops、source-previews、backgrounds 三个目录下符合内容哈希格式的 WebP，不提供任意 bucket key 查询或目录列表。仅支持 GET/HEAD，带 ETag；索引缓存60秒，哈希图片长期缓存。读取失败返回简短错误，不泄露内部信息。`_routes.json` 限定 Function 路径，其余页面保持静态服务。
 
 创建限定此 Bucket 的 S3 读写凭据，保留 Account ID、Access Key ID、Secret Access Key。不要把密钥放进前端、GitHub 或聊天。
 
@@ -77,3 +77,7 @@ python tools/upload_r2.py
 导出使用 global human confirmed/trusted 身份，解析已合并身份，保留当前 instance_id。对人物 crop 最长边限制 512px，对来源整列同时限制宽180px/长640px；重新编码去除元数据。只读 SQLite，不跑 detector、embedding 或 ranker。官方目录有新增也不会自动导入新的漫画；仅匹配数据库已有篇目。
 
 数据更新无需修改页面代码；release.json 缓存最长约60秒，图片名包含内容哈希。新增的展示文件上传，旧对象保留；此轮未实现或执行清理操作。
+
+## 封面背景
+
+封面原图只在本地 `../123罗德岛_官方原图/封面图`。运行 `.venv-publish312/bin/python tools/publish_backgrounds.py --upload`，生成 1920×1080 原尺寸、高画质重新编码且不含原图元数据的 WebP 并上传到 R2；将输出的 `/media/backgrounds/...` 路径填入 `config/site.json` 的 `theme.backgroundImages`。每次 Pages 构建从该列表随机选一张，写入只存在于部署产物的 `config/selected-background.json`。页面以 38% 不透明度呈现，不更新人物发布清单，也不会把原始文件或重新编码文件提交到 GitHub。

@@ -14,7 +14,7 @@ with tempfile.TemporaryDirectory(prefix='rhodes-copy-test-') as directory:
     target = Path(directory)
     for name in ('content', 'templates', 'config'):
         shutil.copytree(str(ROOT / name), str(target / name))
-    for name in ('styles.css', 'app.js', 'stats.js'):
+    for name in ('styles.css', 'background.js', 'app.js', 'stats.js'):
         shutil.copyfile(str(ROOT / name), str(target / name))
     builder.ROOT = target
     path = target / 'content/copy.zh-CN.json'
@@ -23,6 +23,8 @@ with tempfile.TemporaryDirectory(prefix='rhodes-copy-test-') as directory:
     copy['site.name']['text'] = '测试站</script><script>alert(1)</script>'
     path.write_text(json.dumps(copy, ensure_ascii=False), encoding='utf-8')
     builder.build()
+    selected = json.loads((target / 'config/selected-background.json').read_text(encoding='utf-8'))
+    assert selected['image'] in json.loads((target / 'config/site.json').read_text(encoding='utf-8'))['theme']['backgroundImages']
     output = (target / 'index.html').read_text(encoding='utf-8')
     assert '今日数据&lt;b&gt;&amp;&quot;' in output
     assert '<script>alert(1)</script>' not in output

@@ -5,7 +5,14 @@
   "theme": {
     "accent": "#7860CB",
     "background": "#F5F2FF",
-    "backgroundImage": ""
+    "backgroundImage": "",
+    "backgroundImages": [
+      "/media/backgrounds/4f254a4e2849ed05-7e0c2a5c549e6940.webp",
+      "/media/backgrounds/7a0fa26607cc9dd9-f9b3253a0f7287e0.webp",
+      "/media/backgrounds/e62dad241194c4cc-4e6a897302280413.webp",
+      "/media/backgrounds/914f873559c3791d-da0d8f1dc5724579.webp",
+      "/media/backgrounds/42b506885cbcdc32-6b2cf93af0fb2c78.webp"
+    ]
   },
   "carousel": {
     "enabled": true,

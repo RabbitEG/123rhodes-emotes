@@ -13,10 +13,12 @@ assert(r.headers.get("Cache-Control").includes("max-age=60"));
 r=await run("/media/crops/0123456789abcdef-0123456789abcdef.webp");
 assert.equal(r.headers.get("Content-Type"),"image/webp");
 assert(r.headers.get("Cache-Control").includes("immutable"));
+r=await run("/media/backgrounds/0123456789abcdef-0123456789abcdef.webp");
+assert.equal(r.headers.get("Content-Type"),"image/webp");
 r=await run("/data/release.json",{method:"HEAD"}); assert.equal(await r.text(),"");
 r=await run("/data/release.json",{headers:{"If-None-Match":'W/"v1"'}}); assert.equal(r.status,304);
 const before=calls.length;
-for(const path of ["/data/private.json","/media/index.sqlite","/media/crops/secret.webp","/media/%2e%2e/private"]){
+for(const path of ["/data/private.json","/media/index.sqlite","/media/crops/secret.webp","/media/backgrounds/secret.webp","/media/%2e%2e/private"]){
   assert.equal((await run(path)).status,404);
 }
 assert.equal((await run("/data/release.json",{method:"POST"})).status,405);

@@ -61,7 +61,8 @@ git push
 | --- | --- |
 | theme.accent | 主色，六位十六进制颜色 |
 | theme.background | 底色 |
-| theme.backgroundImage | 可选 /assets/ 下装饰背景路径；覆盖全页，低透明度，空字符串关闭 |
+| theme.backgroundImage | 可选单张背景路径；非空时优先于随机封面 |
+| theme.backgroundImages | 可选 R2 低清封面路径列表；每次网站构建随机选一张，同一次部署的所有页面一致 |
 | carousel.enabled | 是否使用已发布图填入轮播 |
 | carousel.mode | random / sequential |
 | carousel.speedPixelsPerSecond | 每秒移动像素，默认22，范围5–60；从右向左连续滚动 |
@@ -70,7 +71,7 @@ git push
 | releaseManifest | 发布清单路径，默认 /data/release.json |
 | publicDataBaseUrl | 保持空值，通过本站 Pages Function 的 media binding 读取 R2 |
 
-图片背景可放 `assets/background.webp` 后配置对应路径。纯色和星形/网点装饰不依赖外部资源。具体卡片尺寸、字体大小等样式在 styles.css 中修改。轮播优先使用发布清单的 featured_instance_ids，否则尽量均衡抽取不同角色。
+当前五张封面从本地 `../123罗德岛_官方原图/封面图` 按 1920×1080 原尺寸重新编码为高画质 WebP，放在 R2 的 `media/backgrounds/`，原始文件不进入 GitHub。`python3 tools/build.py` 每次构建会随机生成被 Git 忽略的 `config/selected-background.json`；Cloudflare Pages 的 Git 构建也会执行这一步。`--check` 只验证已选背景，不重新随机选择。背景全页以 38% 不透明度显示；清空 `theme.backgroundImages` 可以关闭随机封面。新增封面时运行 `.venv-publish312/bin/python tools/publish_backgrounds.py --upload`，将输出的新路径加入 `config/site.json` 的列表，再构建、提交和部署。纯色和星形/网点装饰不依赖外部资源。具体卡片尺寸、字体大小等样式在 styles.css 中修改。轮播优先使用发布清单的 featured_instance_ids，否则尽量均衡抽取不同角色。
 
 ## 统计与后续数据工作
 

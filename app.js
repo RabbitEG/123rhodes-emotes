@@ -264,11 +264,6 @@
         if (origin.protocol !== "https:" || origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash) throw new Error("Invalid public data origin");
         dataBase = origin.origin;
       }
-      for (const [key, variable] of Object.entries({ accent: "--accent", background: "--background" })) if (/^#[0-9a-f]{6}$/i.test(config.theme?.[key] || "")) document.documentElement.style.setProperty(variable, config.theme[key]);
-      if (config.theme?.backgroundImage) {
-        const url = new URL(config.theme.backgroundImage, location.origin);
-        if (url.origin === location.origin && url.pathname.startsWith("/assets/") && /\.(webp|png|jpe?g|svg)$/i.test(url.pathname)) document.documentElement.style.setProperty("--site-background", 'url("' + encodeURI(url.href).replace(/"/g, "%22") + '")');
-      }
     } catch { config = {}; }
     carouselMode = config.carousel?.mode === "sequential" ? "sequential" : "random";
     visible = Number(config.pageSize) || 36; await load();
