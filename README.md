@@ -71,7 +71,7 @@ git push
 | releaseManifest | 发布清单路径，默认 /data/release.json |
 | publicDataBaseUrl | 保持空值，通过本站 Pages Function 的 media binding 读取 R2 |
 
-当前五张封面从本地 `../123罗德岛_官方原图/封面图` 按 1920×1080 原尺寸重新编码为高画质 WebP，放在 R2 的 `media/backgrounds/`，原始文件不进入 GitHub。`python3 tools/build.py` 每次构建会随机更新 `config/selected-background.json`；这个文件只记录一条公开的 R2 图片路径，需要和网页一起提交，确保 Pages 使用同一次选图。`--check` 只验证已选背景，不重新随机选择。背景全页以 38% 不透明度显示；清空 `theme.backgroundImages` 可以关闭随机封面。新增封面时运行 `.venv-publish312/bin/python tools/publish_backgrounds.py --upload`，将输出的新路径加入 `config/site.json` 的列表，再构建、提交和部署。纯色和星形/网点装饰不依赖外部资源。具体卡片尺寸、字体大小等样式在 styles.css 中修改。轮播优先使用发布清单的 featured_instance_ids，否则尽量均衡抽取不同角色。
+当前五张封面从本地 `../123罗德岛_官方原图/封面图` 按 1920×1080 原尺寸重新编码为高画质 WebP，放在 R2 的 `media/backgrounds/`，原始文件不进入 GitHub。`python3 tools/build.py` 每次构建会随机更新 `config/selected-background.json`；这个文件只记录一条公开的 R2 图片路径，需要和网页一起提交，确保 Pages 使用同一次选图。`--check` 只验证已选背景，不重新随机选择。背景全页以 50% 不透明度显示，完整适配视口，不裁切；清空 `theme.backgroundImages` 可以关闭随机封面。新增封面时运行 `.venv-publish312/bin/python tools/publish_backgrounds.py --upload`，将输出的新路径加入 `config/site.json` 的列表，再构建、提交和部署。纯色和星形/网点装饰不依赖外部资源。具体卡片尺寸、字体大小等样式在 styles.css 中修改。轮播优先使用发布清单的 featured_instance_ids，否则尽量均衡抽取不同角色。
 
 ## 统计与后续数据工作
 

@@ -16,7 +16,7 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { scroll-behavior: smooth; scroll-padding-top: 28px; }
-body { margin: 0; color: var(--ink); background-color: var(--background); background-image: linear-gradient(#f5f2ff9e, #f5f2ff9e), var(--site-background); background-size: cover; background-position: center; background-attachment: fixed; line-height: 1.7; font-weight: 600; }
+body { margin: 0; color: var(--ink); background-color: var(--background); background-image: linear-gradient(#f5f2ff80, #f5f2ff80), var(--site-background); background-size: cover, contain; background-repeat: no-repeat; background-position: center; background-attachment: fixed; line-height: 1.7; font-weight: 600; }
 a { color: var(--accent); text-underline-offset: 4px; }
 a:hover { color: #5b43a6; }
 button, input, select { font: inherit; }
