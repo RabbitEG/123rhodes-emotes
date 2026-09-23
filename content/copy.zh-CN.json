@@ -366,8 +366,8 @@
     "note": "统计公式"
   },
   "fun.oneSidedNote": {
-    "text": "方向 = A → B；A=低覆盖篇数，B=高覆盖篇数，n=共同篇数；分数 = (n/A)(1−n/B)ln(n+1)/B",
-    "note": "统计公式"
+    "text": "分数 = (n/A)(1−n/B)ln(n+1)/B",
+    "note": "单相思公式：A 为低覆盖篇数，B 为高覆盖篇数，n 为共同篇数"
   },
   "fun.bidirectionalValue": {
     "text": "{count} 篇 · {percent}%",

@@ -71,6 +71,22 @@
     }
     if (castReady) {
       const normalizeHomeName = value => String(value).normalize("NFKC").replace(/\s+/g, "").replace(/篇$/, "");
+      // Episode titles use operator alter names, while the public gallery keeps
+      // one canonical person. Keep these reviewed title-to-person pairs explicit:
+      // suffix matching would wrongly turn 罗小黑 into 黑 or 杜林 into 林.
+      const alternateHomeOwners = new Map(Object.entries({
+        "阿米娅（医疗）": "阿米娅", "寒芒克洛丝": "克洛丝", "归溟幽灵鲨": "幽灵鲨",
+        "濯尘芙蓉": "芙蓉", "承曦格雷伊": "格雷伊", "百炼嘉维尔": "嘉维尔",
+        "缄默德克萨斯": "德克萨斯", "焰影苇草": "苇草", "淬羽赫默": "赫默",
+        "圣约送葬人": "送葬人", "纯烬艾雅法拉": "艾雅法拉", "琳琅诗怀雅": "诗怀雅",
+        "涤火杰西卡": "杰西卡", "历阵锐枪芬": "芬", "维什戴尔": "W",
+        "荒芜拉普兰德": "拉普兰德", "引星棘刺": "棘刺", "烛煌": "煌",
+        "新约能天使": "能天使", "司霆惊蛰": "惊蛰", "斩业星熊": "星熊",
+        "凛御银灰": "银灰", "溯光星源": "星源", "圣聆初雪": "初雪",
+        "浊心斯卡蒂": "斯卡蒂", "撷英调香师": "调香师", "赤刃明霄陈": "陈",
+        "怒潮凛冬": "凛冬", "凯尔希·思衡托": "凯尔希", "予愿安洁莉娜": "安洁莉娜",
+        "假日威龙陈": "陈"
+      }).map(([title, name]) => [normalizeHomeName(title), normalizeHomeName(name)]));
       const ownersByName = new Map();
       for (const c of rows) for (const name of [c.name, ...(c.aliases ?? [])]) {
         const normalized = normalizeHomeName(name);
@@ -80,7 +96,8 @@
       }
       for (const e of episodes.values()) {
         const title = e.name.replace(/^\d+_/, "");
-        const owners = ownersByName.get(normalizeHomeName(title));
+        const normalizedTitle = normalizeHomeName(title);
+        const owners = ownersByName.get(normalizedTitle) ?? ownersByName.get(alternateHomeOwners.get(normalizedTitle));
         if (owners?.size === 1) characters.get(owners.values().next().value).homeEpisodes.add(e.id);
       }
       for (const c of rows) c.homes = c.homeEpisodes.size;
@@ -89,7 +106,7 @@
       const c = characters.get(item.character_id), e = episodes.get(item.episode_id);
       c.count++; c.episodes.add(e.id); e.count++; e.characters.add(c.id);
       c.perEpisode.set(e.id, (c.perEpisode.get(e.id) || 0) + 1);
-      if (!(homeReady ? c.homeEpisodes.has(e.id) : e.cast.has(c.id))) {
+      if (!c.homeEpisodes.has(e.id)) {
         c.cameo++;
         c.cameoEpisodes.add(e.id);
       }

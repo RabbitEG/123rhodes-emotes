@@ -149,6 +149,7 @@ body[data-page="home"] #search-status { display: none; }
 .totals article:nth-child(4) strong { color: #ad8d57; }
 .totals span { font-size: 14px; color: #82778f; }
 .stat-panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: start; }
+.stat-panels:not(.fun-panels) { align-items: stretch; }
 .fun-panels { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
 .paper-card { position: relative; border: 1px solid var(--line); border-radius: 16px; padding: 21px 22px; background: var(--card); box-shadow: 0 4px 0 #e6ddee66; }
 .paper-card::before { content: ""; position: absolute; left: 25px; top: -1px; width: 42px; height: 3px; background: #b19ad7; border-radius: 4px; }
@@ -189,6 +190,7 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
 .fun-heading h3 { font-size: 20px; letter-spacing: .05em; }
 .fun-heading > span { color: #d1b6e3; font-size: 25px; }
 .fun-panels .rank-list { min-height: 0; max-height: 35vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #dfd2ed transparent; }
+.fun-panels .card-note { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .guestbook { padding: 36px 20px 42px; text-align: center; border-top: 1px dashed #d9cbe6; border-bottom: 1px dashed #d9cbe6; background: #faf7fc80; border-radius: 18px; }
 .letter-mark { color: #ca8eb0; font-size: 32px; }
 .guestbook h2 { font-size: 23px; margin: 4px 0 8px; }

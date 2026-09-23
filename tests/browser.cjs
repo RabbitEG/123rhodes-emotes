@@ -35,15 +35,19 @@ assert.throws(() => validate({ ...data, instances: [{ ...instances[0], crop_url:
 assert.throws(() => validate({ ...data, episodes: [{ ...episodes[0], official_url: "javascript:alert(1)" }] }));
 const selfCameo = analyze(validate({
   characters: [
-    { id: "amiya", name: "阿米娅", aliases: ["阿米娅（医疗）"], home_episode_ids: [] },
-    { id: "doctor", name: "博士", aliases: [], home_episode_ids: [] }
+    { id: "amiya", name: "阿米娅", aliases: [], home_episode_ids: [] },
+    { id: "doctor", name: "博士", aliases: [], home_episode_ids: [] },
+    { id: "skadi", name: "斯卡蒂", aliases: [], home_episode_ids: [] },
+    { id: "black", name: "黑", aliases: [], home_episode_ids: [] }
   ],
-  episodes: ["001_阿米娅篇", "002_阿米娅(医疗)篇", "003_博士篇"].map((name, i) => ({ id: "home" + i, name, order: i + 1, official_url: "https://comic.hypergryph.com/comic/6253/home-" + i })),
-  instances: ["home0", "home1", "home2"].map((episode_id, i) => ({ id: "home-instance-" + i, character_id: "amiya", episode_id, crop_url: "/media/crops/test.webp" }))
+  episodes: ["001_阿米娅篇", "002_阿米娅(医疗)篇", "003_博士篇", "004_浊心斯卡蒂篇", "005_罗小黑篇"].map((name, i) => ({ id: "home" + i, name, order: i + 1, official_url: "https://comic.hypergryph.com/comic/6253/home-" + i })),
+  instances: ["amiya", "amiya", "amiya", "skadi", "black"].map((character_id, i) => ({ id: "home-instance-" + i, character_id, episode_id: "home" + i, crop_url: "/media/crops/test.webp" }))
 }));
 assert.equal(selfCameo.characters.get("amiya").cameo, 1);
 assert.deepEqual([...selfCameo.characters.get("amiya").homeEpisodes].sort(), ["home0", "home1"]);
-assert.deepEqual(selfCameo.guestRecords.map(row => row.episode), ["home2"]);
+assert.equal(selfCameo.characters.get("skadi").cameo, 0);
+assert.equal(selfCameo.characters.get("black").cameo, 1);
+assert.deepEqual(selfCameo.guestRecords.map(row => row.episode).sort(), ["home2", "home4"]);
 console.log("Statistics: counts, deduplication, cast, chronology, validation passed");
 
 (async () => {
