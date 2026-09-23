@@ -8,7 +8,7 @@
 
 ## 当前版本
 
-浅紫/粉色贴纸册风格，居中首页：顶部真实 instance 持续横向慢速滚动 → 一个搜索框切换表情/篇目 → 首页统计和榜单 → 留言准备区与来源说明。搜索后进入独立的 search.html 结果页。
+浅紫/粉色贴纸册风格，居中首页：顶部真实 instance 持续横向慢速滚动 → 一个搜索框切换表情/篇目 → 首页统计和榜单 → 留言区与来源说明。搜索后进入独立的 search.html 结果页。
 
 - 名称、别名、篇目编号搜索；角色/篇目/组合过滤；URL 分享、刷新和前后退恢复。
 - 人物图片网格、继续加载、原始整列的低清出处预览、官方篇目外链。
@@ -16,7 +16,7 @@
 - 表情带按像素速度连续移动；随机/顺序控制实例排列，支持暂停/继续、手动往后看、悬停/聚焦暂停和系统减少动态效果。
 - 手机适配、图片失败提示、清单缺失/错误状态和重试。
 
-**真实图库已上线。** R2 保存 4,803 张人物 crop、683 张低清预览、339 个篇目、368 位角色；公开索引和素材不提交仓库，网站通过 Pages Function binding 读取。留言后端未开放。
+**真实图库已上线。** R2 保存 4,803 张人物 crop、683 张低清预览、339 个篇目、368 位角色；公开索引和素材不提交仓库，网站通过 Pages Function binding 读取。留言板代码已备好，D1、Turnstile 和审核密钥配置完成前保持关闭。
 
 本地真实预览：运行 `python3 tools/preview.py --port 4174`，打开 http://127.0.0.1:4174/ 。没有导出包的普通 clone 仍可用下述静态预览检查空状态。
 
@@ -46,7 +46,7 @@ python3 -m http.server 4173 --bind 127.0.0.1
 
 ```bash
 python3 tools/build.py --check
-git add content/copy.zh-CN.json config/selected-background.json index.html search.html about.html privacy.html 404.html _headers
+git add content/copy.zh-CN.json index.html search.html about.html privacy.html 404.html guestbook-admin.html _headers
 git commit -m "docs: update site copy"
 git push
 ```
@@ -62,7 +62,7 @@ git push
 | theme.accent | 主色，六位十六进制颜色 |
 | theme.background | 底色 |
 | theme.backgroundImage | 可选单张背景路径；非空时优先于随机封面 |
-| theme.backgroundImages | 可选 R2 低清封面路径列表；每次网站构建随机选一张，同一次部署的所有页面一致 |
+| theme.backgroundImages | R2 封面路径列表；每次进入页面或刷新时随机选择，尽量不与上一页重复 |
 | carousel.enabled | 是否使用已发布图填入轮播 |
 | carousel.mode | random / sequential |
 | carousel.speedPixelsPerSecond | 每秒移动像素，默认22，范围5–60；从右向左连续滚动 |
@@ -71,7 +71,7 @@ git push
 | releaseManifest | 发布清单路径，默认 /data/release.json |
 | publicDataBaseUrl | 保持空值，通过本站 Pages Function 的 media binding 读取 R2 |
 
-当前五张封面从本地 `../123罗德岛_官方原图/封面图` 按 1920×1080 原尺寸重新编码为高画质 WebP，放在 R2 的 `media/backgrounds/`，原始文件不进入 GitHub。`python3 tools/build.py` 每次构建会随机更新 `config/selected-background.json`；这个文件只记录一条公开的 R2 图片路径，需要和网页一起提交，确保 Pages 使用同一次选图。`--check` 只验证已选背景，不重新随机选择。背景全页以 80% 透明度显示，完整适配视口，不裁切；清空 `theme.backgroundImages` 可以关闭随机封面。新增封面时运行 `.venv-publish312/bin/python tools/publish_backgrounds.py --upload`，将输出的新路径加入 `config/site.json` 的列表，再构建、提交和部署。纯色和星形/网点装饰不依赖外部资源。具体卡片尺寸、字体大小等样式在 styles.css 中修改。轮播优先使用发布清单的 featured_instance_ids，否则尽量均衡抽取不同角色。
+当前五张封面从本地 `../123罗德岛_官方原图/封面图` 按 1920×1080 原尺寸重新编码为高画质 WebP，放在 R2 的 `media/backgrounds/`，原始文件不进入 GitHub。浏览器每次载入页面（包括搜索跳转、刷新），以及结果页内再次搜索或前后退时，从列表中随机换封面；使用本标签页 sessionStorage 记住上一张并避免连续重复。只点开图片预览或滚动时不换。`theme.backgroundImage` 非空时固定使用单张图；清空 `theme.backgroundImages` 可以关闭随机封面。背景全页以 80% 透明度完整显示，不裁切。新增封面时运行 `.venv-publish312/bin/python tools/publish_backgrounds.py --upload`，将输出的新路径加入 `config/site.json` 的列表，再构建、提交和部署。具体卡片尺寸、字体大小等样式在 styles.css 中修改。
 
 ## 统计与后续数据工作
 
@@ -97,7 +97,7 @@ git push
 
 - 配置 Pages R2 binding：media → 123rhodes-db，上传公开包后接通线上素材；无需公开 bucket 或配置跨域域名。上传凭据仅留本地。
 - 整理可靠的本篇 cast，再启用两份客串榜。image_id 与篇目顺序已经齐全。
-- 匿名留言板、人工审核、防刷与留言保存说明。
+- 完成 [留言板 Cloudflare 配置](docs/GUESTBOOK_SETUP.md)，开放匿名留言与人工审核。
 - Beta 共现分组可留待以后；当前只有共同出场统计，不解释为关系亲密度。
 
 ## 目录
@@ -114,13 +114,17 @@ index.html              生成：首页、统一搜索、统计
 search.html             生成：独立搜索结果页
 about.html              生成：关于和版权
 privacy.html            生成：隐私
+guestbook-admin.html    生成：私用留言审核入口（必须提供服务器密钥）
 404.html                生成：缺失页；也避免 Pages 把缺失 JSON 回退成首页
 styles.css              共享视觉样式
 app.js                  页面交互与发布数据读取
+guestbook.js            留言提交和公开列表
+guestbook-admin.js      私用审核页
 stats.js                纯公开数据统计与清单校验
 assets/                 自制装饰素材（当前只有 SVG 图标）
 docs/                   完整方案与数据协议
 tests/browser.cjs       统计与浏览器验收（仅内存测试数据）
+db/guestbook.sql        独立 D1 留言表
 tests/real-data.cjs     本地真实数据浏览器验收
 publish/site/           真实公开索引和展示副本，不进 Git
 .env                   本地 R2 凭据，不进 Git

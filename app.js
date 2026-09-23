@@ -30,6 +30,7 @@
     const destination = "/search.html" + (p.toString() ? "?" + p.toString() : "");
     if (!isSearchPage) { location.assign(destination); return; }
     history.pushState(null, "", destination + (scroll ? "#results-section" : "#search"));
+    window.RhodesBackground?.rotate();
     visible = Number(config.pageSize) || 36;
     renderSearch();
     if (scroll && !$("#results-section").hidden) $("#results-section").scrollIntoView({ block: "start", behavior: motion.matches ? "instant" : "smooth" });
@@ -204,7 +205,7 @@
     $("#clear-search")?.addEventListener("click", () => go({}));
     $("#load-more")?.addEventListener("click", () => { visible += Number(config.pageSize) || 36; renderMatches(); });
     $("#ranking-kind")?.addEventListener("change", renderRanking); $("#retry").addEventListener("click", load);
-    window.addEventListener("popstate", () => { state = readState(); visible = Number(config.pageSize) || 36; renderSearch(); });
+    window.addEventListener("popstate", () => { state = readState(); visible = Number(config.pageSize) || 36; renderSearch(); window.RhodesBackground?.rotate(); });
     document.addEventListener("click", event => {
       const toggle = event.target.closest(".source-toggle");
       if (toggle) {

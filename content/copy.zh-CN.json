@@ -427,7 +427,107 @@
   },
   "guest.status": {
     "text": "留言板还在准备中",
-    "note": "留言尚未开通"
+    "note": "未配置 D1 或 Turnstile 时"
+  },
+  "guest.loading": {
+    "text": "正在打开留言簿…",
+    "note": "留言加载中"
+  },
+  "guest.open": {
+    "text": "留言会先经过人工审核",
+    "note": "留言开放后的状态"
+  },
+  "guest.unavailable": {
+    "text": "留言暂时打不开，请稍后再来。",
+    "note": "留言接口或数据库错误"
+  },
+  "guest.empty": {
+    "text": "还没有公开留言，来写第一条吧。",
+    "note": "没有已审核留言时"
+  },
+  "guest.bodyLabel": {
+    "text": "留言内容",
+    "note": "留言框辅助标签"
+  },
+  "guest.placeholder": {
+    "text": "写下想说的话，最多 500 字；请不要留下个人信息或链接。",
+    "note": "留言输入框提示"
+  },
+  "guest.submit": {
+    "text": "寄出留言",
+    "note": "留言提交按钮"
+  },
+  "guest.more": {
+    "text": "再看一些留言",
+    "note": "留言列表分页按钮"
+  },
+  "guest.invalid": {
+    "text": "请填写不超过 500 字的留言。",
+    "note": "无效留言提示"
+  },
+  "guest.verifyFirst": {
+    "text": "请先完成人机验证。",
+    "note": "Turnstile 尚未完成"
+  },
+  "guest.verifyError": {
+    "text": "验证没有通过，请重试。",
+    "note": "Turnstile 加载或验证失败"
+  },
+  "guest.sending": {
+    "text": "正在寄出…",
+    "note": "留言提交中"
+  },
+  "guest.sent": {
+    "text": "收到了！审核通过后才会显示在这里。",
+    "note": "留言进入待审核"
+  },
+  "guest.sendFailed": {
+    "text": "没能寄出，请检查内容或稍后重试。",
+    "note": "留言提交失败"
+  },
+  "guest.adminTitle": {
+    "text": "留言审核",
+    "note": "私用审核页面标题"
+  },
+  "guest.adminNote": {
+    "text": "只有通过的留言会公开。这里不会显示访客账号或 IP。",
+    "note": "审核页面说明"
+  },
+  "guest.adminKey": {
+    "text": "审核密钥",
+    "note": "审核密钥输入标签"
+  },
+  "guest.adminLogin": {
+    "text": "打开待审核留言",
+    "note": "审核页登录按钮"
+  },
+  "guest.adminUnauthorized": {
+    "text": "密钥不对，或审核服务尚未配置。",
+    "note": "审核认证失败"
+  },
+  "guest.adminFilter": {
+    "text": "查看状态",
+    "note": "审核页筛选标签"
+  },
+  "guest.adminPending": {
+    "text": "待审核",
+    "note": "待审核状态 / 撤回审核按钮"
+  },
+  "guest.adminApprove": {
+    "text": "通过",
+    "note": "通过审核按钮 / 状态"
+  },
+  "guest.adminReject": {
+    "text": "排除",
+    "note": "排除留言按钮 / 状态"
+  },
+  "guest.adminEmpty": {
+    "text": "这里暂时没有留言。",
+    "note": "审核页空状态"
+  },
+  "guest.adminSaved": {
+    "text": "已保存审核结果。",
+    "note": "审核操作成功"
   },
   "footer.note": {
     "text": "《123罗德岛！？》非官方粉丝站",
@@ -498,15 +598,19 @@
     "note": "联系标题"
   },
   "about.contact": {
-    "text": "联系渠道和留言板还在准备中，开放后会在这里更新。请勿在公开留言或 issue 中提交个人信息。",
+    "text": "建议与错字可以使用首页留言板。需要删除已公开留言，请通过项目仓库的 Issue 联系站长；请勿在公开内容里留下个人信息。",
     "note": "联系渠道说明"
+  },
+  "about.contactLink": {
+    "text": "打开项目 Issue",
+    "note": "关于页的删除请求联系入口"
   },
   "privacy.title": {
     "text": "隐私说明",
     "note": "隐私页面标题"
   },
   "privacy.intro": {
-    "text": "当前版本没有账号系统、留言接口或自建访问追踪脚本。",
+    "text": "本站没有访客账号系统或自建访问追踪脚本。留言功能仅在完成服务配置后开放。",
     "note": "隐私概述"
   },
   "privacy.requestsTitle": {
@@ -514,7 +618,7 @@
     "note": "请求说明标题"
   },
   "privacy.requests": {
-    "text": "页面加载本站的网页、配置和公开图集。图集上线后会请求人物裁切图和低清出处缩略图；点击官方出处才会跳转泰拉记事社。搜索在你的浏览器内完成。",
+    "text": "页面加载本站的网页、配置、公开图集及留言。图片包括人物裁切图和低清出处缩略图；点击官方出处才会跳转泰拉记事社。搜索在你的浏览器内完成；留言开放后，提交时还会加载 Cloudflare Turnstile 人机验证。",
     "note": "页面请求说明"
   },
   "privacy.platformTitle": {
@@ -530,7 +634,7 @@
     "note": "留言标题"
   },
   "privacy.messages": {
-    "text": "留言板尚未开放，当前不会收集留言。开放前会说明保存内容、人工审核方式和保存期限。",
+    "text": "留言开放后，本站仅保存留言正文、服务器生成的提交时间、审核状态与审核时间，不要求昵称或账号，也不在留言数据库保存 IP。留言先由站长审核，通过后才公开正文和时间；排除的留言不公开。请勿提交个人信息、链接或他人隐私。若需删除已公开留言，可通过本站关于页的项目仓库链接联系站长。Cloudflare 仍可能按平台规则处理必要的网络与安全日志。",
     "note": "留言隐私说明"
   },
   "notfound.title": {

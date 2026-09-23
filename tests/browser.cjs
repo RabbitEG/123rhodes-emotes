@@ -61,18 +61,19 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     let csp = fs.readFileSync(path.join(__dirname, "../_headers"), "utf8").split("\n").find(line => line.includes("Content-Security-Policy:")).split("Content-Security-Policy: ")[1];
     await page.route(base + "/**", async route => {
       if (route.request().resourceType() !== "document") return route.continue();
-      const response = await route.fetch();
-      return route.fulfill({ response, headers: { ...response.headers(), "content-security-policy": csp } });
+      const pathname = new URL(route.request().url()).pathname;
+      const filename = pathname === "/" ? "index.html" : pathname.slice(1);
+      return route.fulfill({ status: 200, contentType: "text/html; charset=utf-8", body: fs.readFileSync(path.join(__dirname, "..", filename)), headers: { "content-security-policy": csp } });
     });
     await page.goto(base);
-    await page.waitForFunction(() => document.querySelector("#search-status").textContent.includes("还没上架"));
+    await page.locator("#search-status:has-text('还没上架')").waitFor({ state: "attached" });
     assert.equal(await page.locator("#totals strong").allTextContents().then(x => x.join(",")), "—,—,—,—");
     await page.screenshot({ path: output + "/desktop-empty.png", fullPage: true });
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><rect x="10" y="10" width="160" height="160" rx="45" fill="#d7c7ee"/><circle cx="65" cy="75" r="7" fill="#665078"/><circle cx="115" cy="75" r="7" fill="#665078"/><path d="M70 115 Q90 135 110 115" stroke="#665078" stroke-width="5" fill="none"/></svg>';
     await page.route("**/media/**", route => route.fulfill({ contentType: "image/svg+xml", body: svg }));
     await page.route("**/data/release.json", route => route.fulfill({ json: data }));
     await page.reload();
-    await page.waitForFunction(() => document.querySelector("#totals strong").textContent === "4");
+    await page.locator("#totals article:first-child strong:has-text('4')").waitFor();
     assert.deepEqual(await page.locator("#totals strong").allTextContents(), ["4", "50", "8", "4"]);
     assert.equal(await page.locator(".legend-row").count(), 7);
     assert.equal(await page.locator("#results-section").count(), 0);
@@ -145,7 +146,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     await page.route("**/data/release.json", route => route.fulfill({ json: { ...data, cast_complete: false, episodes: episodes.map(e => ({ ...e, order: undefined })) } }));
     await page.goto(base);
     await page.waitForSelector(".legend-row"); await page.locator("#ranking-kind").selectOption("cameo");
-    assert((await page.locator("#character-ranking").textContent()).includes("本篇角色资料"));
+    assert((await page.locator("#character-ranking").textContent()).includes("本篇关系"));
     await page.locator("#ranking-kind").selectOption("absence");
     assert((await page.locator("#character-ranking").textContent()).includes("篇目顺序"));
     await page.route("**/data/release.json", route => route.fulfill({ status: 500, body: "error" }));

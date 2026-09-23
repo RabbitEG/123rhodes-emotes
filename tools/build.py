@@ -5,7 +5,6 @@ import hashlib
 import html
 import json
 import re
-import secrets
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -51,19 +50,12 @@ def build(check=False):
             not isinstance(path, str) or not re.fullmatch(r'/media/backgrounds/[0-9a-f]{16}-[0-9a-f]{16}\.webp', path)
             for path in backgrounds) or len(set(backgrounds)) != len(backgrounds):
         raise ValueError('Backgrounds must be unique re-encoded R2 WebP paths')
-    selected_background = ROOT / 'config/selected-background.json'
-    if backgrounds:
-        if check:
-            if not selected_background.exists() or json.loads(selected_background.read_text(encoding='utf-8')).get('image') not in backgrounds:
-                raise SystemExit('Run python3 tools/build.py: selected background missing or outdated')
-        else:
-            selected_background.write_text(json.dumps({'image': secrets.choice(backgrounds)}) + '\n', encoding='utf-8')
     version = hashlib.sha256((source + settings + ''.join((ROOT / name).read_text(encoding='utf-8')
-                            for name in ('styles.css', 'background.js', 'app.js', 'stats.js'))).encode()).hexdigest()[:12]
+                            for name in ('styles.css', 'background.js', 'app.js', 'stats.js', 'guestbook.js', 'guestbook-admin.js'))).encode()).hexdigest()[:12]
     values = dict(copy, asset_version=version)
     payload = json.dumps(copy, ensure_ascii=False).replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026')
     outputs = {}
-    for name in ('index', 'search', 'about', 'privacy', '404'):
+    for name in ('index', 'search', 'about', 'privacy', '404', 'guestbook-admin'):
         template = (ROOT / ('templates/' + name + '.html')).read_text(encoding='utf-8')
         template = re.sub(r'\{\{>(\w+)\}\}', lambda m: (ROOT / ('templates/partials/' + m[1] + '.html')).read_text(encoding='utf-8'), template)
         template = re.sub(r'\{\{([\w.]+)\}\}', lambda m: payload if m[1] == 'copy_json' else html.escape(values[m[1]], quote=True), template)
