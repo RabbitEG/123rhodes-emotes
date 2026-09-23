@@ -394,11 +394,11 @@
     "note": "单篇榜名称"
   },
   "fun.pairNote": {
-    "text": "共同篇目 ÷ 双方出现篇目的并集；至少共同出现两篇。比例描述收录分布，不代表剧情亲密度。",
+    "text": "比例＝共同篇目 ÷ 双方篇目并集；排序分＝比例 × 共同篇数，至少共现两篇。只表示收录分布。",
     "note": "双向共现 Jaccard 比例"
   },
   "fun.oneSidedNote": {
-    "text": "按组合标题从左到右显示：左边角色的篇目中右边角色也出现的比例 / 反向比例（至少共同两篇）；只表示收录分布。",
+    "text": "显示左角色篇目中的右角色共现率 / 反向共现率。至少共同两篇且比例差达10%；排名分再乘较少/较多一方篇目数，压低高频角色。",
     "note": "双方各自篇目中的共现比例"
   },
   "fun.bidirectionalValue": {
@@ -410,11 +410,12 @@
     ]
   },
   "fun.oneSidedValue": {
-    "text": "{firstPercent}% / {secondPercent}%",
-    "note": "按标题角色顺序显示双向比例",
+    "text": "{firstPercent}% / {secondPercent}% · 共{count}篇",
+    "note": "双方共现比例与共同篇数",
     "slots": [
       "firstPercent",
-      "secondPercent"
+      "secondPercent",
+      "count"
     ]
   },
   "fun.recordNote": {

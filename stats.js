@@ -97,6 +97,8 @@
       return {
         ...pair,
         count,
+        firstEpisodes: first.episodes.size,
+        secondEpisodes: second.episodes.size,
         unionCount,
         firstRate: count / first.episodes.size,
         secondRate: count / second.episodes.size,
@@ -104,11 +106,15 @@
         name: first.name + " × " + second.name
       };
     });
-    const commonPairs = [...pairRows].sort(desc("count"));
+    pairRows.forEach(pair => {
+      pair.bidirectionalScore = pair.jaccard * pair.count;
+      pair.oneSidedScore = Math.abs(pair.firstRate - pair.secondRate) * Math.min(pair.firstEpisodes, pair.secondEpisodes) / Math.max(pair.firstEpisodes, pair.secondEpisodes);
+    });
+    const commonPairs = [...pairRows].sort((a, b) => b.bidirectionalScore - a.bidirectionalScore || b.count - a.count || byName(characters.get(a.first), characters.get(b.first)));
     const bidirectionalPairs = pairRows.filter(pair => pair.count >= 2)
-      .sort((a, b) => b.jaccard - a.jaccard || b.count - a.count || byName(characters.get(a.first), characters.get(b.first)));
-    const oneSidedPairs = pairRows.filter(pair => pair.count >= 2 && Math.abs(pair.firstRate - pair.secondRate) > 0)
-      .sort((a, b) => Math.abs(b.firstRate - b.secondRate) - Math.abs(a.firstRate - a.secondRate) || b.count - a.count || byName(characters.get(a.first), characters.get(b.first)));
+      .sort((a, b) => b.bidirectionalScore - a.bidirectionalScore || b.count - a.count || byName(characters.get(a.first), characters.get(b.first)));
+    const oneSidedPairs = pairRows.filter(pair => pair.count >= 2 && Math.abs(pair.firstRate - pair.secondRate) >= 0.1)
+      .sort((a, b) => b.oneSidedScore - a.oneSidedScore || b.count - a.count || byName(characters.get(a.first), characters.get(b.first)));
     const records = present.flatMap(c => [...c.perEpisode].map(([eid, count]) => ({ character: c.id, episode: eid, count, name: c.name + " · " + episodes.get(eid).name }))).sort(desc("count"));
     let imageCount = null;
     if (Array.isArray(release.images)) imageCount = release.images.length;
