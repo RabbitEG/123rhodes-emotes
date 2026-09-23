@@ -19,7 +19,7 @@ crop_url 和 source_preview_url 只接受 `/media/` 下 WebP/PNG/JPEG/AVIF 相�
 | images: [{id}] | 发布涉及的源图目录，仅 ID，不带原图地址 |
 | overview.images | 无 images 目录时的显式来源图总数 |
 | instance.image_id | 两项都缺失时，若每张 crop 都有 image_id，按它去重计来源图数；覆盖不全显示 — |
-| characters[].home_episode_ids | 多对多本篇关系；客串统计按某角色在不属于其本篇集合的篇目中出现来计算。异格身份合并后的本篇关系并入同一个 canonical character |
+| characters[].home_episode_ids | 多对多本篇关系；统计还会将篇目标题去掉末尾“篇”后与角色正式名或别名完全相同的篇目视为本篇；其余已确认出场才计作客串，不根据一般出场反推本篇。异格身份合并后的本篇关系并入同一个 canonical character |
 | episode.cast_character_ids / cast_complete | 仅为旧清单兼容字段；新清单优先使用 characters[].home_episode_ids |
 | episode.order | 已核实的时间先后顺序数值，所有篇目完整且唯一时启用久未出现榜 |
 | featured_instance_ids | 站长选定轮播实例，引用本发布包的 instance id |

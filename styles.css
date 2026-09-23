@@ -41,7 +41,6 @@ button { border: 0; }
 .site-header nav a { padding: 7px 17px; border-radius: 9px; text-decoration: none; font-size: 15px; color: #6b647d; }
 .site-header nav a:hover { background: #eae3fb; color: var(--accent); }
 .hero { position: relative; display: flex; flex-direction: column; min-height: calc(100svh - 84px); padding-bottom: 24px; background-image: radial-gradient(#cec2e766 .8px, transparent .8px); background-size: 16px 16px; }
-.hero::after { content: ""; position: absolute; left: calc(50% - 25px); bottom: -4px; height: 8px; width: 50px; border-radius: 10px; background: #d3c4ed; }
 .ribbon-shell { width: min(1480px, 100%); margin: 0 auto; }
 .ribbon { overflow-x: auto; scrollbar-width: none; padding: 19px 18px 16px; mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent); }
 .ribbon::-webkit-scrollbar { display: none; }
@@ -66,6 +65,9 @@ body[data-page="search"] #results-section { min-height: 45vh; }
 .dummy { font-size: 22px; color: #947ca8; letter-spacing: -.04em; padding-bottom: 13px; user-select: none; }
 .dummy i { position: absolute; bottom: 5px; right: 9px; font-size: 11px; color: #ad9cbc; font-style: normal; }
 .hero-center { position: absolute; top: calc(50% - 42px); left: 50%; z-index: 1; margin: 0; padding: 12px 0 25px; text-align: center; transform: translate(-50%, -50%); }
+.scroll-cue { position: absolute; z-index: 2; left: 50%; bottom: 14px; display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid #d6c8e8; border-radius: 50%; color: var(--accent); background: #fffdfc; box-shadow: 0 3px 10px #4933621c; text-decoration: none; transform: translateX(-50%); transition: transform .18s, background .18s, box-shadow .18s; }
+.scroll-cue svg { display: block; width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.scroll-cue:hover { color: #5b43a6; background: #fff; box-shadow: 0 5px 14px #4933622b; transform: translate(-50%, 3px); }
 .kicker { color: #9285aa; font-size: 12px; letter-spacing: .2em; font-weight: 750; }
 .hero h1 { position: relative; display: inline-block; margin: 5px 0 15px; font-size: clamp(34px, 4.4vw, 56px); letter-spacing: .07em; font-weight: 900; color: #4b3d6c; text-shadow: 2px 3px 0 #fff, 3px 5px 0 #dfd4f0; }
 .hero h1::after { content: ""; position: absolute; z-index: -1; height: 14px; left: 0; right: 0; bottom: 3px; background: #ebcbdc; transform: rotate(-2deg); }

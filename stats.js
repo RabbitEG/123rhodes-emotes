@@ -66,14 +66,24 @@
     const orderReady = release.episodes.length > 0 && release.episodes.every(e => Number.isFinite(e.order)) && new Set(release.episodes.map(e => e.order)).size === release.episodes.length;
     const sequence = [...episodes.values()].sort((a, b) => a.order - b.order);
     const orderIndex = new Map(sequence.map((e, i) => [e.id, i]));
-    if (homeReady) {
-      for (const c of rows) c.homes = c.homeEpisodes.size;
-    } else if (legacyCastReady) {
-      for (const e of episodes.values()) for (const cid of e.cast) {
-        const character = characters.get(cid);
-        character.homes++;
-        character.homeEpisodes.add(e.id);
+    if (!homeReady && legacyCastReady) {
+      for (const e of episodes.values()) for (const cid of e.cast) characters.get(cid).homeEpisodes.add(e.id);
+    }
+    if (castReady) {
+      const normalizeHomeName = value => String(value).normalize("NFKC").replace(/\s+/g, "").replace(/篇$/, "");
+      const ownersByName = new Map();
+      for (const c of rows) for (const name of [c.name, ...(c.aliases ?? [])]) {
+        const normalized = normalizeHomeName(name);
+        if (!normalized) continue;
+        if (!ownersByName.has(normalized)) ownersByName.set(normalized, new Set());
+        ownersByName.get(normalized).add(c.id);
       }
+      for (const e of episodes.values()) {
+        const title = e.name.replace(/^\d+_/, "");
+        const owners = ownersByName.get(normalizeHomeName(title));
+        if (owners?.size === 1) characters.get(owners.values().next().value).homeEpisodes.add(e.id);
+      }
+      for (const c of rows) c.homes = c.homeEpisodes.size;
     }
     for (const item of release.instances) {
       const c = characters.get(item.character_id), e = episodes.get(item.episode_id);

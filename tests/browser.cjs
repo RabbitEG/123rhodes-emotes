@@ -33,6 +33,17 @@ assert.equal(analyze(validate({ ...data, episodes: episodes.map(e => ({ ...e, or
 assert.throws(() => validate({ ...data, instances: [...instances, instances[0]] }));
 assert.throws(() => validate({ ...data, instances: [{ ...instances[0], crop_url: "https://example.com/tracking.png" }] }));
 assert.throws(() => validate({ ...data, episodes: [{ ...episodes[0], official_url: "javascript:alert(1)" }] }));
+const selfCameo = analyze(validate({
+  characters: [
+    { id: "amiya", name: "阿米娅", aliases: ["阿米娅（医疗）"], home_episode_ids: [] },
+    { id: "doctor", name: "博士", aliases: [], home_episode_ids: [] }
+  ],
+  episodes: ["001_阿米娅篇", "002_阿米娅(医疗)篇", "003_博士篇"].map((name, i) => ({ id: "home" + i, name, order: i + 1, official_url: "https://comic.hypergryph.com/comic/6253/home-" + i })),
+  instances: ["home0", "home1", "home2"].map((episode_id, i) => ({ id: "home-instance-" + i, character_id: "amiya", episode_id, crop_url: "/media/crops/test.webp" }))
+}));
+assert.equal(selfCameo.characters.get("amiya").cameo, 1);
+assert.deepEqual([...selfCameo.characters.get("amiya").homeEpisodes].sort(), ["home0", "home1"]);
+assert.deepEqual(selfCameo.guestRecords.map(row => row.episode), ["home2"]);
 console.log("Statistics: counts, deduplication, cast, chronology, validation passed");
 
 (async () => {
