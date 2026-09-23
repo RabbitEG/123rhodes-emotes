@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -77,7 +78,8 @@ def upload(bundle, dry_run, configure_cors, env_file):
     from botocore.config import Config
     client = boto3.client('s3', endpoint_url='https://' + account + '.r2.cloudflarestorage.com',
                           region_name='auto', aws_access_key_id=access, aws_secret_access_key=secret,
-                          config=Config(retries={'max_attempts': 5, 'mode': 'standard'},
+                          config=Config(max_pool_connections=16,
+                                        retries={'max_attempts': 5, 'mode': 'standard'},
                                         request_checksum_calculation='when_required',
                                         response_checksum_validation='when_required'))
     if configure_cors:
@@ -86,18 +88,19 @@ def upload(bundle, dry_run, configure_cors, env_file):
     existing = {}
     for page in client.get_paginator('list_objects_v2').paginate(Bucket=bucket, Prefix='media/'):
         existing.update({obj['Key']: obj['Size'] for obj in page.get('Contents', [])})
-    uploaded = skipped = 0
-    for key, path in files.items():
-        if existing.get(key) == path.stat().st_size:
-            skipped += 1
-            continue
+    pending = [(key, path) for key, path in files.items() if existing.get(key) != path.stat().st_size]
+    skipped = len(files) - len(pending)
+    def send(item):
+        key, path = item
         client.upload_file(str(path), bucket, key, ExtraArgs={'ContentType': 'image/webp', 'CacheControl': 'public, max-age=31536000, immutable'})
-        uploaded += 1
-        if uploaded % 250 == 0:
-            print('Uploaded %d assets' % uploaded, flush=True)
+        return key
+    with ThreadPoolExecutor(max_workers=12) as workers:
+        for uploaded, _ in enumerate(workers.map(send, pending), 1):
+            if uploaded % 250 == 0:
+                print('Uploaded %d assets' % uploaded, flush=True)
     client.put_object(Bucket=bucket, Key='data/release.json', Body=manifest.read_bytes(),
                       ContentType='application/json; charset=utf-8', CacheControl='public, max-age=60, must-revalidate')
-    print(json.dumps({'uploaded': uploaded, 'unchanged': skipped, 'manifest_published': True}))
+    print(json.dumps({'uploaded': len(pending), 'unchanged': skipped, 'manifest_published': True}))
 
 
 if __name__ == '__main__':
