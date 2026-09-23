@@ -10,7 +10,11 @@
   const number = value => Number(value).toLocaleString("zh-CN");
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
   const { validate, analyze, assetPath, officialURL } = RhodesStats;
-  let release, stats, config = {}, state, visible = 36, matches = [], carouselTimer;
+  const isSearchPage = document.body.dataset.page === "search";
+  let release, stats, config = {}, state, visible = 36, matches = [], dataBase = "";
+  let marqueePosition = 0, marqueeWidth = 0, lastFrame = 0, manualUntil = 0;
+  let ribbonObserver;
+  const publicAsset = path => dataBase ? new URL(path, dataBase).href : path;
   let userPaused = false, ribbonHovered = false, ribbonFocused = false, carouselMode = "random";
 
   function readState() {
@@ -23,7 +27,9 @@
     if (state.mode !== "expressions") p.set("mode", state.mode);
     for (const key of ["q", "character", "episode", "pair"]) if (state[key]) p.set(key, state[key]);
     if (state.browse) p.set("browse", "1");
-    history.pushState(null, "", "/" + (p.toString() ? "?" + p.toString() : "") + (scroll ? "#results-section" : "#search"));
+    const destination = "/search.html" + (p.toString() ? "?" + p.toString() : "");
+    if (!isSearchPage) { location.assign(destination); return; }
+    history.pushState(null, "", destination + (scroll ? "#results-section" : "#search"));
     visible = Number(config.pageSize) || 36;
     renderSearch();
     if (scroll && !$("#results-section").hidden) $("#results-section").scrollIntoView({ block: "start", behavior: motion.matches ? "instant" : "smooth" });
@@ -32,16 +38,16 @@
     return !query || [c.name, ...(c.aliases ?? [])].some(name => normalize(name).includes(query));
   }
   function matchesEpisode(e, query) {
-    if (!query || normalize(e.name).includes(query) || normalize(e.id).includes(query)) return true;
+    if (!query) return true;
     if (/^\d+$/.test(query)) {
       const prefix = String(e.name).match(/^0*(\d+)(?:\D|$)/) || String(e.id).match(/^0*(\d+)(?:\D|$)/);
-      if (prefix && Number(prefix[1]) === Number(query)) return true;
+      return Boolean(prefix && Number(prefix[1]) === Number(query));
     }
-    return false;
+    return normalize(e.name).includes(query) || normalize(e.id) === query;
   }
-  function image(path, alt) {
+  function image(path, alt, eager = false) {
     const url = assetPath(path);
-    return url ? `<img src="${escape(url)}" alt="${escape(alt)}" loading="lazy" decoding="async">` : `<span class="image-missing">${text("card.unavailable")}</span>`;
+    return url ? `<img src="${escape(publicAsset(url))}" alt="${escape(alt)}" loading="${eager ? "eager" : "lazy"}" decoding="async">` : `<span class="image-missing">${text("card.unavailable")}</span>`;
   }
   function cropCard(item) {
     const c = stats.characters.get(item.character_id), e = stats.episodes.get(item.episode_id);
@@ -57,10 +63,9 @@
     $("#site-search").placeholder = t(state.mode === "expressions" ? "search.placeholderExpressions" : "search.placeholderEpisodes");
     $$("[data-mode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode)));
     if (!release) return;
-    const active = Boolean(state.q || state.character || state.episode || state.pair || state.browse);
-    $("#results-section").hidden = !active;
     $("#search-status").textContent = t("search.crops", { count: number(release.instances.length) });
-    if (!active) return;
+    if (!isSearchPage) return;
+    $("#results-section").hidden = false;
     const query = normalize(state.q);
     const cids = new Set([...stats.characters.values()].filter(c => matchesCharacter(c, query)).map(c => c.id));
     const eids = new Set([...stats.episodes.values()].filter(e => matchesEpisode(e, query)).map(e => e.id));
@@ -69,7 +74,7 @@
     if (state.mode === "episodes") {
       matches = [...stats.episodes.values()].filter(e => !query || eids.has(e.id) || [...e.characters].some(cid => cids.has(cid))).sort((a, b) => a.name.localeCompare(b.name, "zh-CN", { numeric: true }));
     } else {
-      matches = release.instances.filter(item => (!query || cids.has(item.character_id) || eids.has(item.episode_id)) && (!state.character || item.character_id === state.character) && (!state.episode || item.episode_id === state.episode) && (!state.pair || (shared?.has(item.episode_id) && pairIds.includes(item.character_id)))).sort((a, b) => String(a.sort_key ?? a.id).localeCompare(String(b.sort_key ?? b.id), "zh-CN", { numeric: true }));
+      matches = release.instances.filter(item => (!query || cids.has(item.character_id)) && (!state.character || item.character_id === state.character) && (!state.episode || item.episode_id === state.episode) && (!state.pair || (shared?.has(item.episode_id) && pairIds.includes(item.character_id)))).sort((a, b) => String(a.sort_key ?? a.id).localeCompare(String(b.sort_key ?? b.id), "zh-CN", { numeric: true }));
     }
     let title = state.q || t("search.all");
     const scopedNames = [stats.characters.get(state.character)?.name, stats.episodes.get(state.episode)?.name].filter(Boolean);
@@ -125,7 +130,7 @@
     return items;
   }
   function drawRibbon() {
-    if (!release?.instances.length || config.carousel?.enabled === false) return;
+    if (isSearchPage || !release?.instances.length || config.carousel?.enabled === false) return;
     const max = Math.max(4, Math.min(32, Number(config.carousel?.maxItems) || 16));
     const byId = new Map(release.instances.map(item => [item.id, item]));
     let items = (release.featured_instance_ids || []).map(id => byId.get(String(id))).filter(Boolean);
@@ -135,11 +140,29 @@
       const chosen = new Set(items.map(item => item.id)); items.push(...pool.filter(item => !chosen.has(item.id)));
     } else if (carouselMode === "random") shuffle(items);
     $("#ribbon-track").removeAttribute("aria-hidden");
-    $("#ribbon-track").innerHTML = items.slice(0, max).map(item => {
+    const cards = items.slice(0, max).map(item => {
       const c = stats.characters.get(item.character_id), e = stats.episodes.get(item.episode_id);
-      return `<a class="sticker" href="${escape(officialURL(e.official_url))}" target="_blank" rel="noopener noreferrer" aria-label="${text("card.cropAlt", { character: c.name })} · ${text("card.official")}">${image(item.crop_url, t("card.cropAlt", { character: c.name }))}<span class="sticker-label">${escape(c.name)}</span></a>`;
+      return `<a class="sticker" data-instance="${escape(item.id)}" href="${escape(officialURL(e.official_url))}" target="_blank" rel="noopener noreferrer" aria-label="${text("card.cropAlt", { character: c.name })} · ${text("card.official")}">${image(item.crop_url, t("card.cropAlt", { character: c.name }), true)}<span class="sticker-label">${escape(c.name)}</span></a>`;
     }).join("");
-    $("#ribbon").scrollLeft = 0;
+    const track = $("#ribbon-track");
+    track.classList.add("is-marquee");
+    track.innerHTML = '<div class="ribbon-group">' + cards + '</div>';
+    const group = $(".ribbon-group", track);
+    ribbonObserver?.disconnect();
+    ribbonObserver = new ResizeObserver(() => {
+      marqueeWidth = group.offsetWidth + parseFloat(getComputedStyle(track).gap);
+      marqueePosition %= Math.max(1, marqueeWidth);
+      $("#ribbon").scrollLeft = marqueePosition;
+    });
+    ribbonObserver.observe(group);
+    marqueeWidth = group.offsetWidth + parseFloat(getComputedStyle(track).gap);
+    const groups = Math.max(2, Math.ceil(1480 / Math.max(1, marqueeWidth)) + 1);
+    for (let i = 1; i < groups; i++) {
+      const clone = group.cloneNode(true); clone.setAttribute("aria-hidden", "true");
+      $$("a", clone).forEach(link => { link.tabIndex = -1; });
+      track.append(clone);
+    }
+    marqueePosition = 0; $("#ribbon").scrollLeft = 0;
     $("#ribbon-note").textContent = t("ribbon.label");
     $$(".ribbon-toolbar button").forEach(button => { button.disabled = false; });
     $("#ribbon-mode").textContent = t("ribbon." + carouselMode); updatePause();
@@ -152,18 +175,34 @@
   }
   function nextRibbon() {
     const ribbon = $("#ribbon");
-    ribbon.scrollTo({ left: ribbon.scrollLeft + ribbon.clientWidth >= ribbon.scrollWidth - 8 ? 0 : ribbon.scrollLeft + ribbon.clientWidth * .55, behavior: motion.matches ? "instant" : "smooth" });
+    marqueePosition = marqueeWidth ? (ribbon.scrollLeft + ribbon.clientWidth * .5) % marqueeWidth : 0;
+    ribbon.scrollLeft = marqueePosition;
+  }
+  function animateRibbon(now) {
+    const elapsed = Math.min((now - lastFrame) / 1000 || 0, .05); lastFrame = now;
+    const ribbon = $("#ribbon");
+    if (ribbon && marqueeWidth) {
+      const paused = userPaused || motion.matches || ribbonHovered || ribbonFocused || document.hidden || now < manualUntil;
+      if (paused) marqueePosition = ribbon.scrollLeft;
+      else {
+        const speed = Math.max(5, Math.min(60, Number(config.carousel?.speedPixelsPerSecond) || 22));
+        marqueePosition = (marqueePosition + elapsed * speed) % marqueeWidth;
+        ribbon.scrollLeft = marqueePosition;
+      }
+    }
+    requestAnimationFrame(animateRibbon);
   }
   async function load() {
     $("#retry").hidden = true; $("#search-status").textContent = t("search.loading");
     try {
-      const url = new URL(config.releaseManifest || "/data/release.json", location.origin);
-      if (url.origin !== location.origin) throw new Error("Release must be same-origin");
+      const expectedOrigin = dataBase || location.origin;
+      const url = new URL(config.releaseManifest || "/data/release.json", expectedOrigin);
+      if (url.origin !== new URL(expectedOrigin).origin) throw new Error("Release origin mismatch");
       const response = await fetch(url, { cache: "no-cache" });
       if (response.status === 404) { $("#search-status").textContent = t("search.unpublished"); return; }
       if (!response.ok) throw new Error("Release unavailable");
       release = validate(await response.json()); stats = analyze(release);
-      renderSearch(); renderStats(); drawRibbon();
+      renderSearch(); if (!isSearchPage) { renderStats(); drawRibbon(); }
     } catch (error) {
       release = undefined; stats = undefined;
       $("#search-status").textContent = t("search.failed"); $("#retry").hidden = false;
@@ -172,10 +211,14 @@
   }
   function setupEvents() {
     $("#search-form").addEventListener("submit", event => { event.preventDefault(); go({ q: $("#site-search").value.trim(), browse: !$("#site-search").value.trim() }, true); });
-    $$("[data-mode]").forEach(b => b.addEventListener("click", () => go({ mode: b.dataset.mode, q: $("#site-search").value.trim(), browse: state.browse })));
-    $("#clear-search").addEventListener("click", () => go({}));
-    $("#load-more").addEventListener("click", () => { visible += Number(config.pageSize) || 36; renderMatches(); });
-    $("#ranking-kind").addEventListener("change", renderRanking); $("#retry").addEventListener("click", load);
+    $$("[data-mode]").forEach(b => b.addEventListener("click", () => {
+      const patch = { mode: b.dataset.mode, q: $("#site-search").value.trim(), browse: state.browse };
+      if (isSearchPage) go(patch);
+      else { state = { ...state, ...patch }; renderSearch(); }
+    }));
+    $("#clear-search")?.addEventListener("click", () => go({}));
+    $("#load-more")?.addEventListener("click", () => { visible += Number(config.pageSize) || 36; renderMatches(); });
+    $("#ranking-kind")?.addEventListener("change", renderRanking); $("#retry").addEventListener("click", load);
     window.addEventListener("popstate", () => { state = readState(); visible = Number(config.pageSize) || 36; renderSearch(); });
     document.addEventListener("click", event => {
       const toggle = event.target.closest(".source-toggle");
@@ -215,6 +258,10 @@
       if (card && !card.contains(event.relatedTarget)) card.classList.remove("preview-suppressed");
     });
     const ribbon = $("#ribbon");
+    if (!ribbon) return;
+    ribbon.addEventListener("touchstart", () => { manualUntil = performance.now() + 60000; }, { passive: true });
+    ribbon.addEventListener("touchend", () => { manualUntil = performance.now() + 1500; }, { passive: true });
+    ribbon.addEventListener("touchcancel", () => { manualUntil = performance.now() + 1500; }, { passive: true });
     ribbon.addEventListener("mouseenter", () => { ribbonHovered = true; }); ribbon.addEventListener("mouseleave", () => { ribbonHovered = false; });
     ribbon.addEventListener("focusin", () => { ribbonFocused = true; }); ribbon.addEventListener("focusout", event => { ribbonFocused = ribbon.contains(event.relatedTarget); });
     $("#ribbon-pause").addEventListener("click", () => { userPaused = !userPaused; updatePause(); });
@@ -223,10 +270,19 @@
     motion.addEventListener("change", () => { if (release?.instances.length && config.carousel?.enabled !== false) updatePause(); });
   }
   async function init() {
-    state = readState(); setupEvents(); renderSearch();
+    state = readState();
+    if (!isSearchPage && (state.q || state.character || state.episode || state.pair || state.browse)) {
+      location.replace("/search.html" + location.search); return;
+    }
+    setupEvents(); renderSearch();
     try {
       const response = await fetch("/config/site.json", { cache: "no-cache" });
       if (response.ok) config = await response.json();
+      if (config.publicDataBaseUrl) {
+        const origin = new URL(config.publicDataBaseUrl);
+        if (origin.protocol !== "https:" || origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash) throw new Error("Invalid public data origin");
+        dataBase = origin.origin;
+      }
       for (const [key, variable] of Object.entries({ accent: "--accent", background: "--background" })) if (/^#[0-9a-f]{6}$/i.test(config.theme?.[key] || "")) document.documentElement.style.setProperty(variable, config.theme[key]);
       if (config.theme?.backgroundImage) {
         const url = new URL(config.theme.backgroundImage, location.origin);
@@ -235,8 +291,7 @@
     } catch { config = {}; }
     carouselMode = config.carousel?.mode === "sequential" ? "sequential" : "random";
     visible = Number(config.pageSize) || 36; await load();
-    clearInterval(carouselTimer);
-    carouselTimer = setInterval(() => { if (release?.instances.length && config.carousel?.enabled !== false && !userPaused && !motion.matches && !ribbonHovered && !ribbonFocused && !document.hidden) nextRibbon(); }, Math.max(4000, Number(config.carousel?.intervalMs) || 5200));
+    if (!isSearchPage && config.carousel?.enabled !== false) requestAnimationFrame(animateRibbon);
   }
   init().catch(() => { $("#search-status").textContent = document.body.dataset.error; });
 })();

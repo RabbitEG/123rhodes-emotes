@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/styles.css?v={{asset_version}}">
   <script src="/stats.js?v={{asset_version}}" defer></script><script src="/app.js?v={{asset_version}}" defer></script>
 </head>
-<body data-error="{{search.failed}}">
+<body data-page="home" data-error="{{search.failed}}">
   {{>header}}
   <main id="main">
     <section class="hero">
@@ -22,18 +22,8 @@
         <p class="kicker">{{hero.kicker}}</p>
         <h1>{{site.name}}<span class="title-star" aria-hidden="true">✦</span></h1>
         <p class="hero-line">{{hero.line}}</p><p class="hero-note">{{hero.note}}</p>
-        <form id="search-form" class="search-box" role="search">
-          <div class="search-modes" role="group" aria-label="{{search.label}}"><button type="button" data-mode="expressions" aria-pressed="true">{{search.expressions}}</button><button type="button" data-mode="episodes" aria-pressed="false">{{search.episodes}}</button></div>
-          <div class="search-field"><span aria-hidden="true" class="search-icon"></span><label for="site-search" class="sr-only">{{search.label}}</label><input id="site-search" name="q" type="search" autocomplete="off" placeholder="{{search.placeholderExpressions}}"><button class="primary" type="submit">{{search.submit}} <span aria-hidden="true">↗</span></button></div>
-        </form>
-        <p class="search-hint">{{search.hint}}</p>
-        <p id="search-status" role="status">{{search.loading}}</p><button id="retry" class="pill" type="button" hidden>{{search.retry}}</button>
+        {{>searchform}}
       </div>
-    </section>
-    <section id="results-section" class="wrap results-section" hidden>
-      <div class="results-heading"><div><h2 id="results-title">{{search.browse}}</h2><p id="result-count"></p></div><button class="pill" id="clear-search" type="button">{{search.clear}} <span aria-hidden="true">×</span></button></div>
-      <div id="character-matches" class="character-matches"></div><div id="results-grid" class="gallery-grid"></div>
-      <div class="load-more"><p id="pagination-status"></p><button id="load-more" class="pill" type="button" hidden>{{search.more}} ↓</button></div>
     </section>
     <section id="stats" class="stats-section wrap">
       <div class="section-title"><span class="section-stamp" aria-hidden="true">✦</span><p class="kicker">{{stats.kicker}}</p><h2>{{stats.title}}</h2><p>{{stats.note}} <span id="release-date"></span></p></div>

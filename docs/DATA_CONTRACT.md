@@ -1,6 +1,6 @@
 # 公开发布清单
 
-路径由 config/site.json 的 releaseManifest 指定，默认 /data/release.json。当前仓库没有真实发布包。字段只用于公开检索；不能把 SQLite 导出结果直接当发布清单。
+路径由 config/site.json 的 releaseManifest 指定，默认 /data/release.json；publicDataBaseUrl 指定 R2 公开域名，空值代表当前 origin。本地真实发布包位于被忽略的 publish/site/，GitHub 不保存索引或素材。字段只用于公开检索；不能把 SQLite 导出结果直接当发布清单。
 
 ## 必需内容
 
@@ -9,7 +9,7 @@
 - instances：`id`、`character_id`、`episode_id`、`crop_url`；可选 `image_id`、`source_preview_url`、`sort_key`。每一项是当前有效、人类 confirmed/trusted、经发布筛选的 canonical 实例。
 - 三个数组允许为空；重复 ID、未知角色/篇目关联、无效公开资源路径会让清单加载失败并显示重试，防止静默出现错误统计。
 
-crop_url 和 source_preview_url 只接受本站 `/media/` 下 WebP/PNG/JPEG/AVIF。人物图保持比例；出处缩略图来自原始整列/整页，不能用后台 panel 代替。禁止任何字段携带本地绝对路径、原图、面板文件、模型/审核历史。
+crop_url 和 source_preview_url 只接受 `/media/` 下 WebP/PNG/JPEG/AVIF 相对路径。运行时统一加上受配置约束的 R2 公开域名，不允许每张图自行指定外部 URL。人物图保持比例；出处缩略图来自原始整列/整页，不能用后台 panel 代替。禁止任何字段携带本地绝对路径、原图、面板文件、模型/审核历史。
 
 ## 可选内容与统计可用性
 
@@ -45,4 +45,4 @@ crop_url 和 source_preview_url 只接受本站 `/media/` 下 WebP/PNG/JPEG/AVIF
 }
 ```
 
-公开数据与图片默认不进 Git。本轮 Git 驱动 Pages 仅部署界面；接入真实发布包前需单独确定构建导入或发布产物方式。`.gitignore` 不会让本地文件自动进入 Cloudflare 构建环境。
+公开数据与图片不进 Git，用户已选择 R2。Git 驱动 Pages 部署界面和 Functions；media binding 读取私有 bucket 123rhodes-db，publicDataBaseUrl 保持空值，浏览器走同域。上传工具验证每份图片的哈希，先传展示图再传 release.json；详见 R2_SETUP.md。

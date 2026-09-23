@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f5f2ff"><title>{{search.pageTitle}} · {{site.name}}</title><link rel="icon" href="/assets/star.svg" type="image/svg+xml"><link rel="stylesheet" href="/styles.css?v={{asset_version}}"><script src="/stats.js?v={{asset_version}}" defer></script><script src="/app.js?v={{asset_version}}" defer></script></head>
+<body data-page="search" data-error="{{search.failed}}">
+{{>header}}
+<main id="main">
+<section class="search-page-heading wrap" id="search"><a class="back-link" href="/">← {{info.back}}</a><h1>{{search.pageTitle}}</h1>{{>searchform}}</section>
+    <section id="results-section" class="wrap results-section" hidden>
+      <div class="results-heading"><div><h2 id="results-title">{{search.browse}}</h2><p id="result-count"></p></div><button class="pill" id="clear-search" type="button">{{search.clear}} <span aria-hidden="true">×</span></button></div>
+      <div id="character-matches" class="character-matches"></div><div id="results-grid" class="gallery-grid"></div>
+      <div class="load-more"><p id="pagination-status"></p><button id="load-more" class="pill" type="button" hidden>{{search.more}} ↓</button></div>
+    </section>
+</main>
+{{>footer}}
+<script id="site-copy" type="application/json">{{copy_json}}</script>
+</body></html>

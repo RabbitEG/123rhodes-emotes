@@ -46,6 +46,14 @@ button { border: 0; }
 .ribbon { overflow-x: auto; scrollbar-width: none; padding: 24px 18px 20px; mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent); }
 .ribbon::-webkit-scrollbar { display: none; }
 .ribbon-track { display: flex; align-items: center; gap: 22px; width: max-content; min-width: 100%; justify-content: center; }
+.ribbon-track.is-marquee { display: flex; gap: 22px; min-width: 0; justify-content: flex-start; }
+.ribbon-group { display: flex; align-items: center; gap: 22px; flex-shrink: 0; }
+.ribbon-group .sticker { flex-shrink: 0; }
+.search-page-heading { text-align: center; padding: 25px 0 16px; }
+.search-page-heading h1 { margin: 12px 0 25px; font-size: 30px; }
+.search-page-heading .back-link { font-size: 12px; }
+.search-page-heading .search-hint { margin-top: 13px; }
+body[data-page="search"] #results-section { min-height: 45vh; }
 .sticker { position: relative; display: flex; align-items: center; justify-content: center; flex: 0 0 150px; height: 142px; padding: 13px 14px 24px; border: 2px solid white; border-radius: 12px; outline: 1px solid #e1d6ee; background: #fffdfc; text-decoration: none; box-shadow: 4px 6px 0 #ddd3ed60; transform: rotate(-5deg); transition: transform .2s; }
 .sticker:nth-child(2n) { transform: rotate(5deg); background: #fff4f5; }
 .sticker:nth-child(3n) { transform: rotate(-2deg); background: #eff9f5; }
@@ -94,8 +102,8 @@ button { border: 0; }
 .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
 .expression-card { position: relative; min-width: 0; border-radius: 13px; padding: 8px 8px 0; background: white; border: 1px solid var(--line); box-shadow: 0 3px 0 #e7dfef80; }
 .expression-card:hover, .expression-card:focus-within { z-index: 5; border-color: #b8a0d5; }
-.crop-wrap { display: grid; place-items: center; height: 176px; border-radius: 8px; background: #f9f6fc; padding: 8px; }
-.crop-wrap img { width: 100%; height: 100%; object-fit: contain; }
+.crop-wrap { display: flex; align-items: center; justify-content: center; height: 176px; overflow: hidden; border-radius: 8px; background: #f9f6fc; padding: 8px; }
+.crop-wrap img { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; object-fit: contain; }
 .expression-caption { display: grid; padding: 8px 4px 6px; gap: 3px; }
 .name-button, .episode-button { background: transparent; text-align: left; padding: 0; }
 .name-button { color: #51405e; font-size: 13px; font-weight: 750; }

@@ -4,19 +4,21 @@
 
 线上：<https://123rhodes-emotes.pages.dev/>
 
-完整方案：[docs/SITE_PLAN.md](docs/SITE_PLAN.md) · 数据格式：[docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md)
+完整方案：[docs/SITE_PLAN.md](docs/SITE_PLAN.md) · 数据格式：[docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md) · [R2 接入步骤](docs/R2_SETUP.md)
 
 ## 当前版本
 
-浅紫/粉色贴纸册风格，居中首页：顶部表情轮播 → 一个搜索框切换表情/篇目 → 首页统计和榜单 → 留言准备区与来源说明。
+浅紫/粉色贴纸册风格，居中首页：顶部真实 instance 持续横向慢速滚动 → 一个搜索框切换表情/篇目 → 首页统计和榜单 → 留言准备区与来源说明。搜索后进入独立的 search.html 结果页。
 
 - 名称、别名、篇目编号搜索；角色/篇目/组合过滤；URL 分享、刷新和前后退恢复。
 - 人物图片网格、继续加载、原始整列的低清出处预览、官方篇目外链。
 - 四项总量、前五位角色出场占比环形图、六种角色榜、共现组合和单篇记录。
-- 轮播支持随机/顺序、暂停/继续、手动下一组、悬停/聚焦暂停和系统减少动态效果。
+- 表情带按像素速度连续移动；随机/顺序控制实例排列，支持暂停/继续、手动往后看、悬停/聚焦暂停和系统减少动态效果。
 - 手机适配、图片失败提示、清单缺失/错误状态和重试。
 
-**当前尚未接入真实公开图集。** 页面没有漫画素材、内部数据库或示例统计数字；未发布时显示装饰颜文字和待收录状态。前端已能读取正式发布清单。留言后端未开放。
+**真实数据已导出到本地，等待 R2 凭据上线。** publish/site 包含 4,803 张人物 crop、683 张低清预览、339 个篇目、368 位角色，官方篇目链接全部匹配。用户已选择 GitHub 只放代码；公开索引和素材不提交仓库，线上暂时等待 R2。留言后端未开放。
+
+本地真实预览：运行 `python3 tools/preview.py --port 4174`，打开 http://127.0.0.1:4174/ 。没有导出包的普通 clone 仍可用下述静态预览检查空状态。
 
 ## 人工修改所有文案
 
@@ -40,11 +42,11 @@ python3 -m http.server 4173 --bind 127.0.0.1
 
 访问 <http://127.0.0.1:4173>。无需安装前端框架或 Python 依赖。
 
-构建把模板与文案生成根目录的 index.html / about.html / privacy.html / 404.html。不要直接修改这四个生成文件。确认效果后：
+构建生成根目录 index.html / search.html / about.html / privacy.html / 404.html，并同步生成 _headers。不要直接修改这些生成文件。确认效果后：
 
 ```bash
 python3 tools/build.py --check
-git add content/copy.zh-CN.json index.html about.html privacy.html 404.html
+git add content/copy.zh-CN.json index.html search.html about.html privacy.html 404.html _headers
 git commit -m "docs: update site copy"
 git push
 ```
@@ -62,10 +64,11 @@ git push
 | theme.backgroundImage | 可选 /assets/ 下装饰背景路径；覆盖全页，低透明度，空字符串关闭 |
 | carousel.enabled | 是否使用已发布图填入轮播 |
 | carousel.mode | random / sequential |
-| carousel.intervalMs | 自动滚动间隔，至少 4000 毫秒 |
+| carousel.speedPixelsPerSecond | 每秒移动像素，默认22，范围5–60；从右向左连续滚动 |
 | carousel.maxItems | 轮播最多图片数，4–32 |
 | pageSize | 每批检索结果数量，默认 36 |
-| releaseManifest | 本站发布清单地址 |
+| releaseManifest | 发布清单路径，默认 /data/release.json |
+| publicDataBaseUrl | 保持空值，通过本站 Pages Function 的 media binding 读取 R2 |
 
 图片背景可放 `assets/background.webp` 后配置对应路径。纯色和星形/网点装饰不依赖外部资源。具体卡片尺寸、字体大小等样式在 styles.css 中修改。轮播优先使用发布清单的 featured_instance_ids，否则尽量均衡抽取不同角色。
 
@@ -86,13 +89,12 @@ git push
 | 最常见组合 | 已实现，两角色共同 episode 数，同篇多张不重复计 |
 | 单篇出场记录 | 已实现，每个角色 × 篇目的实例数 |
 
-榜单条目和图例可点击回到同一搜索区。cast 或篇目顺序资料缺失时，相关榜单显示缺资料提示，不把未知值计算为零。
+榜单条目和图例点击后进入独立搜索结果页。当前篇目顺序已和官方目录核对，“久未出现榜”可用；内部 cast 包含全部已确认出场，不能直接算客串，两份客串榜暂待可靠本篇资料。
 
 后续计划：
 
-- 完成只读白名单导出、逐篇核实官方链接、生成公开 crop 和整列低清预览，接入真实发布包。
-- 补齐来源 image_id、本篇 cast、可靠篇目顺序，使全部榜单有可靠数据。内部 cast 若已自动包含所有实际出现角色，需先分清其与“本篇角色”的含义。
-- 选择公开发布包的构建导入/部署方式：当前这些生成数据被 .gitignore 排除，GitHub 集成不会自动上传本地忽略文件。
+- 配置 Pages R2 binding：media → 123rhodes-db，上传公开包后接通线上素材；无需公开 bucket 或配置跨域域名。上传凭据仅留本地。
+- 整理可靠的本篇 cast，再启用两份客串榜。image_id 与篇目顺序已经齐全。
 - 匿名留言板、人工审核、防刷与留言保存说明。
 - Beta 共现分组可留待以后；当前只有共同出场统计，不解释为关系亲密度。
 
@@ -102,8 +104,12 @@ git push
 content/copy.zh-CN.json  唯一人工文案源（带中文说明）
 templates/              页面模板与共享导航/页脚
 tools/build.py          文案与模板生成程序
+tools/export_public.py  只读数据库，白名单导出与展示图生成
+tools/preview.py        页面 + 本地真实发布包的隔离预览
+tools/upload_r2.py      上传公开展示资源，最后更新索引
 config/site.json        主题、轮播、分页、数据地址
 index.html              生成：首页、统一搜索、统计
+search.html             生成：独立搜索结果页
 about.html              生成：关于和版权
 privacy.html            生成：隐私
 404.html                生成：缺失页；也避免 Pages 把缺失 JSON 回退成首页
@@ -113,14 +119,16 @@ stats.js                纯公开数据统计与清单校验
 assets/                 自制装饰素材（当前只有 SVG 图标）
 docs/                   完整方案与数据协议
 tests/browser.cjs       统计与浏览器验收（仅内存测试数据）
-data/、media/           后续发布包，默认不进 Git
+tests/real-data.cjs     本地真实数据浏览器验收
+publish/site/           真实公开索引和展示副本，不进 Git
+.env                   本地 R2 凭据，不进 Git
 ```
 
 ## 验证
 
 `python3 tools/build.py --check` 检查生成内容是否最新；`python3 tests/copy_test.py` 在临时目录验证人工修改文案后的生成、转义与占位符检查。浏览器验收需要 Node.js、Playwright 和 Chromium，在本地静态服务器运行时执行 `node tests/browser.cjs`；可用 PLAYWRIGHT_MODULE / CHROMIUM_EXECUTABLE 指定现有安装，SITE_TEST_URL 指定本地测试地址。
 
-测试验证统计去重/缺字段处理、搜索、分页、URL 恢复、桌面/手机预览、CSP、轮播暂停、错误重试。虚构数据通过浏览器请求拦截注入，不创建 data/release.json，也不进入生产页面。截图存入忽略的 test-results/。
+测试验证统计去重/缺字段处理、独立结果页、分页、URL 恢复、桌面/手机预览、CSP、连续滚动/暂停、错误重试。虚构数据通过浏览器请求拦截注入，不创建 data/release.json，也不进入生产页面。真实数据验证通过本地4174预览运行 `node tests/real-data.cjs`。截图存入忽略的 test-results/。
 
 ## 发布与版权
 

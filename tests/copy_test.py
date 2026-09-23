@@ -12,7 +12,7 @@ spec.loader.exec_module(builder)
 
 with tempfile.TemporaryDirectory(prefix='rhodes-copy-test-') as directory:
     target = Path(directory)
-    for name in ('content', 'templates'):
+    for name in ('content', 'templates', 'config'):
         shutil.copytree(str(ROOT / name), str(target / name))
     for name in ('styles.css', 'app.js', 'stats.js'):
         shutil.copyfile(str(ROOT / name), str(target / name))
@@ -28,6 +28,14 @@ with tempfile.TemporaryDirectory(prefix='rhodes-copy-test-') as directory:
     assert '<script>alert(1)</script>' not in output
     assert '\\u003c/script\\u003e' in output
     builder.build(check=True)
+    config_path = target / 'config/site.json'
+    config = json.loads(config_path.read_text(encoding='utf-8'))
+    config['publicDataBaseUrl'] = 'https://media.example.test'
+    config_path.write_text(json.dumps(config), encoding='utf-8')
+    builder.build()
+    headers = (target / '_headers').read_text(encoding='utf-8')
+    assert "connect-src 'self' https://media.example.test;" in headers
+    assert "img-src 'self' data: https://media.example.test;" in headers
     copy['search.crops']['text'] = '已删除占位符'
     path.write_text(json.dumps(copy, ensure_ascii=False), encoding='utf-8')
     try:

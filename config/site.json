@@ -1,5 +1,6 @@
 {
   "releaseManifest": "/data/release.json",
+  "publicDataBaseUrl": "",
   "pageSize": 36,
   "theme": {
     "accent": "#7860CB",
@@ -9,7 +10,7 @@
   "carousel": {
     "enabled": true,
     "mode": "random",
-    "intervalMs": 5200,
+    "speedPixelsPerSecond": 22,
     "maxItems": 16
   }
 }

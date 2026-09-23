@@ -43,7 +43,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     const page = await context.newPage();
     page.on("pageerror", e => errors.push(e.message));
     page.on("console", message => { if (/violates.*(?:Security|policy)|Refused to/i.test(message.text())) errors.push(message.text()); });
-    const csp = fs.readFileSync(path.join(__dirname, "../_headers"), "utf8").split("\n").find(line => line.includes("Content-Security-Policy:")).split("Content-Security-Policy: ")[1];
+    let csp = fs.readFileSync(path.join(__dirname, "../_headers"), "utf8").split("\n").find(line => line.includes("Content-Security-Policy:")).split("Content-Security-Policy: ")[1];
     await page.route(base + "/**", async route => {
       if (route.request().resourceType() !== "document") return route.continue();
       const response = await route.fetch();
@@ -60,9 +60,10 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     await page.waitForFunction(() => document.querySelector("#totals strong").textContent === "4");
     assert.deepEqual(await page.locator("#totals strong").allTextContents(), ["4", "50", "8", "4"]);
     assert.equal(await page.locator(".legend-row").count(), 6);
-    assert(await page.locator("#results-section").isHidden());
+    assert.equal(await page.locator("#results-section").count(), 0);
     await page.screenshot({ path: output + "/desktop-data.png", fullPage: true });
     await page.locator("#site-search").fill("别名甲"); await page.locator("#site-search").press("Enter");
+    await page.waitForURL("**/search.html?*"); await page.waitForSelector(".expression-card");
     assert.equal(await page.locator("#result-count").textContent(), "40 张表情");
     assert.equal(await page.locator(".expression-card").count(), 36);
     await page.locator("#load-more").click();
@@ -81,14 +82,25 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     assert.equal(await page.locator("#result-count").textContent(), "6 张表情");
     await page.goBack();
     await page.waitForSelector(".episode-card");
+    await page.goto(base); await page.waitForSelector(".legend-row");
     await page.locator("#ranking-kind").selectOption("rare");
     assert(!(await page.locator("#character-ranking").textContent()).includes("测试零"));
     await page.locator("#pair-ranking .rank-row").first().click();
+    await page.waitForURL("**/search.html?*"); await page.waitForSelector(".expression-card");
     assert.equal(await page.locator("#result-count").textContent(), "44 张表情");
+    await page.goto(base); await page.waitForSelector(".legend-row");
     await page.locator("#record-ranking .rank-row").first().click();
+    await page.waitForURL("**/search.html?*"); await page.waitForSelector(".expression-card");
     assert.equal(await page.locator("#result-count").textContent(), "39 张表情");
     await page.locator("#clear-search").click();
-    assert(await page.locator("#results-section").isHidden());
+    assert.equal(await page.locator("#result-count").textContent(), "50 张表情");
+    await page.goto(base); await page.waitForSelector(".legend-row");
+    assert.equal(await page.locator(".ribbon-group").first().locator("[data-instance]").count(), 16);
+    await page.locator(".site-header").hover();
+    const beforeScroll = await page.locator("#ribbon").evaluate(e => e.scrollLeft);
+    await page.waitForTimeout(600);
+    const afterScroll = await page.locator("#ribbon").evaluate(e => e.scrollLeft);
+    assert(afterScroll > beforeScroll && afterScroll - beforeScroll < 40, "Marquee must move continuously at slow speed");
     await page.locator("#ribbon-pause").click();
     assert.equal(await page.locator("#ribbon-pause").getAttribute("aria-pressed"), "true");
     await page.locator("#ribbon").hover(); await page.locator("#site-search").hover();
@@ -103,6 +115,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     await page.screenshot({ path: output + "/mobile-data.png", fullPage: true });
     await page.locator("#site-search").fill("别名甲"); await page.locator("#site-search").press("Enter");
+    await page.waitForURL("**/search.html?*"); await page.waitForSelector(".expression-card");
     await page.locator(".source-toggle").first().click();
     await page.locator(".source-peek img").first().waitFor({ state: "visible", timeout: 5000 });
     assert(await page.locator(".source-peek img").first().isVisible());
@@ -127,7 +140,15 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
       assert.equal(await page.locator(".site-header nav a").count(), 3);
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     }
+    csp = csp.replace("img-src 'self' data:;", "img-src 'self' data: https://media.example.test;").replace("connect-src 'self';", "connect-src 'self' https://media.example.test;");
+    await page.route("**/config/site.json", route => route.fulfill({ json: { publicDataBaseUrl: "https://media.example.test", pageSize: 36 } }));
+    await page.route("https://media.example.test/data/release.json", route => route.fulfill({ json: data, headers: { "Access-Control-Allow-Origin": base } }));
+    await page.goto(base); await page.waitForSelector(".legend-row");
+    assert((await page.locator(".ribbon-group img").first().getAttribute("src")).startsWith("https://media.example.test/media/"));
+    await page.locator("#site-search").fill("别名甲"); await page.locator("#site-search").press("Enter");
+    await page.waitForURL("**/search.html?*"); await page.waitForSelector(".expression-card");
+    assert.equal(await page.locator("#result-count").textContent(), "40 张表情");
     assert.deepEqual(errors, []);
-    console.log("Browser: desktop/mobile, CSP, unified search, aliases, episode numbers, paging, preview, reload/back, rankings, missing metadata, carousel, error/retry passed");
+    console.log("Browser: desktop/mobile, CSP, separate result page, unified search, continuous marquee, aliases, episode numbers, paging, preview, reload/back, rankings, missing metadata, carousel, error/retry passed");
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });

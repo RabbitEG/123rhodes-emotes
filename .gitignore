@@ -11,6 +11,7 @@
 .DS_Store
 .wrangler/
 node_modules/
+.venv/
 .env
 .env.*
 !.env.example
