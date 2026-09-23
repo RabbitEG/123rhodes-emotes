@@ -36,7 +36,7 @@
     "note": "搜索上方一句话"
   },
   "hero.note": {
-    "text": "选个角色，翻翻 TA 在漫画里的样子。",
+    "text": "找找看你喜欢的角色吧",
     "note": "首页标题说明"
   },
   "ribbon.label": {
@@ -104,7 +104,7 @@
     "note": "无搜索条件时的结果标题"
   },
   "search.hint": {
-    "text": "角色名、别名、篇目编号都可以。",
+    "text": "目前仅支持角色名、别名表正在建设中",
     "note": "搜索框下方提示"
   },
   "search.results": {
@@ -222,11 +222,11 @@
     "note": "统计小标题"
   },
   "stats.title": {
-    "text": "这本表情簿有多厚？",
+    "text": "全站数据汇总",
     "note": "统计区标题"
   },
   "stats.note": {
-    "text": "只数本站已经收录的内容。",
+    "text": "本站已收录内容统计。",
     "note": "统计区说明"
   },
   "stats.episodes": {
@@ -261,7 +261,7 @@
     "note": "环形图标题"
   },
   "stats.chartNote": {
-    "text": "按表情图数量，前五位 + 其他角色。",
+    "text": "按表情图数量展示前十位干员，其余合并为一项。",
     "note": "环形图统计口径"
   },
   "stats.other": {
@@ -297,7 +297,7 @@
     "note": "统计无数据时"
   },
   "stats.castMissing": {
-    "text": "本篇角色资料还没补齐，这两份客串榜先等等。",
+    "text": "本篇角色资料还没补齐；名单整理完整后，会显示客串王和无本篇客串榜。",
     "note": "cast 不完整时"
   },
   "stats.orderMissing": {
@@ -345,7 +345,7 @@
     "note": "榜单解释"
   },
   "rank.cameoNote": {
-    "text": "在未登记为本篇角色的篇目里，出现了多少次。",
+    "text": "按已完整登记的篇目 cast 统计非本篇出场实例；名单未完整时暂不排名。",
     "note": "榜单解释"
   },
   "rank.noHomeNote": {
@@ -378,20 +378,44 @@
     ]
   },
   "fun.title": {
-    "text": "漫画里的小记录",
+    "text": "趣味榜",
     "note": "趣味榜标题"
   },
   "fun.pairs": {
-    "text": "最常见组合",
-    "note": "共现榜名称"
+    "text": "双向奔赴",
+    "note": "按共同篇目占双方篇目并集的比例排名"
+  },
+  "fun.oneSided": {
+    "text": "单相思",
+    "note": "按双方各自篇目中的共现比例差排序"
   },
   "fun.records": {
     "text": "单篇出场记录",
     "note": "单篇榜名称"
   },
   "fun.pairNote": {
-    "text": "一起出现在多少篇漫画中，不代表剧情里的亲密程度。",
-    "note": "共现说明"
+    "text": "共同篇目 ÷ 双方出现篇目的并集；至少共同出现两篇。比例描述收录分布，不代表剧情亲密度。",
+    "note": "双向共现 Jaccard 比例"
+  },
+  "fun.oneSidedNote": {
+    "text": "按组合标题从左到右显示：左边角色的篇目中右边角色也出现的比例 / 反向比例（至少共同两篇）；只表示收录分布。",
+    "note": "双方各自篇目中的共现比例"
+  },
+  "fun.bidirectionalValue": {
+    "text": "{count} 篇 · {percent}%",
+    "note": "共同篇目和并集比例",
+    "slots": [
+      "count",
+      "percent"
+    ]
+  },
+  "fun.oneSidedValue": {
+    "text": "{firstPercent}% / {secondPercent}%",
+    "note": "按标题角色顺序显示双向比例",
+    "slots": [
+      "firstPercent",
+      "secondPercent"
+    ]
   },
   "fun.recordNote": {
     "text": "一个角色，在同一篇里留下了多少张表情。",

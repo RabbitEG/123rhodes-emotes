@@ -100,7 +100,7 @@
     const kind = $("#ranking-kind").value;
     $("#rank-note").textContent = t("rank." + kind + "Note");
     const rows = stats.rankings[kind];
-    $("#character-ranking").innerHTML = rows === null ? `<p class="empty-copy">${text(kind === "absence" ? "stats.orderMissing" : "stats.castMissing")}</p>` : rows.length ? rows.slice(0, 10).map((c, index) => {
+    $("#character-ranking").innerHTML = rows === null ? `<p class="empty-copy">${text(kind === "absence" ? "stats.orderMissing" : "stats.castMissing")}</p>` : rows.length ? rows.slice(0, 30).map((c, index) => {
       const value = kind === "coverage" ? c.episodes.size : kind === "cameo" ? c.cameo : kind === "absence" ? c.absence : c.count;
       return rankButton(c.name, t(kind === "coverage" ? "rank.episodeValue" : kind === "absence" ? "rank.absenceValue" : "rank.cropValue", { count: number(value) }), `data-character="${escape(c.id)}"`, index);
     }).join("") : `<p class="empty-copy">${text(release.instances.length ? "stats.noRank" : "stats.empty")}</p>`;
@@ -122,8 +122,9 @@
       $("#distribution").innerHTML = `<div class="donut"><svg viewBox="0 0 180 180" role="img" aria-label="${text("stats.chartLabel")}"><title>${text("stats.chartLabel")}</title>${arcs}</svg><div class="donut-center"><strong>${number(release.instances.length)}</strong><span>${text("stats.chartTotal")}</span></div></div><div class="legend">${legend}</div>`;
     }
     renderRanking();
-    $("#pair-ranking").innerHTML = stats.commonPairs.length ? stats.commonPairs.slice(0, 5).map((p, index) => rankButton(t("fun.pairName", { first: stats.characters.get(p.first).name, second: stats.characters.get(p.second).name }), t("rank.episodeValue", { count: p.count }), `data-pair="${escape(p.first + "," + p.second)}"`, index)).join("") : `<p class="empty-copy">${text("stats.noRank")}</p>`;
-    $("#record-ranking").innerHTML = stats.records.length ? stats.records.slice(0, 5).map((r, index) => rankButton(t("fun.recordName", { character: stats.characters.get(r.character).name, episode: stats.episodes.get(r.episode).name }), t("rank.cropValue", { count: r.count }), `data-record-character="${escape(r.character)}" data-record-episode="${escape(r.episode)}"`, index)).join("") : `<p class="empty-copy">${text("stats.noRank")}</p>`;
+    $("#pair-ranking").innerHTML = stats.bidirectionalPairs.length ? stats.bidirectionalPairs.slice(0, 30).map((p, index) => rankButton(t("fun.pairName", { first: stats.characters.get(p.first).name, second: stats.characters.get(p.second).name }), t("fun.bidirectionalValue", { count: p.count, percent: (100 * p.jaccard).toFixed(0) }), `data-pair="${escape(p.first + "," + p.second)}"`, index)).join("") : `<p class="empty-copy">${text("stats.noRank")}</p>`;
+    $("#one-sided-ranking").innerHTML = stats.oneSidedPairs.length ? stats.oneSidedPairs.slice(0, 30).map((p, index) => rankButton(t("fun.pairName", { first: stats.characters.get(p.first).name, second: stats.characters.get(p.second).name }), t("fun.oneSidedValue", { firstPercent: (100 * p.firstRate).toFixed(0), secondPercent: (100 * p.secondRate).toFixed(0) }), `data-pair="${escape(p.first + "," + p.second)}"`, index)).join("") : `<p class="empty-copy">${text("stats.noRank")}</p>`;
+    $("#record-ranking").innerHTML = stats.records.length ? stats.records.slice(0, 30).map((r, index) => rankButton(t("fun.recordName", { character: stats.characters.get(r.character).name, episode: stats.episodes.get(r.episode).name }), t("rank.cropValue", { count: number(r.count) }), `data-record-character="${escape(r.character)}" data-record-episode="${escape(r.episode)}"`, index)).join("") : `<p class="empty-copy">${text("stats.noRank")}</p>`;
   }
   function shuffle(items) {
     for (let i = items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [items[i], items[j]] = [items[j], items[i]]; }

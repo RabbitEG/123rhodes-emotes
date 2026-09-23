@@ -59,7 +59,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     await page.reload();
     await page.waitForFunction(() => document.querySelector("#totals strong").textContent === "4");
     assert.deepEqual(await page.locator("#totals strong").allTextContents(), ["4", "50", "8", "4"]);
-    assert.equal(await page.locator(".legend-row").count(), 6);
+    assert.equal(await page.locator(".legend-row").count(), 7);
     assert.equal(await page.locator("#results-section").count(), 0);
     await page.screenshot({ path: output + "/desktop-data.png", fullPage: true });
     await page.locator("#site-search").fill("别名甲"); await page.locator("#site-search").press("Enter");

@@ -83,23 +83,41 @@
     };
     const pairs = new Map();
     for (const e of episodes.values()) {
-      const ids = [...e.characters].sort();
+      const ids = [...e.characters].sort((a, b) => byName(characters.get(a), characters.get(b)));
       for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
         const key = JSON.stringify([ids[i], ids[j]]);
         if (!pairs.has(key)) pairs.set(key, { first: ids[i], second: ids[j], episodes: [] });
         pairs.get(key).episodes.push(e.id);
       }
     }
-    const commonPairs = [...pairs.values()].map(pair => ({ ...pair, count: pair.episodes.length, name: characters.get(pair.first).name + " × " + characters.get(pair.second).name })).sort(desc("count"));
+    const pairRows = [...pairs.values()].map(pair => {
+      const first = characters.get(pair.first), second = characters.get(pair.second);
+      const count = pair.episodes.length;
+      const unionCount = first.episodes.size + second.episodes.size - count;
+      return {
+        ...pair,
+        count,
+        unionCount,
+        firstRate: count / first.episodes.size,
+        secondRate: count / second.episodes.size,
+        jaccard: unionCount ? count / unionCount : 0,
+        name: first.name + " × " + second.name
+      };
+    });
+    const commonPairs = [...pairRows].sort(desc("count"));
+    const bidirectionalPairs = pairRows.filter(pair => pair.count >= 2)
+      .sort((a, b) => b.jaccard - a.jaccard || b.count - a.count || byName(characters.get(a.first), characters.get(b.first)));
+    const oneSidedPairs = pairRows.filter(pair => pair.count >= 2 && Math.abs(pair.firstRate - pair.secondRate) > 0)
+      .sort((a, b) => Math.abs(b.firstRate - b.secondRate) - Math.abs(a.firstRate - a.secondRate) || b.count - a.count || byName(characters.get(a.first), characters.get(b.first)));
     const records = present.flatMap(c => [...c.perEpisode].map(([eid, count]) => ({ character: c.id, episode: eid, count, name: c.name + " · " + episodes.get(eid).name }))).sort(desc("count"));
     let imageCount = null;
     if (Array.isArray(release.images)) imageCount = release.images.length;
     else if (Number.isInteger(release.overview?.images) && release.overview.images >= 0) imageCount = release.overview.images;
     else if (release.instances.length > 0 && release.instances.every(i => i.image_id)) imageCount = new Set(release.instances.map(i => i.image_id)).size;
-    const chart = rankings.appearances.slice(0, 5).map(c => ({ id: c.id, name: c.name, count: c.count }));
+    const chart = rankings.appearances.slice(0, 10).map(c => ({ id: c.id, name: c.name, count: c.count }));
     const other = release.instances.length - chart.reduce((sum, c) => sum + c.count, 0);
     if (other > 0) chart.push({ id: null, name: null, count: other });
-    return { characters, episodes, rankings, commonPairs, records, chart, imageCount, castReady, orderReady };
+    return { characters, episodes, rankings, commonPairs, bidirectionalPairs, oneSidedPairs, records, chart, imageCount, castReady, orderReady };
   }
   globalThis.RhodesStats = { validate, analyze, assetPath, officialURL };
 })();
