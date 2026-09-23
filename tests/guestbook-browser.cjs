@@ -49,6 +49,7 @@ const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4174";
     await page.goto(base);
     await page.locator("#guestbook-status:has-text('准备中')").waitFor();
     assert.equal(await page.locator("#guestbook-form").isVisible(), false, "Unconfigured board stays closed");
+    assert.equal(await page.locator("#guestbook-list").textContent(), "", "Closed board should not invite an impossible submission");
 
     const pending = [{ id: "11111111-1111-1111-1111-111111111111", body: "请改错别字", created_at: "2026-09-23T00:00:00.000Z", status: "pending" }];
     await page.route("**/api/guestbook/admin?*", route => route.fulfill({ json: { messages: pending } }));

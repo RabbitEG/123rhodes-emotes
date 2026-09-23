@@ -71,6 +71,7 @@
       const sitekey = configResponse.ok ? (await configResponse.json()).guestbook?.turnstileSiteKey : "";
       if (!enabled || typeof sitekey !== "string" || !sitekey.trim()) {
         status.textContent = t("guest.status");
+        if (list.firstElementChild?.classList.contains("guestbook-empty")) list.replaceChildren();
         return;
       }
       status.textContent = t("guest.open");
