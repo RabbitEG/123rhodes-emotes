@@ -16,7 +16,7 @@
 - 表情带按像素速度连续移动；随机/顺序控制实例排列，支持暂停/继续、手动往后看、悬停/聚焦暂停和系统减少动态效果。
 - 手机适配、图片失败提示、清单缺失/错误状态和重试。
 
-**真实图库已上线。** R2 保存 4,803 张人物 crop、683 张低清预览、339 个篇目、368 位角色；公开索引和素材不提交仓库，网站通过 Pages Function binding 读取。留言板代码已备好，D1、Turnstile 和审核密钥配置完成前保持关闭。
+**真实图库已上线。** R2 保存 4,803 张人物 crop、683 张低清预览、339 个篇目、368 位角色；公开索引和素材不提交仓库，网站通过 Pages Function binding 读取。留言板代码已备好，D1、Turnstile 和审核密钥配置完成前保持关闭。站内匿名行为统计和私用汇总页也已实现；独立 D1 与后台密钥配置前，事件会安全丢弃。
 
 本地真实预览：运行 `python3 tools/preview.py --port 4174`，打开 http://127.0.0.1:4174/ 。没有导出包的普通 clone 仍可用下述静态预览检查空状态。
 
@@ -100,6 +100,12 @@ git push
 - 完成 [留言板 Cloudflare 配置](docs/GUESTBOOK_SETUP.md)，开放匿名留言与人工审核。
 - Beta 共现分组可留待以后；当前只有共同出场统计，不解释为关系亲密度。
 
+## 站内访问分析
+
+站内统计记录页面类型、已知角色/篇目/instance 的匿名事件、搜索结果数量分桶、详情来源类别、窄/宽屏类别和粗略国家代码。精确命中公开目录的搜索目标可以汇总；自由文本原文、IP、完整 URL、User-Agent、Cookie、留言正文和逐人浏览轨迹不进入分析 D1。新事件写入时每天最多清理一次超过 90 天的事件明细、超过 30 天的会话关联；若网站一段时间没有新事件，清理会在下一次写入后继续。长期趋势仅保留按日计数。访客可在隐私页退出，浏览器 DNT/GPC 也会被遵循。
+
+配置独立 D1、`ANALYTICS_DB` binding 和私用 `ANALYTICS_ADMIN_KEY` 后，访问 `/analytics-admin.html` 查看页面浏览、热门表情/角色/篇目、搜索结果区间、已知搜索目标、来源、粗略设备地区与日趋势。操作步骤、统计口径、保留和清理方式见 [docs/ANALYTICS_SETUP.md](docs/ANALYTICS_SETUP.md)。它统计的是站内交互事件，不是全部 HTTP 静态资源请求；网络请求总量和页面性能请看 Cloudflare 提供的聚合分析。
+
 ## 目录
 
 ```text
@@ -116,6 +122,7 @@ instance.html           生成：单张表情信息与原漫画出处
 about.html              生成：关于和版权
 privacy.html            生成：隐私
 guestbook-admin.html    生成：私用留言审核入口（必须提供服务器密钥）
+analytics-admin.html    生成：私用站内访问汇总（必须提供独立 D1 和服务器密钥）
 404.html                生成：缺失页；也避免 Pages 把缺失 JSON 回退成首页
 styles.css              共享视觉样式
 app.js                  页面交互与发布数据读取
@@ -126,6 +133,7 @@ assets/                 自制装饰素材（当前只有 SVG 图标）
 docs/                   完整方案与数据协议
 tests/browser.cjs       统计与浏览器验收（仅内存测试数据）
 db/guestbook.sql        独立 D1 留言表
+db/analytics.sql        独立 D1 统计明细与长期聚合表
 tests/real-data.cjs     本地真实数据浏览器验收
 publish/site/           真实公开索引和展示副本，不进 Git
 .env                   本地 R2 凭据，不进 Git

@@ -14,7 +14,7 @@ with tempfile.TemporaryDirectory(prefix='rhodes-copy-test-') as directory:
     target = Path(directory)
     for name in ('content', 'templates', 'config'):
         shutil.copytree(str(ROOT / name), str(target / name))
-    for name in ('styles.css', 'background.js', 'app.js', 'stats.js', 'guestbook.js', 'guestbook-admin.js'):
+    for name in ('styles.css', 'background.js', 'analytics.js', 'analytics-admin.js', 'app.js', 'stats.js', 'guestbook.js', 'guestbook-admin.js'):
         shutil.copyfile(str(ROOT / name), str(target / name))
     builder.ROOT = target
     path = target / 'content/copy.zh-CN.json'

@@ -1,0 +1,20 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#f5f2ff"><title>{{analytics.title}} · {{site.name}}</title><link rel="icon" href="/assets/star.svg" type="image/svg+xml"><link rel="stylesheet" href="/styles.css?v={{asset_version}}"><script src="/background.js?v={{asset_version}}" defer></script><script src="/analytics-admin.js?v={{asset_version}}" defer></script></head>
+<body>{{>header}}<main id="main" class="info-page paper-card analytics-admin"><a class="back-link" href="/">← {{info.back}}</a><h1>{{analytics.title}}</h1><p class="notice">{{analytics.intro}}</p>
+<form id="analytics-login" class="analytics-login"><label for="analytics-key">{{analytics.keyLabel}}</label><input id="analytics-key" name="key" type="password" required minlength="32" autocomplete="off" placeholder="{{analytics.keyPlaceholder}}"><button class="primary" type="submit">{{analytics.login}}</button></form>
+<p id="analytics-feedback" class="analytics-feedback" role="status" aria-live="polite"></p>
+<section id="analytics-panel" hidden>
+  <div class="analytics-toolbar"><label for="analytics-days">{{analytics.rangeLabel}}</label><select id="analytics-days"><option value="7">{{analytics.days7}}</option><option value="30" selected>{{analytics.days30}}</option><option value="90">{{analytics.days90}}</option></select><button id="analytics-refresh" class="pill" type="button">{{analytics.refresh}}</button><button id="analytics-logout" class="pill" type="button">{{analytics.logout}}</button></div>
+  <p id="analytics-generated" class="analytics-generated"></p>
+  <div id="analytics-kpis" class="analytics-kpis"></div>
+  <div class="analytics-report-grid">
+    <article class="analytics-card"><h2>{{analytics.instances}}</h2><div id="analytics-instances"></div></article>
+    <article class="analytics-card"><h2>{{analytics.allTimeInstances}}</h2><div id="analytics-all-instances"></div></article>
+    <article class="analytics-card"><h2>{{analytics.characters}}</h2><div id="analytics-characters"></div></article>
+    <article class="analytics-card"><h2>{{analytics.episodes}}</h2><div id="analytics-episodes"></div></article>
+    <article class="analytics-card"><h2>{{analytics.daily}}</h2><div id="analytics-daily"></div></article>
+    <article class="analytics-card"><h2>{{analytics.searches}}</h2><div id="analytics-searches"></div></article>
+    <article class="analytics-card"><h2>{{analytics.searchTargets}}</h2><div id="analytics-search-targets"></div></article>
+    <article class="analytics-card"><h2>{{analytics.entrySources}}</h2><div id="analytics-sources"></div></article>
+    <article class="analytics-card"><h2>{{analytics.audience}}</h2><div id="analytics-audience"></div></article>
+  </div>
+</section></main>{{>footer}}<script id="site-copy" type="application/json">{{copy_json}}</script></body></html>

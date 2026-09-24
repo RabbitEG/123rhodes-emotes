@@ -703,7 +703,7 @@
     "note": "隐私页面标题"
   },
   "privacy.intro": {
-    "text": "本站没有访客账号系统或自建访问追踪脚本。留言功能仅在完成服务配置后开放。",
+    "text": "本站没有访客账号。为了解检索和图集的使用情况，本站会记录有限的站内行为数据；你可以在本页关闭。",
     "note": "隐私概述"
   },
   "privacy.requestsTitle": {
@@ -719,8 +719,52 @@
     "note": "平台说明标题"
   },
   "privacy.platform": {
-    "text": "Cloudflare Pages 及其网络基础设施可能按其服务条款处理访问请求和安全日志。目前未启用 Cloudflare Web Analytics；如有变化会更新本页。",
+    "text": "网站托管于 Cloudflare Pages。Cloudflare 可能按其服务条款处理连接所需的网络信息和安全日志；本站未启用 Cloudflare Web Analytics。站内使用统计由本站 Pages Function 接收，并写入独立的 D1 分析数据库。",
     "note": "平台隐私说明"
+  },
+  "privacy.analyticsTitle": {
+    "text": "站内使用统计",
+    "note": "自建第一方行为统计说明标题"
+  },
+  "privacy.analytics": {
+    "text": "为了解哪些表情和篇目更常被打开，以及检索是否有结果，本站会记录页面类型、公开的 instance/角色/篇目 ID、搜索模式与结果数量、建议项选择、表情卡片曝光/打开、原站跳转、粗略屏幕类别，以及 Cloudflare 提供的国家/地区代码。未匹配的自由文本搜索词不会发送或保存；留言正文不会进入分析记录。分析数据库不保存原始 IP、完整网址查询参数、完整 User-Agent、请求头或 Cookie。这是站内交互统计，不是逐个静态图片、脚本等 HTTP 请求日志。为区分同一标签页中的连续浏览，浏览器会在 sessionStorage 保存随机会话标识，30 分钟无活动后更换；每当有新统计写入时，服务器每天最多清理一次超过 30 天的会话关联和超过 90 天的事件明细；网站长期没有新统计时，清理会在下一次写入后继续。按日汇总只保留计数。浏览器的“请勿追踪”或 Global Privacy Control 设置会被遵循。",
+    "note": "统计字段、目的和保留期限"
+  },
+  "privacy.analyticsChoiceTitle": {
+    "text": "统计偏好",
+    "note": "站内统计退出控制标题"
+  },
+  "privacy.analyticsChoiceNote": {
+    "text": "关闭后，此浏览器不会再发送站内使用事件；已汇总的统计不会因此删除。设置仅保存在当前浏览器。",
+    "note": "站内统计退出控制说明"
+  },
+  "privacy.analyticsStop": {
+    "text": "关闭此浏览器的站内统计",
+    "note": "关闭统计按钮"
+  },
+  "privacy.analyticsStart": {
+    "text": "允许此浏览器参与站内统计",
+    "note": "重新允许统计按钮"
+  },
+  "privacy.analyticsDnt": {
+    "text": "已遵循浏览器的请勿追踪设置",
+    "note": "浏览器 DNT/GPC 开启时的按钮状态"
+  },
+  "privacy.analyticsDntStatus": {
+    "text": "此浏览器已请求不参与站内统计。",
+    "note": "浏览器 DNT/GPC 开启时的状态说明"
+  },
+  "privacy.analyticsDisabled": {
+    "text": "此浏览器已停止站内统计。",
+    "note": "用户关闭统计后的状态"
+  },
+  "privacy.analyticsEnabled": {
+    "text": "此浏览器当前允许参与站内统计。",
+    "note": "用户重新开启统计后的状态"
+  },
+  "privacy.analyticsPreferenceError": {
+    "text": "浏览器无法保存此项统计偏好。",
+    "note": "无法读写浏览器存储时的提示"
   },
   "privacy.messagesTitle": {
     "text": "留言",
@@ -729,6 +773,255 @@
   "privacy.messages": {
     "text": "留言开放后，本站仅保存留言正文、服务器生成的提交时间、审核状态与审核时间，不要求昵称或账号，也不在留言数据库保存 IP。留言先由站长审核，通过后才公开正文和时间；排除的留言不公开。请勿提交个人信息、链接或他人隐私。若需删除已公开留言，可通过本站关于页的项目仓库链接联系站长。Cloudflare 仍可能按平台规则处理必要的网络与安全日志。",
     "note": "留言隐私说明"
+  },
+  "analytics.title": {
+    "text": "站内访问分析",
+    "note": "私用分析页标题"
+  },
+  "analytics.intro": {
+    "text": "仅供站点维护者查看。这里展示聚合后的访问与检索统计，不展示访客 IP、原始搜索词或逐人浏览记录。",
+    "note": "私用分析页说明"
+  },
+  "analytics.keyLabel": {
+    "text": "后台访问密钥",
+    "note": "分析页密钥输入标签"
+  },
+  "analytics.keyPlaceholder": {
+    "text": "粘贴 Cloudflare 中配置的密钥",
+    "note": "分析页密钥输入提示"
+  },
+  "analytics.login": {
+    "text": "查看统计",
+    "note": "分析页登录按钮"
+  },
+  "analytics.logout": {
+    "text": "退出",
+    "note": "清除内存中的后台密钥"
+  },
+  "analytics.rangeLabel": {
+    "text": "统计范围",
+    "note": "时间范围标签"
+  },
+  "analytics.days7": {
+    "text": "近 7 天",
+    "note": "分析时间范围"
+  },
+  "analytics.days30": {
+    "text": "近 30 天",
+    "note": "分析时间范围"
+  },
+  "analytics.days90": {
+    "text": "近 90 天",
+    "note": "分析时间范围"
+  },
+  "analytics.refresh": {
+    "text": "刷新",
+    "note": "重新载入分析报告"
+  },
+  "analytics.pageViews": {
+    "text": "页面浏览",
+    "note": "访问分析指标"
+  },
+  "analytics.searchesCount": {
+    "text": "搜索与建议选择",
+    "note": "访问分析指标"
+  },
+  "analytics.detailOpens": {
+    "text": "表情详情打开",
+    "note": "访问分析指标"
+  },
+  "analytics.sourceClicks": {
+    "text": "前往原站点击",
+    "note": "访问分析指标"
+  },
+  "analytics.zeroResults": {
+    "text": "零结果检索",
+    "note": "访问分析指标"
+  },
+  "analytics.releaseErrors": {
+    "text": "公开数据读取异常",
+    "note": "统计前端公开清单加载失败事件"
+  },
+  "analytics.sessions": {
+    "text": "短时浏览会话",
+    "note": "基于短时随机标识的近似统计"
+  },
+  "analytics.daysSuffix": {
+    "text": "天",
+    "note": "时间单位"
+  },
+  "analytics.allTimeViews": {
+    "text": "累计页面浏览",
+    "note": "长期聚合指标"
+  },
+  "analytics.allTimeDetailOpens": {
+    "text": "累计详情打开",
+    "note": "长期聚合指标"
+  },
+  "analytics.instances": {
+    "text": "热门表情（所选范围）",
+    "note": "时段表情详情排行"
+  },
+  "analytics.allTimeInstances": {
+    "text": "累计热门表情",
+    "note": "全时段表情详情排行"
+  },
+  "analytics.characters": {
+    "text": "角色详情打开排行",
+    "note": "角色维度统计"
+  },
+  "analytics.episodes": {
+    "text": "篇目详情打开排行",
+    "note": "篇目维度统计"
+  },
+  "analytics.daily": {
+    "text": "每日趋势",
+    "note": "按 UTC 日期汇总"
+  },
+  "analytics.searches": {
+    "text": "检索结果情况",
+    "note": "不显示原始搜索词"
+  },
+  "analytics.searchTargets": {
+    "text": "已知角色 / 篇目搜索目标",
+    "note": "只聚合命中公开角色或篇目目录的搜索，不记录自由输入词"
+  },
+  "analytics.entrySources": {
+    "text": "详情进入来源",
+    "note": "只显示来源类别，不保存完整 referrer"
+  },
+  "analytics.audience": {
+    "text": "粗略设备与地区",
+    "note": "不含精确位置或浏览器指纹"
+  },
+  "analytics.instance": {
+    "text": "表情",
+    "note": "表情排行列标题"
+  },
+  "analytics.character": {
+    "text": "角色",
+    "note": "角色排行列标题"
+  },
+  "analytics.episode": {
+    "text": "篇目",
+    "note": "篇目排行列标题"
+  },
+  "analytics.opens": {
+    "text": "打开次数",
+    "note": "排行表数值列"
+  },
+  "analytics.impressions": {
+    "text": "曝光",
+    "note": "排行表曝光列"
+  },
+  "analytics.clicks": {
+    "text": "点击",
+    "note": "排行表点击列"
+  },
+  "analytics.date": {
+    "text": "日期（UTC）",
+    "note": "趋势日期列"
+  },
+  "analytics.searchMode": {
+    "text": "检索类型",
+    "note": "检索统计表"
+  },
+  "analytics.queryType": {
+    "text": "查询类别",
+    "note": "检索统计表，不显示原词"
+  },
+  "analytics.resultRange": {
+    "text": "结果数量",
+    "note": "检索统计表"
+  },
+  "analytics.count": {
+    "text": "次数",
+    "note": "统计表数量列"
+  },
+  "analytics.entrySource": {
+    "text": "入口类别",
+    "note": "来源统计表"
+  },
+  "analytics.coarseRegionOrScreen": {
+    "text": "粗略类别",
+    "note": "地区或屏幕宽度分类"
+  },
+  "analytics.narrow": {
+    "text": "窄屏",
+    "note": "屏幕宽度分类"
+  },
+  "analytics.wide": {
+    "text": "宽屏",
+    "note": "屏幕宽度分类"
+  },
+  "analytics.unknown": {
+    "text": "未知",
+    "note": "未知设备或地区"
+  },
+  "analytics.zero": {
+    "text": "零结果",
+    "note": "检索结果范围"
+  },
+  "analytics.queryEmpty": {
+    "text": "空检索",
+    "note": "查询类别"
+  },
+  "analytics.queryBrowse": {
+    "text": "浏览全部/筛选",
+    "note": "查询类别"
+  },
+  "analytics.queryFree": {
+    "text": "普通文本（不保存原文）",
+    "note": "查询类别"
+  },
+  "analytics.queryCharacter": {
+    "text": "匹配角色名/别名",
+    "note": "查询类别"
+  },
+  "analytics.queryEpisode": {
+    "text": "匹配篇目名/编号",
+    "note": "查询类别"
+  },
+  "analytics.querySuggestionCharacter": {
+    "text": "选择角色建议",
+    "note": "查询类别"
+  },
+  "analytics.querySuggestionEpisode": {
+    "text": "选择篇目建议",
+    "note": "查询类别"
+  },
+  "analytics.empty": {
+    "text": "所选范围内还没有记录。",
+    "note": "统计表空状态"
+  },
+  "analytics.loading": {
+    "text": "正在读取统计…",
+    "note": "分析报告加载状态"
+  },
+  "analytics.failed": {
+    "text": "统计暂时无法读取，请稍后重试。",
+    "note": "分析 API 错误"
+  },
+  "analytics.notConfigured": {
+    "text": "分析数据库或后台密钥尚未配置；请按项目 docs/ANALYTICS_SETUP.md 完成一次性设置。",
+    "note": "D1 binding / secret 缺失"
+  },
+  "analytics.unauthorized": {
+    "text": "密钥不正确或已失效。",
+    "note": "后台认证失败"
+  },
+  "analytics.keyTooShort": {
+    "text": "密钥至少需要 32 个字符。",
+    "note": "密钥输入校验"
+  },
+  "analytics.loggedOut": {
+    "text": "已退出；后台密钥只在本页内存中使用。",
+    "note": "退出状态"
+  },
+  "analytics.generated": {
+    "text": "报告更新时间：{time} · 滚动清理：事件明细 90 天，会话标识 30 天（有新事件时执行）。",
+    "note": "报告更新时间和活动触发的清理周期",
+    "slots": ["time"]
   },
   "notfound.title": {
     "text": "这一页不在表情簿里",

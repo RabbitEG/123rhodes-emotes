@@ -31,7 +31,7 @@ def build(check=False):
         if slots != set(entry.get('slots', [])):
             raise ValueError('Preserve placeholders for ' + key)
         copy[key] = entry['text']
-    for name in ('app.js', 'stats.js'):
+    for name in ('app.js', 'stats.js', 'analytics-admin.js'):
         script = (ROOT / name).read_text(encoding='utf-8')
         for key in re.findall(r'\bt\("([\w.]+)"\s*[,)]', script):
             if key not in copy:
@@ -51,11 +51,11 @@ def build(check=False):
             for path in backgrounds) or len(set(backgrounds)) != len(backgrounds):
         raise ValueError('Backgrounds must be unique re-encoded R2 WebP paths')
     version = hashlib.sha256((source + settings + ''.join((ROOT / name).read_text(encoding='utf-8')
-                            for name in ('styles.css', 'background.js', 'app.js', 'stats.js', 'guestbook.js', 'guestbook-admin.js'))).encode()).hexdigest()[:12]
+                            for name in ('styles.css', 'background.js', 'analytics.js', 'analytics-admin.js', 'app.js', 'stats.js', 'guestbook.js', 'guestbook-admin.js'))).encode()).hexdigest()[:12]
     values = dict(copy, asset_version=version)
     payload = json.dumps(copy, ensure_ascii=False).replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026')
     outputs = {}
-    for name in ('index', 'search', 'instance', 'about', 'privacy', '404', 'guestbook-admin'):
+    for name in ('index', 'search', 'instance', 'about', 'privacy', '404', 'guestbook-admin', 'analytics-admin'):
         template = (ROOT / ('templates/' + name + '.html')).read_text(encoding='utf-8')
         template = re.sub(r'\{\{>(\w+)\}\}', lambda m: (ROOT / ('templates/partials/' + m[1] + '.html')).read_text(encoding='utf-8'), template)
         template = re.sub(r'\{\{([\w.]+)\}\}', lambda m: payload if m[1] == 'copy_json' else html.escape(values[m[1]], quote=True), template)

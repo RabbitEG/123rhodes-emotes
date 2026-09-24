@@ -12,6 +12,10 @@
   X-Robots-Tag: noindex, nofollow
   Cache-Control: private, no-store
 
+/analytics-admin.html
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: private, no-store
+
 /data/*
   Cache-Control: public, max-age=300, must-revalidate
 

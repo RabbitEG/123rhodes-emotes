@@ -96,6 +96,7 @@
       if (!response.ok) throw new Error(result.error || "unavailable");
       form.elements.body.value = "";
       feedback.textContent = t("guest.sent");
+      window.RhodesAnalytics?.track("guestbook_submit", { context: "unknown" });
     } catch (error) {
       feedback.textContent = t(error.message === "verification_failed" ? "guest.verifyError" : "guest.sendFailed");
     } finally {

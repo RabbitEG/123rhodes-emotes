@@ -23,6 +23,29 @@
     const p = new URLSearchParams(location.search);
     return { mode: p.get("mode") === "episodes" ? "episodes" : "expressions", q: p.get("q") || "", character: p.get("character") || "", episode: p.get("episode") || "", pair: p.get("pair") || "", browse: p.get("browse") === "1" };
   }
+  function analyticsQueryInfo(query, mode) {
+    const normalized = normalize(query);
+    if (!stats) return { query_kind: normalized ? "free_text" : "empty" };
+    if (!normalized) {
+      if (state?.character && stats.characters.has(state.character)) return { query_kind: "known_character", object_type: "character", object_id: state.character };
+      if (state?.episode && stats.episodes.has(state.episode)) return { query_kind: "known_episode", object_type: "episode", object_id: state.episode };
+      return { query_kind: state?.browse ? "browse" : "empty" };
+    }
+    const exactCharacters = [...stats.characters.values()].filter(character => [character.name, ...(character.aliases ?? [])].some(name => normalize(name) === normalized));
+    if (exactCharacters.length === 1) return { query_kind: "known_character", object_type: "character", object_id: exactCharacters[0].id };
+    const exactEpisode = [...stats.episodes.values()].find(episode => normalize(episode.name) === normalized || normalize(episode.id) === normalized);
+    if (exactEpisode) return { query_kind: "known_episode", object_type: "episode", object_id: exactEpisode.id };
+    return { query_kind: "free_text" };
+  }
+  function trackSearchResults() {
+    if (!isSearchPage || !release || !stats) return;
+    const info = analyticsQueryInfo(state.q, state.mode);
+    window.RhodesAnalytics?.track("search_results", {
+      ...info, search_mode: state.mode, result_count: matches.length,
+      context: state.q || state.character || state.episode || state.pair ? "search_grid" : "search_form",
+      release_id: release.release_id,
+    });
+  }
   function go(patch, scroll = false) {
     state = { mode: state.mode, q: "", character: "", episode: "", pair: "", browse: false, ...patch };
     const p = new URLSearchParams();
@@ -35,6 +58,7 @@
     window.RhodesBackground?.rotate();
     visible = Number(config.pageSize) || 36;
     renderSearch();
+    trackSearchResults();
     if (scroll && !$("#results-section").hidden) $("#results-section").scrollIntoView({ block: "start", behavior: motion.matches ? "instant" : "smooth" });
   }
   function matchesCharacter(c, query) {
@@ -115,6 +139,13 @@
     const patch = suggestion.kind === "episode"
       ? { mode: "episodes", q: suggestion.name, episode: suggestion.id }
       : { mode: state.mode, q: suggestion.name, character: suggestion.id };
+    window.RhodesAnalytics?.track("suggestion_select", {
+      object_type: suggestion.kind, object_id: suggestion.id,
+      character_id: suggestion.kind === "character" ? suggestion.id : "",
+      episode_id: suggestion.kind === "episode" ? suggestion.id : "",
+      context: "suggestion", query_kind: suggestion.kind === "character" ? "suggestion_character" : "suggestion_episode",
+      search_mode: state.mode, release_id: release?.release_id,
+    });
     closeSuggestions();
     go(patch, true);
     closeSuggestions();
@@ -125,7 +156,7 @@
   }
   function cropCard(item) {
     const c = stats.characters.get(item.character_id), e = stats.episodes.get(item.episode_id);
-    return `<article class="expression-card" data-instance="${escape(item.id)}"><a class="crop-wrap" href="${escape(instanceURL(item))}" aria-label="${text("detail.open", { character: c.name })}">${image(item.crop_url, t("card.cropAlt", { character: c.name }))}</a><div class="expression-caption"><button class="name-button" data-character="${escape(c.id)}">${escape(c.name)}</button><button class="episode-button" data-episode="${escape(e.id)}">${escape(e.name)}</button></div><div class="source-detail"><button type="button" class="source-toggle" aria-expanded="false" aria-controls="preview-${escape(item.id)}">${text("card.source")} ↗</button><div class="source-peek" id="preview-${escape(item.id)}">${item.source_preview_url ? image(item.source_preview_url, t("card.previewAlt", { episode: e.name })) : `<p>${text("card.previewMissing")}</p>`}<strong>${escape(e.name)}</strong></div></div></article>`;
+    return `<article class="expression-card" data-instance="${escape(item.id)}" data-character="${escape(c.id)}" data-episode="${escape(e.id)}"><a class="crop-wrap" href="${escape(instanceURL(item))}" aria-label="${text("detail.open", { character: c.name })}">${image(item.crop_url, t("card.cropAlt", { character: c.name }))}</a><div class="expression-caption"><button class="name-button" data-character="${escape(c.id)}">${escape(c.name)}</button><button class="episode-button" data-episode="${escape(e.id)}">${escape(e.name)}</button></div><div class="source-detail"><button type="button" class="source-toggle" aria-expanded="false" aria-controls="preview-${escape(item.id)}">${text("card.source")} ↗</button><div class="source-peek" id="preview-${escape(item.id)}">${item.source_preview_url ? image(item.source_preview_url, t("card.previewAlt", { episode: e.name })) : `<p>${text("card.previewMissing")}</p>`}<strong>${escape(e.name)}</strong></div></div></article>`;
   }
   function renderInstance() {
     const status = $("#instance-status"), container = $("#instance-detail");
@@ -152,11 +183,15 @@
     document.title = t("detail.documentTitle", { character: character.name, episode: episode.name });
     status.hidden = true;
     container.hidden = false;
-    container.innerHTML = `<div class="instance-layout"><section class="paper-card instance-main"><div class="instance-heading"><span class="instance-kicker">${text("detail.kicker")}</span><h1>${escape(character.name)}</h1></div><div class="instance-art">${image(item.crop_url, t("card.cropAlt", { character: character.name }), true)}</div><dl class="instance-meta"><div><dt>${text("detail.character")}</dt><dd><button data-character="${escape(character.id)}">${escape(character.name)}</button></dd></div><div><dt>${text("detail.episode")}</dt><dd><button data-episode="${escape(episode.id)}">${escape(episode.name)}</button></dd></div><div class="instance-related"><dt>${text("detail.episodeOthers")}</dt><dd><div class="instance-character-links">${otherCharacterLinks}</div></dd></div></dl></section><aside class="paper-card instance-source"><div class="instance-source-heading"><span aria-hidden="true">✦</span><div><p class="instance-kicker">${text("detail.sourceKicker")}</p><h2>${escape(episode.name)}</h2></div></div><div class="instance-source-art">${item.source_preview_url ? image(item.source_preview_url, t("card.previewAlt", { episode: episode.name }), true) : `<p>${text("card.previewMissing")}</p>`}</div><a class="primary instance-official-link" href="${escape(sourceURL)}" target="_blank" rel="noopener noreferrer">${text("detail.officialLink")} <span aria-hidden="true">↗</span></a></aside></div>`;
+    container.innerHTML = `<div class="instance-layout"><section class="paper-card instance-main"><div class="instance-heading"><span class="instance-kicker">${text("detail.kicker")}</span><h1>${escape(character.name)}</h1></div><div class="instance-art">${image(item.crop_url, t("card.cropAlt", { character: character.name }), true)}</div><dl class="instance-meta"><div><dt>${text("detail.character")}</dt><dd><button data-character="${escape(character.id)}">${escape(character.name)}</button></dd></div><div><dt>${text("detail.episode")}</dt><dd><button data-episode="${escape(episode.id)}">${escape(episode.name)}</button></dd></div><div class="instance-related"><dt>${text("detail.episodeOthers")}</dt><dd><div class="instance-character-links">${otherCharacterLinks}</div></dd></div></dl></section><aside class="paper-card instance-source"><div class="instance-source-heading"><span aria-hidden="true">✦</span><div><p class="instance-kicker">${text("detail.sourceKicker")}</p><h2>${escape(episode.name)}</h2></div></div><div class="instance-source-art">${item.source_preview_url ? image(item.source_preview_url, t("card.previewAlt", { episode: episode.name }), true) : `<p>${text("card.previewMissing")}</p>`}</div><a class="primary instance-official-link" data-source-episode="${escape(episode.id)}" href="${escape(sourceURL)}" target="_blank" rel="noopener noreferrer">${text("detail.officialLink")} <span aria-hidden="true">↗</span></a></aside></div>`;
+    window.RhodesAnalytics?.track("instance_open", {
+      object_type: "instance", object_id: item.id, character_id: character.id, episode_id: episode.id,
+      context: window.RhodesAnalytics.contextForInstanceOpen(), release_id: release.release_id,
+    });
   }
   function episodeCard(e) {
     const first = release.instances.find(item => item.episode_id === e.id);
-    return `<article class="episode-card">${first ? `<button class="episode-cover" data-episode="${escape(e.id)}" aria-label="${text("card.open")} · ${escape(e.name)}">${image(first.crop_url, e.name)}</button>` : '<span class="episode-cover empty-cover" aria-hidden="true">✦</span>'}<div><h3><button class="name-button" data-episode="${escape(e.id)}">${escape(e.name)}</button></h3><p>${text("card.episodeMeta", { crops: e.count, characters: e.characters.size })}</p><div class="episode-characters">${[...e.characters].slice(0, 5).map(cid => `<button data-character="${escape(cid)}">${escape(stats.characters.get(cid).name)}</button>`).join("")}</div><a href="${escape(officialURL(e.official_url))}" target="_blank" rel="noopener noreferrer">${text("card.official")}</a></div></article>`;
+    return `<article class="episode-card" data-episode="${escape(e.id)}">${first ? `<button class="episode-cover" data-episode="${escape(e.id)}" aria-label="${text("card.open")} · ${escape(e.name)}">${image(first.crop_url, e.name)}</button>` : '<span class="episode-cover empty-cover" aria-hidden="true">✦</span>'}<div><h3><button class="name-button" data-episode="${escape(e.id)}">${escape(e.name)}</button></h3><p>${text("card.episodeMeta", { crops: e.count, characters: e.characters.size })}</p><div class="episode-characters">${[...e.characters].slice(0, 5).map(cid => `<button data-character="${escape(cid)}">${escape(stats.characters.get(cid).name)}</button>`).join("")}</div><a href="${escape(officialURL(e.official_url))}" target="_blank" rel="noopener noreferrer">${text("card.official")}</a></div></article>`;
   }
   function renderSearch() {
     if (isInstancePage || !$("#site-search")) return;
@@ -191,6 +226,8 @@
     const grid = $("#results-grid");
     grid.classList.toggle("episodes-grid", state.mode === "episodes");
     grid.innerHTML = matches.length ? matches.slice(0, visible).map(state.mode === "episodes" ? episodeCard : cropCard).join("") : `<div class="empty-result"><span aria-hidden="true">(・_・?)</span><p>${text("search.noResults")}</p></div>`;
+    if (state.mode === "episodes") window.RhodesAnalytics?.observeEpisodes(grid);
+    else window.RhodesAnalytics?.observeInstances(grid, "search_grid");
     $("#pagination-status").textContent = matches.length ? t("search.shown", { shown: Math.min(visible, matches.length), total: matches.length }) : "";
     $("#load-more").hidden = visible >= matches.length;
   }
@@ -243,7 +280,8 @@
     $("#ribbon-track").removeAttribute("aria-hidden");
     const cards = items.slice(0, max).map(item => {
       const c = stats.characters.get(item.character_id);
-      return `<a class="sticker" data-instance="${escape(item.id)}" href="${escape(instanceURL(item))}" aria-label="${text("detail.open", { character: c.name })}">${image(item.crop_url, t("card.cropAlt", { character: c.name }), true)}<span class="sticker-label">${escape(c.name)}</span></a>`;
+      const e = stats.episodes.get(item.episode_id);
+      return `<a class="sticker" data-instance="${escape(item.id)}" data-character="${escape(c.id)}" data-episode="${escape(e.id)}" href="${escape(instanceURL(item))}" aria-label="${text("detail.open", { character: c.name })}">${image(item.crop_url, t("card.cropAlt", { character: c.name }), true)}<span class="sticker-label">${escape(c.name)}</span></a>`;
     }).join("");
     const track = $("#ribbon-track");
     track.classList.add("is-marquee");
@@ -263,6 +301,7 @@
       $$("a", clone).forEach(link => { link.tabIndex = -1; });
       track.append(clone);
     }
+    window.RhodesAnalytics?.observeInstances(group, "home_ribbon");
     marqueePosition = 0; $("#ribbon").scrollLeft = 0;
   }
   function animateRibbon(now) {
@@ -291,12 +330,14 @@
       if (response.status === 404) { if (status) status.textContent = t(isInstancePage ? "detail.unpublished" : "search.unpublished"); return; }
       if (!response.ok) throw new Error("Release unavailable");
       release = validate(await response.json()); stats = analyze(release);
+      window.RhodesAnalytics?.setReleaseId(release.release_id);
       if (isInstancePage) renderInstance();
-      else { renderSearch(); if (!isSearchPage) { renderStats(); drawRibbon(); } }
+      else { renderSearch(); if (isSearchPage) trackSearchResults(); else { renderStats(); drawRibbon(); } }
     } catch (error) {
       release = undefined; stats = undefined;
       if (status) status.textContent = t(isInstancePage ? "detail.failed" : "search.failed");
       if (retry) retry.hidden = false;
+      window.RhodesAnalytics?.track("release_error", { context: "fetch_failed" });
       console.warn("Public release unavailable:", error.message);
     }
   }
@@ -324,8 +365,11 @@
       });
       searchForm.addEventListener("submit", event => {
         event.preventDefault();
+        const query = searchInput.value.trim();
+        const info = query ? analyticsQueryInfo(query, state.mode) : { query_kind: "browse" };
+        window.RhodesAnalytics?.track("search_submit", { ...info, search_mode: state.mode, context: "search_form", release_id: release?.release_id });
         closeSuggestions();
-        go({ q: searchInput.value.trim(), browse: !searchInput.value.trim() }, true);
+        go({ q: query, browse: !query }, true);
       });
     }
     $$("[data-mode]").forEach(b => b.addEventListener("click", () => {
@@ -342,7 +386,7 @@
         if (previous.origin === location.origin && previous.pathname === "/search.html") { event.preventDefault(); history.back(); }
       } catch { /* Keep the search-page fallback link. */ }
     });
-    window.addEventListener("popstate", () => { state = readState(); visible = Number(config.pageSize) || 36; renderSearch(); window.RhodesBackground?.rotate(); });
+    window.addEventListener("popstate", () => { state = readState(); visible = Number(config.pageSize) || 36; renderSearch(); trackSearchResults(); window.RhodesBackground?.rotate(); });
     document.addEventListener("click", event => {
       const suggestion = event.target.closest("[data-suggestion-index]");
       if (suggestion) {
