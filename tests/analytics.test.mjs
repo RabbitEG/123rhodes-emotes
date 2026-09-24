@@ -3,6 +3,7 @@ import { webcrypto } from "node:crypto";
 import { normalizeAnalyticsEvent, resultBucket } from "../lib/analytics.mjs";
 import { onRequestPost } from "../functions/api/analytics.js";
 import { onRequestGet } from "../functions/api/analytics/admin.js";
+import { onRequestGet as onRequestSearchRanking } from "../functions/api/analytics/search-ranking.js";
 
 globalThis.crypto ||= webcrypto;
 
@@ -80,4 +81,22 @@ assert.equal((await onRequestGet({ request: adminRequest("incorrect"), env })).s
 const reportResponse = await onRequestGet({ request: adminRequest(secret), env });
 assert.equal(reportResponse.status, 200);
 assert.equal((await reportResponse.json()).configured, true);
+
+const searchRankingDb = {
+  prepare(sql) {
+    assert.match(sql, /analytics_daily_counts/);
+    assert.match(sql, /search_submit.*suggestion_select/s);
+    return { async all() { return { results: [
+      { id: "char-amiya", searches: 14 },
+      { id: "char-doctor", searches: 6 },
+    ] }; } };
+  },
+};
+const searchRankingResponse = await onRequestSearchRanking({ env: { ANALYTICS_DB: searchRankingDb } });
+assert.equal(searchRankingResponse.status, 200);
+assert.equal(searchRankingResponse.headers.get("Cache-Control"), "public, max-age=60, s-maxage=300");
+assert.deepEqual((await searchRankingResponse.json()).items, [
+  { id: "char-amiya", searches: 14 }, { id: "char-doctor", searches: 6 },
+]);
+assert.deepEqual((await (await onRequestSearchRanking({ env: {} })).json()).items, [], "Missing analytics stays fail-soft for public pages");
 console.log("Analytics: allowlist, privacy stripping, DNT, same-origin, batching, idempotency, and admin auth passed");

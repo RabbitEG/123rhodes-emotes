@@ -116,6 +116,7 @@
     const desc = field => (a, b) => b[field] - a[field] || byName(a, b);
     const rankings = {
       appearances: [...present].sort(desc("count")),
+      searches: [],
       coverage: [...present].sort((a, b) => b.episodes.size - a.episodes.size || b.count - a.count || byName(a, b)),
       rare: [...present].sort((a, b) => a.count - b.count || byName(a, b)),
       cameo: castReady ? present.filter(c => c.cameo > 0).sort(desc("cameo")) : null,

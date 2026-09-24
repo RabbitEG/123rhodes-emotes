@@ -18,6 +18,7 @@ const a = analyze(validate(data));
 assert.equal(instances.length, 50);
 assert.equal(a.imageCount, 4);
 assert.equal(a.characters.get("c0").count, 40);
+assert.deepEqual(a.rankings.searches, []);
 assert.equal(a.characters.get("c0").episodes.size, 2);
 assert.equal(a.commonPairs.find(p => p.first === "c0" && p.second === "c1").count, 2);
 assert.equal(a.records[0].count, 39);
@@ -65,6 +66,9 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
       const filename = pathname === "/" ? "index.html" : pathname.slice(1);
       return route.fulfill({ status: 200, contentType: "text/html; charset=utf-8", body: fs.readFileSync(path.join(__dirname, "..", filename)), headers: { "content-security-policy": csp } });
     });
+    await page.route(base + "/api/analytics/search-ranking", route => route.fulfill({ json: { items: [
+      { id: "c1", searches: 37 }, { id: "c0", searches: 12 }, { id: "retired-id", searches: 99 },
+    ] } }));
     await page.goto(base);
     await page.locator("#search-status:has-text('还没上架')").waitFor({ state: "attached" });
     assert.equal(await page.locator("#totals strong").allTextContents().then(x => x.join(",")), "—,—,—,—");
@@ -101,6 +105,10 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     await page.goto(base); await page.waitForSelector(".legend-row");
     await page.locator("#ranking-kind").selectOption("rare");
     assert(!(await page.locator("#character-ranking").textContent()).includes("测试零"));
+    await page.locator("#ranking-kind").selectOption("searches");
+    await page.waitForFunction(() => document.querySelector("#character-ranking")?.textContent.includes("37 次"));
+    assert((await page.locator("#character-ranking .rank-row").first().textContent()).includes("测试乙"), "Search ranking should sort by aggregate counts");
+    assert.equal(await page.locator("#character-ranking .rank-row").count(), 2, "Unknown/retired IDs should not appear in the public ranking");
     await page.locator("#pair-ranking .rank-row").first().click();
     await page.waitForURL("**/search.html?*"); await page.waitForSelector(".expression-card");
     assert.equal(await page.locator("#result-count").textContent(), "44 张表情");

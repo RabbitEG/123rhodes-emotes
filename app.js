@@ -240,10 +240,28 @@
     $("#rank-note").textContent = t("rank." + kind + "Note");
     const rows = stats.rankings[kind];
     $("#character-ranking").innerHTML = rows === null ? `<p class="empty-copy">${text(kind === "absence" ? "stats.orderMissing" : "stats.castMissing")}</p>` : rows.length ? rows.slice(0, 30).map((c, index) => {
-      const value = kind === "coverage" ? c.episodes.size : kind === "cameo" ? c.cameo : kind === "absence" ? c.absence : c.count;
-      const valueKey = kind === "coverage" ? "rank.episodeValue" : kind === "absence" ? "rank.absenceValue" : kind === "cameo" ? "rank.cropEpisodeValue" : "rank.cropValue";
+      const value = kind === "coverage" ? c.episodes.size : kind === "cameo" ? c.cameo : kind === "absence" ? c.absence : kind === "searches" ? c.searches : c.count;
+      const valueKey = kind === "coverage" ? "rank.episodeValue" : kind === "absence" ? "rank.absenceValue" : kind === "cameo" ? "rank.cropEpisodeValue" : kind === "searches" ? "rank.searchValue" : "rank.cropValue";
       return rankButton(c.name, t(valueKey, { count: number(value), episodes: number(c.cameoEpisodes.size) }), `data-character="${escape(c.id)}"`, index);
     }).join("") : `<p class="empty-copy">${text(release.instances.length ? "stats.noRank" : "stats.empty")}</p>`;
+  }
+  async function loadSearchRanking() {
+    if (!stats || isSearchPage || isInstancePage) return;
+    try {
+      const response = await fetch("/api/analytics/search-ranking", { cache: "no-store" });
+      if (!response.ok) return;
+      const payload = await response.json();
+      stats.rankings.searches = (Array.isArray(payload.items) ? payload.items : [])
+        .map(item => {
+          const character = stats.characters.get(String(item.id));
+          const searches = Number(item.searches);
+          return character && Number.isSafeInteger(searches) && searches > 0 ? { ...character, searches } : null;
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.searches - a.searches || a.name.localeCompare(b.name, "zh-CN"))
+        .slice(0, 30);
+      if ($("#ranking-kind")?.value === "searches") renderRanking();
+    } catch { /* Analytics rankings are optional; the rest of the site remains available. */ }
   }
   function renderStats() {
     $("#totals").innerHTML = [["episodes", release.episodes.length], ["instances", release.instances.length], ["characters", release.characters.length], ["images", stats.imageCount]].map(([key, value]) => `<article><strong>${value === null ? "—" : number(value)}</strong><span>${text("stats." + key)}</span></article>`).join("");
@@ -332,7 +350,7 @@
       release = validate(await response.json()); stats = analyze(release);
       window.RhodesAnalytics?.setReleaseId(release.release_id);
       if (isInstancePage) renderInstance();
-      else { renderSearch(); if (isSearchPage) trackSearchResults(); else { renderStats(); drawRibbon(); } }
+      else { renderSearch(); if (isSearchPage) trackSearchResults(); else { renderStats(); void loadSearchRanking(); drawRibbon(); } }
     } catch (error) {
       release = undefined; stats = undefined;
       if (status) status.textContent = t(isInstancePage ? "detail.failed" : "search.failed");
