@@ -20,7 +20,7 @@
   "carousel": {
     "enabled": true,
     "mode": "random",
-    "speedPixelsPerSecond": 22,
+    "speedPixelsPerSecond": 28,
     "maxItems": 16
   }
 }

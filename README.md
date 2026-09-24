@@ -65,7 +65,7 @@ git push
 | theme.backgroundImages | R2 封面路径列表；每次进入页面或刷新时随机选择，尽量不与上一页重复 |
 | carousel.enabled | 是否使用已发布图填入轮播 |
 | carousel.mode | random / sequential |
-| carousel.speedPixelsPerSecond | 每秒移动像素，默认22，范围5–60；从右向左连续滚动 |
+| carousel.speedPixelsPerSecond | 每秒移动像素，默认28，范围5–60；从右向左连续滚动 |
 | carousel.maxItems | 轮播最多图片数，4–32 |
 | pageSize | 每批检索结果数量，默认 36 |
 | releaseManifest | 发布清单路径，默认 /data/release.json |

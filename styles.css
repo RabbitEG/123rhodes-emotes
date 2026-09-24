@@ -52,7 +52,7 @@ button { border: 0; }
 .search-page-heading .back-link { font-size: 14px; }
 .search-page-heading .search-hint { margin-top: 13px; }
 body[data-page="search"] #results-section { min-height: 45vh; }
-.sticker { position: relative; display: flex; align-items: center; justify-content: center; flex: 0 0 190px; height: 180px; padding: 15px 16px 27px; border: 2px solid white; border-radius: 12px; outline: 1px solid #e1d6ee; background: #fffdfc; text-decoration: none; box-shadow: 4px 6px 0 #ddd3ed60; transform: rotate(-5deg); transition: transform .2s; }
+.sticker { position: relative; display: flex; align-items: center; justify-content: center; flex: 0 0 190px; aspect-ratio: 19 / 18; height: auto; padding: 15px 16px 27px; border: 2px solid white; border-radius: 12px; outline: 1px solid #e1d6ee; background: #fffdfc; text-decoration: none; box-shadow: 4px 6px 0 #ddd3ed60; transform: rotate(-5deg); transition: transform .2s; }
 .sticker:nth-child(2n) { transform: rotate(5deg); background: #fff4f5; }
 .sticker:nth-child(3n) { transform: rotate(-2deg); background: #eff9f5; }
 .sticker:nth-child(4n) { transform: rotate(3deg); background: #fff9e7; }
@@ -242,7 +242,7 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
   .site-header nav a:last-child { display: none; }
   .ribbon { padding-top: 20px; padding-bottom: 16px; }
   .ribbon-track { gap: 16px; }
-  .sticker { flex-basis: 140px; height: 135px; padding: 11px 9px 22px; border-radius: 10px; }
+  .sticker { flex-basis: 140px; padding: 11px 9px 22px; border-radius: 10px; }
   .dummy { font-size: 18px; }
   .hero { min-height: calc(100vh - 70px); min-height: calc(100svh - 70px); padding-bottom: 22px; }
   .hero-center { margin: clamp(20px, 4vh, 38px) auto 72px; }
@@ -299,11 +299,11 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
 }
 @media (max-height: 720px) {
   .ribbon { padding-top: 12px; padding-bottom: 10px; }
-  .sticker { height: clamp(120px, 22vh, 170px); }
+  .sticker { flex-basis: clamp(126.7px, 23.22vh, 179.5px); }
   .hero-center { margin-top: clamp(16px, 3vh, 28px); margin-bottom: 68px; }
 }
 @media (max-height: 600px) and (max-width: 700px) {
-  .sticker { height: clamp(100px, 30vh, 130px); }
+  .sticker { flex-basis: clamp(105.5px, 23.33vh, 137px); }
   .hero-center { margin-top: 16px; margin-bottom: 64px; }
 }
 @media (prefers-reduced-motion: reduce) {

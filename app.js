@@ -171,7 +171,7 @@
       const paused = motion.matches || ribbonHovered || ribbonFocused || document.hidden || now < manualUntil;
       if (paused) marqueePosition = ribbon.scrollLeft;
       else {
-        const speed = Math.max(5, Math.min(60, Number(config.carousel?.speedPixelsPerSecond) || 22));
+        const speed = Math.max(5, Math.min(60, Number(config.carousel?.speedPixelsPerSecond) || 28));
         marqueePosition = (marqueePosition + elapsed * speed) % marqueeWidth;
         ribbon.scrollLeft = marqueePosition;
       }
