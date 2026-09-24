@@ -1,4 +1,4 @@
-import { available, getOrCreateGuestbookUser, json, readSmallJson, sameOrigin, validMessage, verifyTurnstile } from "../../lib/guestbook.mjs";
+import { available, json, prepareGuestbookSubmission, readSmallJson, sameOrigin, validMessage, verifyTurnstile, visitorCookie } from "../../lib/guestbook.mjs";
 
 export async function onRequestGet({ request, env }) {
   if (!env.GUESTBOOK_DB) return json({ enabled: false, messages: [], has_more: false });
@@ -34,10 +34,46 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "verification_failed" }, 400);
   }
   try {
-    const user = await getOrCreateGuestbookUser(request, env);
-    await env.GUESTBOOK_DB.prepare(
-      "INSERT INTO guestbook_messages (id, body, created_at, status, source_type, source_id, user_id) VALUES (?, ?, ?, 'pending', ?, ?, ?)"
-    ).bind(crypto.randomUUID(), body, new Date().toISOString(), sourceType, sourceId, user.userId).run();
-    return json({ ok: true, status: "pending", author_name: user.displayName }, 201, { "Set-Cookie": user.cookie });
-  } catch { return json({ error: "unavailable" }, 503); }
+    const user = await prepareGuestbookSubmission(request, env, input?.display_name);
+    const messageId = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
+    const messageForUser = user.existing
+      ? env.GUESTBOOK_DB.prepare(
+        "INSERT INTO guestbook_messages (id, body, created_at, status, source_type, source_id, user_id) VALUES (?, ?, ?, 'pending', ?, ?, ?)"
+      ).bind(messageId, body, createdAt, sourceType, sourceId, user.userId)
+      : env.GUESTBOOK_DB.prepare(
+        "INSERT INTO guestbook_messages (id, body, created_at, status, source_type, source_id, user_id) SELECT ?, ?, ?, 'pending', ?, ?, user_id FROM guestbook_users WHERE token_hash = ?"
+      ).bind(messageId, body, createdAt, sourceType, sourceId, user.tokenHash);
+    const statements = user.existing ? [messageForUser] : [
+      env.GUESTBOOK_DB.prepare(
+        "INSERT OR IGNORE INTO guestbook_users (token_hash, display_name, created_at) VALUES (?, ?, ?)"
+      ).bind(user.tokenHash, user.displayName, createdAt),
+      messageForUser,
+    ];
+    const result = await env.GUESTBOOK_DB.batch(statements);
+    const messageChanges = result?.at(-1)?.meta?.changes;
+    if (messageChanges === 0) {
+      if (!user.existing) {
+        const racedUser = await env.GUESTBOOK_DB.prepare(
+          "SELECT user_id, display_name FROM guestbook_users WHERE token_hash = ?"
+        ).bind(user.tokenHash).first();
+        if (!racedUser) {
+          const error = new Error("Guestbook nickname was claimed");
+          error.code = "nickname_taken";
+          throw error;
+        }
+      }
+      throw new Error("Guestbook message was not stored");
+    }
+    const persistedUser = user.existing ? user : await env.GUESTBOOK_DB.prepare(
+      "SELECT user_id, display_name FROM guestbook_users WHERE token_hash = ?"
+    ).bind(user.tokenHash).first();
+    if (!persistedUser) throw new Error("Guestbook user was not stored");
+    const cookie = visitorCookie(user.token);
+    return json({ ok: true, status: "pending", author_name: user.existing ? user.displayName : persistedUser.display_name }, 201, { "Set-Cookie": cookie });
+  } catch (error) {
+    if (error?.code === "nickname_taken") return json({ error: "nickname_taken" }, 409);
+    if (error?.code === "invalid_nickname") return json({ error: "invalid_nickname" }, 400);
+    return json({ error: "unavailable" }, 503);
+  }
 }

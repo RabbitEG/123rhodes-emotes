@@ -18,12 +18,24 @@ const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4174";
       instances: [{ id: "instance-1", character_id: "amiya", episode_id: "episode-1", crop_url: "/media/crops/test.webp", source_preview_url: "/media/source-previews/test.webp" }],
     };
     const anonymousName = "提丰#799";
+    let previewName = anonymousName;
+    let browserRegistered = false;
+    let registeredName = "";
+    let submittedCount = 0;
     await page.route("**/config/site.json", route => route.fulfill({ json: { theme: { backgroundImages: covers }, guestbook: { turnstileSiteKey: "test-sitekey" } } }));
     await page.route("**/data/release.json", route => route.fulfill({ json: detailRelease }));
     await page.route("**/api/guestbook*", async route => {
+      const url = new URL(route.request().url());
+      if (url.pathname.endsWith("/identity")) {
+        if (!browserRegistered && url.searchParams.has("exclude")) previewName = previewName === "提丰#799" ? "阿米娅#042" : "提丰#799";
+        return route.fulfill({ json: { enabled: boardEnabled, registered: browserRegistered, author_name: browserRegistered ? registeredName : previewName } });
+      }
       if (route.request().method() === "GET") return route.fulfill({ json: { enabled: boardEnabled, messages: boardEnabled ? [{ body: "你好 <script>alert(1)</script>", created_at: "2026-09-23T00:00:00.000Z", author_name: anonymousName }] : [], has_more: false } });
       submitted = route.request().postDataJSON();
-      return route.fulfill({ status: 201, json: { ok: true, status: "pending", author_name: anonymousName } });
+      submittedCount++;
+      browserRegistered = true;
+      registeredName = submitted.display_name;
+      return route.fulfill({ status: 201, json: { ok: true, status: "pending", author_name: registeredName } });
     });
     let submitted;
     await page.route("https://challenges.cloudflare.com/turnstile/v0/api.js?*", route => route.fulfill({ contentType: "application/javascript", body: "window.turnstile={render:(_selector, options)=>{options.callback('test-token');return 1;},reset:()=>{}};" }));
@@ -34,17 +46,29 @@ const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4174";
     assert.match(await page.locator(".guestbook-entry p").textContent(), /<script>/);
     assert.equal(await page.locator(".guestbook-author").first().textContent(), anonymousName);
     assert.equal(await page.locator("script:not([src])").count() >= 1, true); // Copy JSON remains inert.
+    assert.equal(await page.locator("#guestbook-author-preview").textContent(), anonymousName, "The default nickname is visible before sending");
+    await page.locator("#guestbook-reroll").click();
+    assert.equal(await page.locator("#guestbook-author-preview").textContent(), "阿米娅#042", "Visitors can reroll the preview name");
+    assert.equal(submittedCount, 0, "Previewing and rerolling does not submit/register a user");
     await page.locator("#guestbook").screenshot({ path: path.join(__dirname, "../test-results/guestbook-home.png") });
+    await page.locator("#guestbook-body").fill("第一行");
+    await page.locator("#guestbook-body").press("Shift+Enter");
+    await page.locator("#guestbook-body").type("第二行");
+    assert.equal(submittedCount, 0, "Shift+Enter inserts a newline instead of submitting");
+    assert.match(await page.locator("#guestbook-body").inputValue(), /第一行\n第二行/);
     await page.locator("#guestbook-body").fill("这张表情好可爱");
-    await page.locator("#guestbook-send").click();
-    await page.getByText(/你的匿名名称是 提丰#799/).waitFor();
+    await page.locator("#guestbook-body").press("Enter");
+    await page.getByText(/你的匿名名称是 阿米娅#042/).waitFor();
     assert.equal(submitted.body, "这张表情好可爱");
+    assert.equal(submitted.display_name, "阿米娅#042");
     assert.equal(submitted.turnstile_token, "test-token");
     assert.equal(submitted.source_type, "home");
     assert.equal(await page.locator(".guestbook-entry").count(), 1, "Pending submission must not auto-publish");
     await page.goto(base + "/instance.html?id=instance-1");
     await page.locator("#guestbook-form").waitFor({ state: "visible" });
     assert.match(await page.locator("#guestbook").textContent(), /角色、裁切或篇目信息有误/);
+    assert.equal(await page.locator("#guestbook-author-preview").textContent(), "阿米娅#042", "After sending, the same browser retains its chosen nickname");
+    assert.equal(await page.locator("#guestbook-reroll").isVisible(), false, "A registered nickname cannot be rerolled");
     await page.locator("#guestbook-body").fill("详情页的角色可能标错了");
     await page.locator("#guestbook-send").click();
     await page.getByText(/你的匿名名称是 提丰#799/).waitFor();

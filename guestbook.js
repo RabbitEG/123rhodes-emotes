@@ -7,7 +7,11 @@
   const status = document.querySelector("#guestbook-status");
   const feedback = document.querySelector("#guestbook-feedback");
   const send = document.querySelector("#guestbook-send");
+  const authorPreview = document.querySelector("#guestbook-author-preview");
+  const reroll = document.querySelector("#guestbook-reroll");
+  const bodyField = form.elements.body;
   let token = "", widgetId;
+  let authorName = "", registered = false;
   const sourceType = document.body.dataset.page === "instance" ? "instance" : "home";
   const sourceId = sourceType === "instance" ? new URLSearchParams(location.search).get("id") || "" : "";
 
@@ -54,6 +58,28 @@
     return data.enabled;
   }
 
+  function showIdentity(data) {
+    if (typeof data.author_name !== "string" || !data.author_name) throw new Error("identity_unavailable");
+    authorName = data.author_name;
+    registered = data.registered === true;
+    authorPreview.textContent = authorName;
+    reroll.hidden = registered;
+    reroll.disabled = false;
+  }
+
+  async function refreshIdentity(exclude = "") {
+    const params = new URLSearchParams();
+    if (exclude) params.set("exclude", exclude);
+    const query = params.toString();
+    const response = await fetch("/api/guestbook/identity" + (query ? "?" + query : ""), {
+      cache: "no-store", credentials: "same-origin",
+    });
+    if (!response.ok) throw new Error("identity_unavailable");
+    const data = await response.json();
+    if (!data.enabled) throw new Error("identity_unavailable");
+    showIdentity(data);
+  }
+
   function startTurnstile(sitekey) {
     const script = document.createElement("script");
     script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
@@ -82,15 +108,31 @@
         if (list.firstElementChild?.classList.contains("guestbook-empty")) list.replaceChildren();
         return;
       }
+      await refreshIdentity();
       status.textContent = t("guest.open");
       form.hidden = false;
       startTurnstile(sitekey);
     } catch { status.textContent = t("guest.unavailable"); }
   }
 
+  reroll.addEventListener("click", async () => {
+    if (registered || reroll.disabled) return;
+    reroll.disabled = true;
+    feedback.textContent = "";
+    try { await refreshIdentity(authorName); }
+    catch { feedback.textContent = t("guest.identityUnavailable"); }
+    finally { reroll.disabled = registered; }
+  });
+
+  bodyField.addEventListener("keydown", event => {
+    if (event.key !== "Enter" || event.shiftKey || event.isComposing || event.keyCode === 229) return;
+    event.preventDefault();
+    if (!send.disabled) form.requestSubmit(send);
+  });
+
   form.addEventListener("submit", async event => {
     event.preventDefault();
-    const body = form.elements.body.value.trim();
+    const body = bodyField.value.trim();
     if (!body || [...body].length > 500) { feedback.textContent = t("guest.invalid"); return; }
     if (!token) { feedback.textContent = t("guest.verifyFirst"); return; }
     send.disabled = true;
@@ -98,15 +140,26 @@
     try {
       const response = await fetch("/api/guestbook", {
         method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body, turnstile_token: token, source_type: sourceType, source_id: sourceId }),
+        body: JSON.stringify({ body, display_name: authorName, turnstile_token: token, source_type: sourceType, source_id: sourceId }),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "unavailable");
-      form.elements.body.value = "";
+      if (!response.ok) {
+        if (result.error === "nickname_taken") {
+          try { await refreshIdentity(authorName); } catch { /* Keep the old preview visible if refreshing fails. */ }
+          feedback.textContent = t("guest.nicknameTaken");
+          return;
+        }
+        throw new Error(result.error || "unavailable");
+      }
+      bodyField.value = "";
+      authorName = result.author_name || authorName;
+      registered = true;
+      authorPreview.textContent = authorName;
+      reroll.hidden = true;
       feedback.textContent = t("guest.sent").replace("{author}", result.author_name || t("guest.legacyAuthor"));
       window.RhodesAnalytics?.track("guestbook_submit", { context: "unknown" });
     } catch (error) {
-      feedback.textContent = t(error.message === "verification_failed" ? "guest.verifyError" : "guest.sendFailed");
+      feedback.textContent = t(error.message === "verification_failed" ? "guest.verifyError" : error.message === "invalid_nickname" ? "guest.identityUnavailable" : "guest.sendFailed");
     } finally {
       token = "";
       if (widgetId !== undefined) window.turnstile?.reset(widgetId);

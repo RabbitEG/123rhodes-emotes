@@ -3,6 +3,7 @@ import { webcrypto } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import { onRequestGet as listPublic, onRequestPost as submit } from "../functions/api/guestbook.js";
+import { onRequestGet as identity } from "../functions/api/guestbook/identity.js";
 import { onRequestGet as listAdmin, onRequestPost as moderate } from "../functions/api/guestbook/admin.js";
 import { aliasForDraw, weightedSuffixForDraw } from "../lib/guestbook.mjs";
 
@@ -10,6 +11,7 @@ if (!globalThis.crypto) globalThis.crypto = webcrypto;
 const rows = [];
 const users = [];
 let nextUserId = 0;
+let failNextMessageInsert = false;
 const roster = [
   { id: "amiya", name: "阿米娅", type: "canonical" },
   { id: "typhon", name: "提丰", type: "canonical" },
@@ -18,11 +20,14 @@ const roster = [
 const db = {
   prepare(query) {
     let params = [];
-    return {
+    const statement = {
+      query,
+      get params() { return params; },
       bind(...values) { params = values; return this; },
       async first() {
         if (query.includes("COUNT(*) AS total_users")) return { total_users: users.length };
         if (query.includes("FROM guestbook_users WHERE token_hash")) return users.find(user => user.token_hash === params[0]) || null;
+        if (query.includes("FROM guestbook_users WHERE display_name")) return users.find(user => user.display_name === params[0]) || null;
         return null;
       },
       async all() {
@@ -54,6 +59,35 @@ const db = {
         return { meta: { changes: row ? 1 : 0 } };
       },
     };
+    return statement;
+  },
+  async batch(statements) {
+    const usersBefore = users.map(user => ({ ...user }));
+    const rowsBefore = rows.map(row => ({ ...row }));
+    const userIdBefore = nextUserId;
+    const result = [];
+    try {
+      for (const statement of statements) {
+        if (failNextMessageInsert && statement.query.includes("INSERT INTO guestbook_messages")) {
+          failNextMessageInsert = false;
+          throw new Error("simulated message write failure");
+        }
+        if (statement.query.startsWith("INSERT INTO guestbook_messages") && statement.query.includes("SELECT")) {
+          const [id, body, created_at, source_type, source_id, token_hash] = statement.params;
+          const user = users.find(item => item.token_hash === token_hash);
+          if (user) {
+            rows.push({ id, body, created_at, status: "pending", reviewed_at: null, source_type, source_id, user_id: user.user_id });
+            result.push({ meta: { changes: 1 } });
+          } else result.push({ meta: { changes: 0 } });
+        } else result.push(await statement.run());
+      }
+      return result;
+    } catch (error) {
+      users.splice(0, users.length, ...usersBefore);
+      rows.splice(0, rows.length, ...rowsBefore);
+      nextUserId = userIdBefore;
+      throw error;
+    }
   },
 };
 const secret = "a".repeat(48);
@@ -79,18 +113,29 @@ try {
   assert.equal((await submit({ request: request("", "POST", { body: "https://spam.example", turnstile_token: "good" }), env })).status, 400);
   assert.equal((await submit({ request: request("", "POST", { body: "你好", turnstile_token: "bad" }), env })).status, 400);
   assert.equal((await submit({ request: request("", "POST", { body: "你好", turnstile_token: "good", source_type: "instance", source_id: "bad id" }), env })).status, 400);
-  const firstSubmission = await submit({ request: request("", "POST", { body: "你好 <script>", turnstile_token: "good" }), env });
+  const previewResponse = await identity({ request: request("/identity"), env });
+  assert.equal(previewResponse.status, 200);
+  const preview = await previewResponse.json();
+  assert.equal(preview.registered, false);
+  assert.match(preview.author_name, /^(阿米娅|提丰)#\d{3}$/);
+  assert.equal(users.length, 0, "Previewing a nickname must not register or reserve it");
+  const rerolled = await (await identity({ request: request("/identity?exclude=" + encodeURIComponent(preview.author_name)), env })).json();
+  assert.notEqual(rerolled.author_name, preview.author_name, "Reroll excludes the current preview");
+  assert.equal(users.length, 0, "Rerolling must not register a nickname");
+  const firstSubmission = await submit({ request: request("", "POST", { body: "你好 <script>", display_name: preview.author_name, turnstile_token: "good" }), env });
   assert.equal(firstSubmission.status, 201);
   const firstSubmissionData = await firstSubmission.json();
   const visitorCookie = firstSubmission.headers.get("Set-Cookie").split(";", 1)[0];
   assert.match(visitorCookie, /^__Host-rhodes_guestbook=[0-9a-f]{64}$/);
-  assert.match(firstSubmissionData.author_name, /^(阿米娅|提丰)#\d{3}$/);
+  assert.equal(firstSubmissionData.author_name, preview.author_name, "The first successful send stores the previewed nickname");
   assert.equal(rows[0].status, "pending");
   assert.equal(rows[0].source_type, "home");
   assert.equal(rows[0].source_id, "");
   assert.equal(rows[0].user_id, users[0].user_id);
   assert.equal(users[0].token_hash.length, 64);
   assert.equal(users[0].token_hash.includes(visitorCookie.split("=")[1]), false, "Only a hash of the cookie token is stored");
+  const registeredIdentity = await identity({ request: request("/identity", "GET", null, "", visitorCookie), env });
+  assert.deepEqual(await registeredIdentity.json(), { enabled: true, registered: true, author_name: firstSubmissionData.author_name });
   assert.deepEqual((await (await listPublic({ request: request(), env })).json()).messages, []);
   assert.equal((await listAdmin({ request: request("/admin", "GET", null, "bad"), env })).status, 401);
   const pendingMessages = (await (await listAdmin({ request: request("/admin", "GET", null, secret), env })).json()).messages;
@@ -108,7 +153,8 @@ try {
   await moderate({ request: request("/admin", "POST", { id: rows[0].id, status: "rejected" }, secret), env });
   assert.deepEqual((await (await listPublic({ request: request(), env })).json()).messages, []);
 
-  const sameUserSubmission = await submit({ request: request("", "POST", { body: "详情页纠错", turnstile_token: "good", source_type: "instance", source_id: "instance-1" }, "", visitorCookie), env });
+  const otherPreviewName = firstSubmissionData.author_name.startsWith("阿米娅") ? "提丰#999" : "阿米娅#999";
+  const sameUserSubmission = await submit({ request: request("", "POST", { body: "详情页纠错", display_name: otherPreviewName, turnstile_token: "good", source_type: "instance", source_id: "instance-1" }, "", visitorCookie), env });
   assert.equal(sameUserSubmission.status, 201);
   assert.equal((await sameUserSubmission.json()).author_name, firstSubmissionData.author_name, "A browser keeps its anonymous name across pages");
   assert.equal(rows[1].source_type, "instance");
@@ -124,7 +170,21 @@ try {
   assert.equal(detailPublic[0].author_name, firstSubmissionData.author_name);
   assert.deepEqual((await (await listPublic({ request: request("?source_type=instance&source_id=other-instance"), env })).json()).messages, []);
   await moderate({ request: request("/admin", "POST", { id: rows[1].id, status: "rejected" }, secret), env });
-  const distinctUserResponse = await submit({ request: request("", "POST", { body: "另一位访客", turnstile_token: "good" }), env });
+  const userCountBeforeConflict = users.length, rowCountBeforeConflict = rows.length;
+  const conflict = await submit({ request: request("", "POST", { body: "抢占失败的留言", display_name: firstSubmissionData.author_name, turnstile_token: "good" }), env });
+  assert.equal(conflict.status, 409);
+  assert.equal(users.length, userCountBeforeConflict, "A taken preview must not create a user record");
+  assert.equal(rows.length, rowCountBeforeConflict, "A taken preview must not create a message");
+  const failedSendPreview = await (await identity({ request: request("/identity"), env })).json();
+  const usersBeforeFailedSend = users.length, rowsBeforeFailedSend = rows.length;
+  failNextMessageInsert = true;
+  const failedSend = await submit({ request: request("", "POST", { body: "写入失败", display_name: failedSendPreview.author_name, turnstile_token: "good" }), env });
+  assert.equal(failedSend.status, 503);
+  assert.equal(users.length, usersBeforeFailedSend, "A failed first send must not persist the nickname");
+  assert.equal(rows.length, rowsBeforeFailedSend, "A failed first send must not persist a message");
+  const distinctPreview = await (await identity({ request: request("/identity"), env })).json();
+  assert.notEqual(distinctPreview.author_name, firstSubmissionData.author_name);
+  const distinctUserResponse = await submit({ request: request("", "POST", { body: "另一位访客", display_name: distinctPreview.author_name, turnstile_token: "good" }), env });
   const distinctUser = await distinctUserResponse.json();
   assert.equal(distinctUserResponse.status, 201);
   assert.notEqual(distinctUser.author_name, firstSubmissionData.author_name, "Distinct visitors cannot share an anonymous name");
