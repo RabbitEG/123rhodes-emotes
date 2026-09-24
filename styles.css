@@ -210,7 +210,8 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
 .guestbook-keyboard-hint { margin: 6px 2px 0 !important; font-size: 12px !important; text-align: right; }
 .guestbook textarea { display: block; width: 100%; min-height: 110px; resize: vertical; padding: 12px 15px; border: 1px solid #cbbbdc; border-radius: 11px; color: var(--ink); background: #fff; }
 .guestbook textarea:focus { outline: 3px solid #d6c8ef; }
-#guestbook-turnstile { margin: 14px 0; }
+#guestbook-turnstile { display: flex; justify-content: flex-end; margin: 10px 0; transform: scale(.82); transform-origin: right center; }
+#guestbook-send { display: block; margin: 8px auto 0; }
 #guestbook-feedback { min-height: 25px; margin-top: 10px; text-align: center; }
 .guestbook-list { display: grid; gap: 13px; width: min(760px, 100%); margin: 24px auto 0; text-align: left; }
 .guestbook-entry { padding: 15px 19px; border: 1px solid var(--line); border-radius: 12px; background: #fffdfc; overflow-wrap: anywhere; }

@@ -3,7 +3,7 @@ import { webcrypto } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import { onRequestGet as listPublic, onRequestPost as submit } from "../functions/api/guestbook.js";
-import { onRequestGet as identity } from "../functions/api/guestbook/identity.js";
+import { onRequestGet as identity, onRequestPost as rerollIdentity } from "../functions/api/guestbook/identity.js";
 import { onRequestGet as listAdmin, onRequestPost as moderate } from "../functions/api/guestbook/admin.js";
 import { aliasForDraw, weightedSuffixForDraw } from "../lib/guestbook.mjs";
 
@@ -28,6 +28,7 @@ const db = {
         if (query.includes("COUNT(*) AS total_users")) return { total_users: users.length };
         if (query.includes("FROM guestbook_users WHERE token_hash")) return users.find(user => user.token_hash === params[0]) || null;
         if (query.includes("FROM guestbook_users WHERE display_name")) return users.find(user => user.display_name === params[0]) || null;
+        if (query.includes("FROM guestbook_users WHERE first_display_name")) return users.find(user => user.first_display_name === params[0]) || null;
         return null;
       },
       async all() {
@@ -40,18 +41,25 @@ const db = {
         else selected = selected.slice(0, 100);
         return { results: selected.map(row => publicList
           ? { body: row.body, created_at: row.created_at, author_name: users.find(user => user.user_id === row.user_id)?.display_name || "早期留言（未分配昵称）" }
-          : { id: row.id, body: row.body, created_at: row.created_at, status: row.status, reviewed_at: row.reviewed_at, source_type: row.source_type, source_id: row.source_id, author_name: users.find(user => user.user_id === row.user_id)?.display_name || "早期留言（未分配昵称）" }) };
+          : { id: row.id, body: row.body, created_at: row.created_at, status: row.status, reviewed_at: row.reviewed_at, source_type: row.source_type, source_id: row.source_id, author_name: users.find(user => user.user_id === row.user_id)?.display_name || "早期留言（未分配昵称）", first_author_name: users.find(user => user.user_id === row.user_id)?.first_display_name || "早期留言（未分配昵称）" }) };
       },
       async run() {
         if (query.startsWith("INSERT OR IGNORE INTO guestbook_users")) {
-          const [token_hash, display_name, created_at] = params;
-          if (users.some(user => user.token_hash === token_hash || user.display_name === display_name)) return { meta: { changes: 0 } };
-          users.push({ user_id: ++nextUserId, token_hash, display_name, created_at });
+          const [token_hash, display_name, first_display_name, created_at] = params;
+          if (users.some(user => user.token_hash === token_hash || user.display_name === display_name || user.first_display_name === first_display_name)) return { meta: { changes: 0 } };
+          users.push({ user_id: ++nextUserId, token_hash, display_name, first_display_name, created_at });
           return { meta: { changes: 1 } };
         }
         if (query.startsWith("INSERT INTO guestbook_messages")) {
           const [id, body, created_at, source_type, source_id, user_id] = params;
           rows.push({ id, body, created_at, status: "pending", reviewed_at: null, source_type, source_id, user_id });
+          return { meta: { changes: 1 } };
+        }
+        if (query.startsWith("UPDATE guestbook_users")) {
+          const [display_name, user_id, old_display_name] = params;
+          const user = users.find(item => item.user_id === user_id && item.display_name === old_display_name);
+          if (!user || users.some(item => item.user_id !== user_id && item.display_name === display_name)) return { meta: { changes: 0 } };
+          user.display_name = display_name;
           return { meta: { changes: 1 } };
         }
         const row = rows.find(item => item.id === params[2]);
@@ -119,6 +127,7 @@ try {
   assert.equal(preview.registered, false);
   assert.match(preview.author_name, /^(阿米娅|提丰)#\d{3}$/);
   assert.equal(users.length, 0, "Previewing a nickname must not register or reserve it");
+  assert.equal((await rerollIdentity({ request: request("/identity", "POST"), env })).status, 409, "Pre-send nickname rerolls stay previews and cannot register a user");
   const rerolled = await (await identity({ request: request("/identity?exclude=" + encodeURIComponent(preview.author_name)), env })).json();
   assert.notEqual(rerolled.author_name, preview.author_name, "Reroll excludes the current preview");
   assert.equal(users.length, 0, "Rerolling must not register a nickname");
@@ -133,6 +142,7 @@ try {
   assert.equal(rows[0].source_id, "");
   assert.equal(rows[0].user_id, users[0].user_id);
   assert.equal(users[0].token_hash.length, 64);
+  assert.equal(users[0].first_display_name, preview.author_name, "The first assigned nickname is kept separately");
   assert.equal(users[0].token_hash.includes(visitorCookie.split("=")[1]), false, "Only a hash of the cookie token is stored");
   const registeredIdentity = await identity({ request: request("/identity", "GET", null, "", visitorCookie), env });
   assert.deepEqual(await registeredIdentity.json(), { enabled: true, registered: true, author_name: firstSubmissionData.author_name });
@@ -150,6 +160,7 @@ try {
   assert.equal(approvedHomeMessage.author_name, firstSubmissionData.author_name);
   assert.equal("token_hash" in approvedHomeMessage, false);
   assert.equal("user_id" in approvedHomeMessage, false);
+  assert.equal("first_author_name" in approvedHomeMessage, false, "Public comments expose only the current nickname");
   await moderate({ request: request("/admin", "POST", { id: rows[0].id, status: "rejected" }, secret), env });
   assert.deepEqual((await (await listPublic({ request: request(), env })).json()).messages, []);
 
@@ -169,6 +180,18 @@ try {
   assert.equal(detailPublic[0].body, "详情页纠错");
   assert.equal(detailPublic[0].author_name, firstSubmissionData.author_name);
   assert.deepEqual((await (await listPublic({ request: request("?source_type=instance&source_id=other-instance"), env })).json()).messages, []);
+  const rerollResponse = await rerollIdentity({ request: request("/identity", "POST", undefined, "", visitorCookie), env });
+  assert.equal(rerollResponse.status, 200);
+  const rerolledIdentity = await rerollResponse.json();
+  assert.notEqual(rerolledIdentity.author_name, firstSubmissionData.author_name);
+  assert.equal(users[0].user_id, rows[0].user_id, "Reroll keeps the same anonymous user identity");
+  assert.equal(users[0].first_display_name, firstSubmissionData.author_name, "Reroll preserves the first nickname");
+  assert.equal(users[0].display_name, rerolledIdentity.author_name);
+  const detailAfterReroll = (await (await listPublic({ request: request("?source_type=instance&source_id=instance-1"), env })).json()).messages;
+  assert.equal(detailAfterReroll[0].author_name, rerolledIdentity.author_name, "Previously published comments display the current nickname");
+  const approvedAdminMessages = (await (await listAdmin({ request: request("/admin?status=approved", "GET", null, secret), env })).json()).messages;
+  assert.equal(approvedAdminMessages.find(message => message.id === rows[1].id).first_author_name, firstSubmissionData.author_name);
+  assert.equal(approvedAdminMessages.find(message => message.id === rows[1].id).author_name, rerolledIdentity.author_name);
   await moderate({ request: request("/admin", "POST", { id: rows[1].id, status: "rejected" }, secret), env });
   const userCountBeforeConflict = users.length, rowCountBeforeConflict = rows.length;
   const conflict = await submit({ request: request("", "POST", { body: "抢占失败的留言", display_name: firstSubmissionData.author_name, turnstile_token: "good" }), env });

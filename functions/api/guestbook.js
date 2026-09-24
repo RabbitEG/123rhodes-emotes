@@ -46,8 +46,8 @@ export async function onRequestPost({ request, env }) {
       ).bind(messageId, body, createdAt, sourceType, sourceId, user.tokenHash);
     const statements = user.existing ? [messageForUser] : [
       env.GUESTBOOK_DB.prepare(
-        "INSERT OR IGNORE INTO guestbook_users (token_hash, display_name, created_at) VALUES (?, ?, ?)"
-      ).bind(user.tokenHash, user.displayName, createdAt),
+        "INSERT OR IGNORE INTO guestbook_users (token_hash, display_name, first_display_name, created_at) VALUES (?, ?, ?, ?)"
+      ).bind(user.tokenHash, user.displayName, user.displayName, createdAt),
       messageForUser,
     ];
     const result = await env.GUESTBOOK_DB.batch(statements);

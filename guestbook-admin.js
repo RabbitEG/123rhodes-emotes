@@ -27,7 +27,11 @@
       item.className = "guestbook-entry moderator-entry";
       const author = document.createElement("strong");
       author.className = "guestbook-author";
-      author.textContent = message.author_name || t("guest.legacyAuthor");
+      const currentName = message.author_name || t("guest.legacyAuthor");
+      const firstName = message.first_author_name;
+      author.textContent = firstName && firstName !== currentName
+        ? t("guest.adminFirstNickname") + " " + firstName + " → " + t("guest.adminCurrentNickname") + " " + currentName
+        : currentName;
       const body = document.createElement("p");
       body.textContent = message.body;
       const time = document.createElement("time");

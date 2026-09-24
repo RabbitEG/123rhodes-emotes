@@ -27,10 +27,14 @@ const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4174";
     await page.route("**/api/guestbook*", async route => {
       const url = new URL(route.request().url());
       if (url.pathname.endsWith("/identity")) {
+        if (route.request().method() === "POST") {
+          registeredName = registeredName === "阿米娅#042" ? "提丰#328" : "阿米娅#042";
+          return route.fulfill({ json: { enabled: true, registered: true, author_name: registeredName } });
+        }
         if (!browserRegistered && url.searchParams.has("exclude")) previewName = previewName === "提丰#799" ? "阿米娅#042" : "提丰#799";
         return route.fulfill({ json: { enabled: boardEnabled, registered: browserRegistered, author_name: browserRegistered ? registeredName : previewName } });
       }
-      if (route.request().method() === "GET") return route.fulfill({ json: { enabled: boardEnabled, messages: boardEnabled ? [{ body: "你好 <script>alert(1)</script>", created_at: "2026-09-23T00:00:00.000Z", author_name: anonymousName }] : [], has_more: false } });
+      if (route.request().method() === "GET") return route.fulfill({ json: { enabled: boardEnabled, messages: boardEnabled ? [{ body: "你好 <script>alert(1)</script>", created_at: "2026-09-23T00:00:00.000Z", author_name: browserRegistered ? registeredName : anonymousName }] : [], has_more: false } });
       submitted = route.request().postDataJSON();
       submittedCount++;
       browserRegistered = true;
@@ -68,10 +72,15 @@ const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4174";
     await page.locator("#guestbook-form").waitFor({ state: "visible" });
     assert.match(await page.locator("#guestbook").textContent(), /角色、裁切或篇目信息有误/);
     assert.equal(await page.locator("#guestbook-author-preview").textContent(), "阿米娅#042", "After sending, the same browser retains its chosen nickname");
-    assert.equal(await page.locator("#guestbook-reroll").isVisible(), false, "A registered nickname cannot be rerolled");
+    assert.equal(await page.locator("#guestbook-reroll").isVisible(), true, "A registered visitor can reroll again");
+    await page.locator("#guestbook-reroll").click();
+    await page.getByText(/已换成 提丰#328/).waitFor();
+    assert.equal(await page.locator("#guestbook-author-preview").textContent(), "提丰#328");
+    assert.equal(await page.locator(".guestbook-author").first().textContent(), "提丰#328", "Existing public comments refresh to the current nickname");
     await page.locator("#guestbook-body").fill("详情页的角色可能标错了");
     await page.locator("#guestbook-send").click();
-    await page.getByText(/你的匿名名称是 提丰#799/).waitFor();
+    await page.getByText(/你的匿名名称是 提丰#328/).waitFor();
+    assert.equal(submitted.display_name, "提丰#328");
     assert.equal(submitted.source_type, "instance");
     assert.equal(submitted.source_id, "instance-1");
     const first = await page.locator("html").getAttribute("style");
@@ -94,7 +103,7 @@ const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4174";
     assert.equal(await page.locator("#guestbook-form").isVisible(), false, "Unconfigured board stays closed");
     assert.equal(await page.locator("#guestbook-list").textContent(), "", "Closed board should not invite an impossible submission");
 
-    const pending = [{ id: "11111111-1111-1111-1111-111111111111", body: "请改错别字", created_at: "2026-09-23T00:00:00.000Z", status: "pending", source_type: "instance", source_id: "instance-1", author_name: anonymousName }];
+    const pending = [{ id: "11111111-1111-1111-1111-111111111111", body: "请改错别字", created_at: "2026-09-23T00:00:00.000Z", status: "pending", source_type: "instance", source_id: "instance-1", first_author_name: "阿米娅#042", author_name: "提丰#328" }];
     await page.route("**/api/guestbook/admin?*", route => route.fulfill({ json: { messages: pending } }));
     let approval;
     await page.route("**/api/guestbook/admin", route => {
@@ -108,7 +117,7 @@ const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4174";
     await page.locator(".moderator-entry").waitFor();
     assert((await page.locator(".moderator-meta").textContent()).includes("表情详情 · instance-1"));
     assert((await page.locator(".moderator-meta").textContent()).includes("状态：待审核"));
-    assert.equal(await page.locator(".moderator-entry .guestbook-author").textContent(), anonymousName);
+    assert.equal(await page.locator(".moderator-entry .guestbook-author").textContent(), "首昵称 阿米娅#042 → 现昵称 提丰#328");
     await page.locator("#main").screenshot({ path: path.join(__dirname, "../test-results/guestbook-admin.png") });
     await page.getByRole("button", { name: "通过并公开", exact: true }).click();
     await page.getByText("已保存审核结果。").waitFor();

@@ -10,7 +10,7 @@ export async function onRequestGet({ request, env }) {
   if (!["pending", "approved", "rejected"].includes(status)) return json({ error: "invalid_status" }, 400);
   try {
     const result = await env.GUESTBOOK_DB.prepare(
-      "SELECT m.id, m.body, m.created_at, m.status, m.reviewed_at, m.source_type, m.source_id, COALESCE(u.display_name, '早期留言（未分配昵称）') AS author_name FROM guestbook_messages m LEFT JOIN guestbook_users u ON u.user_id = m.user_id WHERE m.status = ? ORDER BY m.created_at DESC, m.id DESC LIMIT 100"
+      "SELECT m.id, m.body, m.created_at, m.status, m.reviewed_at, m.source_type, m.source_id, COALESCE(u.display_name, '早期留言（未分配昵称）') AS author_name, COALESCE(u.first_display_name, u.display_name, '早期留言（未分配昵称）') AS first_author_name FROM guestbook_messages m LEFT JOIN guestbook_users u ON u.user_id = m.user_id WHERE m.status = ? ORDER BY m.created_at DESC, m.id DESC LIMIT 100"
     ).bind(status).all();
     return json({ messages: result.results || [] });
   } catch { return json({ error: "unavailable" }, 503); }

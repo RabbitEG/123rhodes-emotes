@@ -63,7 +63,7 @@
     authorName = data.author_name;
     registered = data.registered === true;
     authorPreview.textContent = authorName;
-    reroll.hidden = registered;
+    reroll.hidden = false;
     reroll.disabled = false;
   }
 
@@ -116,12 +116,33 @@
   }
 
   reroll.addEventListener("click", async () => {
-    if (registered || reroll.disabled) return;
+    if (reroll.disabled) return;
     reroll.disabled = true;
     feedback.textContent = "";
-    try { await refreshIdentity(authorName); }
+    try {
+      if (registered) {
+        const response = await fetch("/api/guestbook/identity", {
+          method: "POST", credentials: "same-origin", cache: "no-store",
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          if (data.error === "nickname_changed") {
+            await refreshIdentity();
+            feedback.textContent = t("guest.nicknameSynced").replace("{author}", authorName);
+            try { await load(); } catch { /* The identity has already been refreshed. */ }
+            return;
+          }
+          throw new Error(data.error || "identity_unavailable");
+        }
+        showIdentity(data);
+        try { await load(); } catch { /* Keep the successful nickname change visible. */ }
+        feedback.textContent = t("guest.nicknameChanged").replace("{author}", authorName);
+      } else {
+        await refreshIdentity(authorName);
+      }
+    }
     catch { feedback.textContent = t("guest.identityUnavailable"); }
-    finally { reroll.disabled = registered; }
+    finally { reroll.disabled = false; }
   });
 
   bodyField.addEventListener("keydown", event => {
@@ -155,7 +176,7 @@
       authorName = result.author_name || authorName;
       registered = true;
       authorPreview.textContent = authorName;
-      reroll.hidden = true;
+      reroll.hidden = false;
       feedback.textContent = t("guest.sent").replace("{author}", result.author_name || t("guest.legacyAuthor"));
       window.RhodesAnalytics?.track("guestbook_submit", { context: "unknown" });
     } catch (error) {

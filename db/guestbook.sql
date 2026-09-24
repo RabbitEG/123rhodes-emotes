@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS guestbook_users (
   user_id INTEGER PRIMARY KEY AUTOINCREMENT,
   token_hash TEXT NOT NULL UNIQUE,
   display_name TEXT NOT NULL UNIQUE,
+  first_display_name TEXT NOT NULL UNIQUE,
   created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS guestbook_messages (
