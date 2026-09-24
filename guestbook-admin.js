@@ -30,9 +30,19 @@
       const time = document.createElement("time");
       time.dateTime = message.created_at;
       time.textContent = new Date(message.created_at).toLocaleString("zh-CN", { dateStyle: "medium", timeStyle: "short" });
+      const meta = document.createElement("div");
+      meta.className = "moderator-meta";
+      const statusLabel = ({ pending: "guest.adminPending", approved: "guest.adminApprove", rejected: "guest.adminReject" })[message.status] || "guest.adminPending";
+      const statusPill = document.createElement("span");
+      statusPill.className = "moderator-status";
+      statusPill.textContent = t("guest.adminStatus") + "：" + t(statusLabel);
+      const origin = document.createElement("span");
+      const originType = message.source_type === "instance" ? "guest.adminOriginInstance" : "guest.adminOriginHome";
+      origin.textContent = t("guest.adminOrigin") + "：" + t(originType) + (message.source_type === "instance" && message.source_id ? " · " + message.source_id : "");
+      meta.append(statusPill, origin);
       const actions = document.createElement("div");
       actions.className = "moderator-actions";
-      for (const [value, label] of [["approved", "guest.adminApprove"], ["rejected", "guest.adminReject"], ["pending", "guest.adminPending"]]) {
+      for (const [value, label] of [["approved", "guest.adminApproveAction"], ["rejected", "guest.adminRejectAction"], ["pending", "guest.adminPendingAction"]]) {
         if (value === message.status) continue;
         const button = document.createElement("button");
         button.type = "button";
@@ -44,7 +54,7 @@
         });
         actions.append(button);
       }
-      item.append(body, time, actions);
+      item.append(body, meta, time, actions);
       list.append(item);
     }
     if (!data.messages.length) list.textContent = t("guest.adminEmpty");

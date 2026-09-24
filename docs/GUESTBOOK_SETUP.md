@@ -1,10 +1,22 @@
 # 留言板上线：Cloudflare 端需要手动做的事
 
-留言板和私有角色 SQLite、R2 图片完全分离。代码已经包含公开列表、免注册投稿、Turnstile 校验、待审核队列和审核页。**下列资源未配齐时投稿表单不会开放**；不要把密钥写入 Git、`config/site.json` 或给访客。
+留言板和私有角色 SQLite、R2 图片完全分离。新留言默认 `pending`，只在你手动点击“通过并公开”后才会展示；首页显示最近 10 条已公开留言，表情详情只显示该 instance 自己最近 10 条已公开留言。审核页会显示留言状态以及来源（首页，或表情详情的 `instance_id`）。**下列 Cloudflare 资源未配齐时投稿表单不会开放**；不要把密钥写入 Git、`config/site.json` 或给访客。
 
 ## 1. 建立独立 D1 数据库
 
 Cloudflare 控制台 → D1 SQL database → Create Database，建议命名 `rhodes-guestbook`。进入该数据库的 Console，把 [db/guestbook.sql](../db/guestbook.sql) 的全部 SQL 贴入执行。它只建 `guestbook_messages` 表和索引，不改原工程的数据库。
+
+如果你之前已经执行过旧版 `db/guestbook.sql`，不要重建或清空 D1；只需在现有留言库 Console 各执行一次以下增量迁移，已有留言会默认标为来自首页：
+
+```sql
+ALTER TABLE guestbook_messages
+  ADD COLUMN source_type TEXT NOT NULL DEFAULT 'home'
+  CHECK (source_type IN ('home', 'instance'));
+ALTER TABLE guestbook_messages
+  ADD COLUMN source_id TEXT NOT NULL DEFAULT '';
+```
+
+如果是新建数据库并已运行当前版 `db/guestbook.sql`，不要再运行这段迁移。
 
 Cloudflare 控制台 → Workers & Pages → `123rhodes-emotes` → Settings → Bindings → Add → D1 database：
 
@@ -39,21 +51,21 @@ python3 -c 'import secrets; print(secrets.token_urlsafe(48))'
 
 ## 4. 构建与验收
 
-完成 sitekey 填写后，在仓库中运行：
+当前仓库中的 `guestbook.turnstileSiteKey` 仍为空，生产接口目前报告留言板未启用。你完成 D1、Turnstile 与两个 secret 的配置后，把公开 sitekey 写入 [config/site.json](../config/site.json) 的 `guestbook.turnstileSiteKey`，再在仓库中运行：
 
 ```bash
 python3 tools/build.py
 python3 tools/build.py --check
-git add config/site.json content/copy.zh-CN.json index.html search.html about.html privacy.html 404.html guestbook-admin.html _headers
+git add config/site.json db/guestbook.sql functions/api/guestbook.js functions/api/guestbook/admin.js guestbook.js guestbook-admin.js app.js styles.css content/copy.zh-CN.json templates index.html instance.html privacy.html guestbook-admin.html README.md docs/GUESTBOOK_SETUP.md
 git commit -m "config: enable guestbook Turnstile"
 git push
 ```
 
 Cloudflare Secrets 和 D1 binding 都要在生产环境配置，保存后重新部署。上线检查：
 
-1. 首页留言区出现输入框及 Turnstile；如果仍显示“准备中”，核对 `GUESTBOOK_DB`、`TURNSTILE_SECRET_KEY`、sitekey 和重新部署。
+1. 首页与具体表情详情的留言区出现输入框及 Turnstile；如果仍显示“准备中”，核对 `GUESTBOOK_DB`、`TURNSTILE_SECRET_KEY`、`GUESTBOOK_ADMIN_KEY`、sitekey 和重新部署。
 2. 用测试文字提交，访客列表**立即不应出现**。
-3. 审核页选“通过”，刷新首页后显示正文和留言时间；“排除”则始终不公开。
+3. 审核页会标明 `待审核 / 已公开 / 已排除` 和发起位置。选“通过并公开”后，首页与对应详情页显示正文和留言时间；“排除”则始终不公开。公开区只显示最近 10 条。
 4. 试一次错误密钥，确保不能打开待审核列表。
 
 本地 `python3 -m http.server` 只预览静态页面，不会运行 Pages Functions 或 D1；真实投稿需在 Cloudflare 部署后测试。公开接口只返回已通过的留言，后台不在 D1 保存访客 IP。没有账号、图片上传、外链或自动公开。若遇到刷屏，可在 Cloudflare 配置针对 `POST /api/guestbook` 的限速规则；Turnstile 不等于绝对防刷。

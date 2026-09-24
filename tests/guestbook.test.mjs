@@ -7,27 +7,26 @@ import { onRequestGet as listAdmin, onRequestPost as moderate } from "../functio
 const rows = [];
 const db = {
   prepare(query) {
-    return { bind(...params) {
-      return {
+    const statement = params => ({
         async all() {
           if (query.includes("status = 'approved'")) {
-            return { results: rows.filter(row => row.status === "approved")
+            return { results: rows.filter(row => row.status === "approved" && (!query.includes("source_id = ?") || row.source_id === params[0]))
               .sort((a, b) => b.created_at.localeCompare(a.created_at))
-              .slice(params[0], params[0] + 21).map(({ body, created_at }) => ({ body, created_at })) };
+              .slice(0, 10).map(({ body, created_at }) => ({ body, created_at })) };
           }
           return { results: rows.filter(row => row.status === params[0]) };
         },
         async run() {
           if (query.startsWith("INSERT")) {
-            rows.push({ id: params[0], body: params[1], created_at: params[2], status: "pending", reviewed_at: null });
+            rows.push({ id: params[0], body: params[1], created_at: params[2], status: "pending", reviewed_at: null, source_type: params[3], source_id: params[4] });
             return { meta: { changes: 1 } };
           }
           const row = rows.find(item => item.id === params[2]);
           if (row) { row.status = params[0]; row.reviewed_at = params[1]; }
           return { meta: { changes: row ? 1 : 0 } };
         },
-      };
-    } };
+      });
+    return { ...statement([]), bind: (...params) => statement(params) };
   },
 };
 const secret = "a".repeat(48);
@@ -49,15 +48,41 @@ try {
   assert.equal((await submit({ request: new Request(url, { method: "POST", headers: { "Content-Type": "application/json", Origin: "https://evil.example" }, body: JSON.stringify({ body: "你好", turnstile_token: "good" }) }), env })).status, 403);
   assert.equal((await submit({ request: request("", "POST", { body: "https://spam.example", turnstile_token: "good" }), env })).status, 400);
   assert.equal((await submit({ request: request("", "POST", { body: "你好", turnstile_token: "bad" }), env })).status, 400);
+  assert.equal((await submit({ request: request("", "POST", { body: "你好", turnstile_token: "good", source_type: "instance", source_id: "bad id" }), env })).status, 400);
   assert.equal((await submit({ request: request("", "POST", { body: "你好 <script>", turnstile_token: "good" }), env })).status, 201);
   assert.equal(rows[0].status, "pending");
+  assert.equal(rows[0].source_type, "home");
+  assert.equal(rows[0].source_id, "");
   assert.deepEqual((await (await listPublic({ request: request(), env })).json()).messages, []);
   assert.equal((await listAdmin({ request: request("/admin", "GET", null, "bad"), env })).status, 401);
-  assert.equal((await (await listAdmin({ request: request("/admin", "GET", null, secret), env })).json()).messages.length, 1);
+  const pendingMessages = (await (await listAdmin({ request: request("/admin", "GET", null, secret), env })).json()).messages;
+  assert.equal(pendingMessages.length, 1);
+  assert.equal(pendingMessages[0].source_type, "home");
   assert.equal((await moderate({ request: request("/admin", "POST", { id: rows[0].id, status: "approved" }, secret), env })).status, 200);
   assert.equal((await (await listPublic({ request: request(), env })).json()).messages[0].body, "你好 <script>");
   await moderate({ request: request("/admin", "POST", { id: rows[0].id, status: "rejected" }, secret), env });
   assert.deepEqual((await (await listPublic({ request: request(), env })).json()).messages, []);
+
+  assert.equal((await submit({ request: request("", "POST", { body: "详情页纠错", turnstile_token: "good", source_type: "instance", source_id: "instance-1" }), env })).status, 201);
+  assert.equal(rows[1].source_type, "instance");
+  assert.equal(rows[1].source_id, "instance-1");
+  const instancePending = (await (await listAdmin({ request: request("/admin", "GET", null, secret), env })).json()).messages;
+  assert.equal(instancePending[0].source_id, "instance-1");
+  assert.deepEqual((await (await listPublic({ request: request(), env })).json()).messages, [], "Pending detail feedback stays private");
+  await moderate({ request: request("/admin", "POST", { id: rows[1].id, status: "approved" }, secret), env });
+  const detailPublic = (await (await listPublic({ request: request("?source_type=instance&source_id=instance-1"), env })).json()).messages;
+  assert.equal(detailPublic.length, 1);
+  assert.equal(detailPublic[0].body, "详情页纠错");
+  assert.deepEqual((await (await listPublic({ request: request("?source_type=instance&source_id=other-instance"), env })).json()).messages, []);
+  await moderate({ request: request("/admin", "POST", { id: rows[1].id, status: "rejected" }, secret), env });
+  for (let index = 0; index < 12; index++) rows.push({
+    id: `published-${index}`, body: `已公开 ${index}`, created_at: `2026-01-01T00:${String(index).padStart(2, "0")}:00.000Z`,
+    status: "approved", reviewed_at: "2026-01-02T00:00:00.000Z", source_type: "home", source_id: "",
+  });
+  const latest = (await (await listPublic({ request: request(), env })).json()).messages;
+  assert.equal(latest.length, 10, "Public board only returns ten approved messages");
+  assert.equal(latest[0].body, "已公开 11");
+  assert.equal(latest[9].body, "已公开 2");
 } finally { globalThis.fetch = mockVerify; }
 
 const background = readFileSync(new URL("../background.js", import.meta.url), "utf8");

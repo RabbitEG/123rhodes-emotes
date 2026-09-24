@@ -213,11 +213,13 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
 .guestbook-entry p { color: var(--ink); font-size: 15px; font-weight: 600; white-space: pre-wrap; }
 .guestbook-entry time { display: block; margin-top: 9px; color: var(--muted); font-size: 12px; }
 .guestbook-empty { text-align: center; }
-#guestbook-more { margin-top: 18px; }
 .guestbook-admin { width: min(840px, calc(100% - 56px)); }
 .guestbook-admin .moderator-login { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
 .moderator-login input { min-width: min(100%, 290px); padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
 .guestbook-admin select { margin-left: 8px; padding: 7px; border: 1px solid var(--line); border-radius: 8px; background: white; }
+.instance-guestbook { margin: 28px 0 8px; }
+.moderator-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 14px; margin-top: 10px; color: var(--muted); font-size: 12px; }
+.moderator-status { display: inline-flex; align-items: center; padding: 3px 8px; border: 1px solid #e7dfef; border-radius: 999px; color: #69547e; background: #f6f1fb; font-weight: 750; }
 .moderator-actions { display: flex; gap: 9px; margin-top: 12px; }
 .moderator-actions button { padding: 5px 14px; border-radius: 8px; color: #5e4d7d; background: #eae3f4; }
 .moderator-actions button:hover { background: #dcd0ef; }

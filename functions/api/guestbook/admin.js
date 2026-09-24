@@ -10,7 +10,7 @@ export async function onRequestGet({ request, env }) {
   if (!["pending", "approved", "rejected"].includes(status)) return json({ error: "invalid_status" }, 400);
   try {
     const result = await env.GUESTBOOK_DB.prepare(
-      "SELECT id, body, created_at, status, reviewed_at FROM guestbook_messages WHERE status = ? ORDER BY created_at DESC, id DESC LIMIT 100"
+      "SELECT id, body, created_at, status, reviewed_at, source_type, source_id FROM guestbook_messages WHERE status = ? ORDER BY created_at DESC, id DESC LIMIT 100"
     ).bind(status).all();
     return json({ messages: result.results || [] });
   } catch { return json({ error: "unavailable" }, 503); }

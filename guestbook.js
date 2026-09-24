@@ -6,17 +6,18 @@
   const list = document.querySelector("#guestbook-list");
   const status = document.querySelector("#guestbook-status");
   const feedback = document.querySelector("#guestbook-feedback");
-  const more = document.querySelector("#guestbook-more");
   const send = document.querySelector("#guestbook-send");
-  let token = "", page = 0, widgetId;
+  let token = "", widgetId;
+  const sourceType = document.body.dataset.page === "instance" ? "instance" : "home";
+  const sourceId = sourceType === "instance" ? new URLSearchParams(location.search).get("id") || "" : "";
 
   function date(value) {
     const parsed = new Date(value);
     return Number.isNaN(parsed.getTime()) ? "" : parsed.toLocaleString("zh-CN", { dateStyle: "medium", timeStyle: "short" });
   }
 
-  function render(messages, append) {
-    if (!append) list.replaceChildren();
+  function render(messages) {
+    list.replaceChildren();
     for (const message of messages) {
       const item = document.createElement("article");
       item.className = "guestbook-entry";
@@ -36,13 +37,17 @@
     }
   }
 
-  async function load(pageNumber = 0) {
-    const response = await fetch("/api/guestbook?page=" + pageNumber, { cache: "no-store" });
+  async function load() {
+    const params = new URLSearchParams();
+    if (sourceType === "instance") {
+      params.set("source_type", "instance");
+      params.set("source_id", sourceId);
+    }
+    const query = params.toString();
+    const response = await fetch("/api/guestbook" + (query ? "?" + query : ""), { cache: "no-store" });
     if (!response.ok) throw new Error("guestbook unavailable");
     const data = await response.json();
-    render(data.messages || [], pageNumber > 0);
-    page = pageNumber;
-    more.hidden = !data.has_more;
+    render((data.messages || []).slice(0, 10));
     return data.enabled;
   }
 
@@ -90,7 +95,7 @@
     try {
       const response = await fetch("/api/guestbook", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body, turnstile_token: token }),
+        body: JSON.stringify({ body, turnstile_token: token, source_type: sourceType, source_id: sourceId }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "unavailable");
@@ -104,12 +109,6 @@
       if (widgetId !== undefined) window.turnstile?.reset(widgetId);
       send.disabled = false;
     }
-  });
-  more.addEventListener("click", async () => {
-    more.disabled = true;
-    try { await load(page + 1); }
-    catch { feedback.textContent = t("guest.unavailable"); }
-    finally { more.disabled = false; }
   });
   init();
 })();
