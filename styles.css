@@ -244,7 +244,7 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
 .instance-heading { text-align: center; }
 .instance-kicker { color: #9b83b3; font-size: 12px; font-weight: 750; letter-spacing: .12em; }
 .instance-heading h1 { margin: 5px 0 3px; color: #514165; font-size: clamp(23px, 3vw, 32px); overflow-wrap: anywhere; }
-.instance-heading > p, .instance-source-note { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
+.instance-source-note { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
 .instance-art { display: grid; place-items: center; min-height: 300px; max-height: 74vh; margin: 20px 0; padding: 18px; overflow: hidden; border-radius: 12px; background: #f8f5fb; }
 .instance-art img { display: block; width: 100%; height: min(68vh, 680px); object-fit: contain; }
 .instance-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }
