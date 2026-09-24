@@ -207,10 +207,12 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
 .guestbook-identity { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin: 0 0 11px; color: var(--muted); font-size: 14px; }
 .guestbook-identity strong { color: #6d5682; font-size: 16px; letter-spacing: .02em; }
 .guestbook-identity .pill { padding: 5px 11px; font-size: 13px; }
+.guestbook-compose-row { display: grid; grid-template-columns: minmax(0, 620px) 300px; align-items: start; gap: 18px; width: max-content; }
+.guestbook-compose-field { min-width: 0; }
 .guestbook-keyboard-hint { margin: 6px 2px 0 !important; font-size: 12px !important; text-align: right; }
 .guestbook textarea { display: block; width: 100%; min-height: 110px; resize: vertical; padding: 12px 15px; border: 1px solid #cbbbdc; border-radius: 11px; color: var(--ink); background: #fff; }
 .guestbook textarea:focus { outline: 3px solid #d6c8ef; }
-#guestbook-turnstile { display: flex; justify-content: flex-end; margin: 10px 0; transform: scale(.82); transform-origin: right center; }
+#guestbook-turnstile { display: flex; justify-content: flex-start; margin: 0; transform: scale(.82); transform-origin: left top; }
 #guestbook-send { display: block; margin: 8px auto 0; }
 #guestbook-feedback { min-height: 25px; margin-top: 10px; text-align: center; }
 .guestbook-list { display: grid; gap: 13px; width: min(760px, 100%); margin: 24px auto 0; text-align: left; }
@@ -299,6 +301,10 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
 .instance-source-art p { padding: 24px 12px; color: var(--muted); font-size: 13px; }
 .instance-official-link { display: flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 16px; box-sizing: border-box; text-align: center; text-decoration: none; line-height: 1.5; white-space: normal; }
 .instance-official-link span { flex: 0 0 auto; }
+@media (max-width: 1259px) {
+  .guestbook-compose-row { display: block; width: 100%; }
+  #guestbook-turnstile { justify-content: flex-end; margin: 10px 0 0; transform-origin: right top; }
+}
 @media (max-width: 1050px) {
   .distribution { flex-direction: column; gap: 16px; }
   .legend { width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); }
