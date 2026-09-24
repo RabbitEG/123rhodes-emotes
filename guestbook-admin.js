@@ -25,6 +25,9 @@
     for (const message of data.messages) {
       const item = document.createElement("article");
       item.className = "guestbook-entry moderator-entry";
+      const author = document.createElement("strong");
+      author.className = "guestbook-author";
+      author.textContent = message.author_name || t("guest.legacyAuthor");
       const body = document.createElement("p");
       body.textContent = message.body;
       const time = document.createElement("time");
@@ -54,7 +57,7 @@
         });
         actions.append(button);
       }
-      item.append(body, meta, time, actions);
+      item.append(author, body, meta, time, actions);
       list.append(item);
     }
     if (!data.messages.length) list.textContent = t("guest.adminEmpty");

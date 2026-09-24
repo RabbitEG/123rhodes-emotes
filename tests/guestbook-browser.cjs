@@ -17,12 +17,13 @@ const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4174";
       episodes: [{ id: "episode-1", name: "001_测试篇", order: 1, official_url: "https://comic.hypergryph.com/comic/6253/test" }],
       instances: [{ id: "instance-1", character_id: "amiya", episode_id: "episode-1", crop_url: "/media/crops/test.webp", source_preview_url: "/media/source-previews/test.webp" }],
     };
+    const anonymousName = "提丰#799";
     await page.route("**/config/site.json", route => route.fulfill({ json: { theme: { backgroundImages: covers }, guestbook: { turnstileSiteKey: "test-sitekey" } } }));
     await page.route("**/data/release.json", route => route.fulfill({ json: detailRelease }));
     await page.route("**/api/guestbook*", async route => {
-      if (route.request().method() === "GET") return route.fulfill({ json: { enabled: boardEnabled, messages: boardEnabled ? [{ body: "你好 <script>alert(1)</script>", created_at: "2026-09-23T00:00:00.000Z" }] : [], has_more: false } });
+      if (route.request().method() === "GET") return route.fulfill({ json: { enabled: boardEnabled, messages: boardEnabled ? [{ body: "你好 <script>alert(1)</script>", created_at: "2026-09-23T00:00:00.000Z", author_name: anonymousName }] : [], has_more: false } });
       submitted = route.request().postDataJSON();
-      return route.fulfill({ status: 201, json: { ok: true, status: "pending" } });
+      return route.fulfill({ status: 201, json: { ok: true, status: "pending", author_name: anonymousName } });
     });
     let submitted;
     await page.route("https://challenges.cloudflare.com/turnstile/v0/api.js?*", route => route.fulfill({ contentType: "application/javascript", body: "window.turnstile={render:(_selector, options)=>{options.callback('test-token');return 1;},reset:()=>{}};" }));
@@ -31,11 +32,12 @@ const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4174";
     assert.match(await page.locator("#guestbook-status").textContent(), /人工审核/);
     assert.equal(await page.locator(".guestbook-entry").count(), 1);
     assert.match(await page.locator(".guestbook-entry p").textContent(), /<script>/);
+    assert.equal(await page.locator(".guestbook-author").first().textContent(), anonymousName);
     assert.equal(await page.locator("script:not([src])").count() >= 1, true); // Copy JSON remains inert.
     await page.locator("#guestbook").screenshot({ path: path.join(__dirname, "../test-results/guestbook-home.png") });
     await page.locator("#guestbook-body").fill("这张表情好可爱");
     await page.locator("#guestbook-send").click();
-    await page.getByText("收到了！审核通过后才会显示在这里。").waitFor();
+    await page.getByText(/你的匿名名称是 提丰#799/).waitFor();
     assert.equal(submitted.body, "这张表情好可爱");
     assert.equal(submitted.turnstile_token, "test-token");
     assert.equal(submitted.source_type, "home");
@@ -45,7 +47,7 @@ const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4174";
     assert.match(await page.locator("#guestbook").textContent(), /角色、裁切或篇目信息有误/);
     await page.locator("#guestbook-body").fill("详情页的角色可能标错了");
     await page.locator("#guestbook-send").click();
-    await page.getByText("收到了！审核通过后才会显示在这里。").waitFor();
+    await page.getByText(/你的匿名名称是 提丰#799/).waitFor();
     assert.equal(submitted.source_type, "instance");
     assert.equal(submitted.source_id, "instance-1");
     const first = await page.locator("html").getAttribute("style");
@@ -68,7 +70,7 @@ const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4174";
     assert.equal(await page.locator("#guestbook-form").isVisible(), false, "Unconfigured board stays closed");
     assert.equal(await page.locator("#guestbook-list").textContent(), "", "Closed board should not invite an impossible submission");
 
-    const pending = [{ id: "11111111-1111-1111-1111-111111111111", body: "请改错别字", created_at: "2026-09-23T00:00:00.000Z", status: "pending", source_type: "instance", source_id: "instance-1" }];
+    const pending = [{ id: "11111111-1111-1111-1111-111111111111", body: "请改错别字", created_at: "2026-09-23T00:00:00.000Z", status: "pending", source_type: "instance", source_id: "instance-1", author_name: anonymousName }];
     await page.route("**/api/guestbook/admin?*", route => route.fulfill({ json: { messages: pending } }));
     let approval;
     await page.route("**/api/guestbook/admin", route => {
@@ -82,6 +84,7 @@ const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4174";
     await page.locator(".moderator-entry").waitFor();
     assert((await page.locator(".moderator-meta").textContent()).includes("表情详情 · instance-1"));
     assert((await page.locator(".moderator-meta").textContent()).includes("状态：待审核"));
+    assert.equal(await page.locator(".moderator-entry .guestbook-author").textContent(), anonymousName);
     await page.locator("#main").screenshot({ path: path.join(__dirname, "../test-results/guestbook-admin.png") });
     await page.getByRole("button", { name: "通过并公开", exact: true }).click();
     await page.getByText("已保存审核结果。").waitFor();

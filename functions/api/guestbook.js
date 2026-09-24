@@ -1,4 +1,4 @@
-import { available, json, readSmallJson, sameOrigin, validMessage, verifyTurnstile } from "../../lib/guestbook.mjs";
+import { available, getOrCreateGuestbookUser, json, readSmallJson, sameOrigin, validMessage, verifyTurnstile } from "../../lib/guestbook.mjs";
 
 export async function onRequestGet({ request, env }) {
   if (!env.GUESTBOOK_DB) return json({ enabled: false, messages: [], has_more: false });
@@ -8,9 +8,10 @@ export async function onRequestGet({ request, env }) {
     return json({ error: "invalid_source" }, 400);
   }
   try {
+    const fields = "m.body, m.created_at, COALESCE(u.display_name, '早期留言（未分配昵称）') AS author_name";
     const statement = sourceType === "instance"
-      ? env.GUESTBOOK_DB.prepare("SELECT body, created_at FROM guestbook_messages WHERE status = 'approved' AND source_type = 'instance' AND source_id = ? ORDER BY created_at DESC, id DESC LIMIT 10").bind(sourceId)
-      : env.GUESTBOOK_DB.prepare("SELECT body, created_at FROM guestbook_messages WHERE status = 'approved' ORDER BY created_at DESC, id DESC LIMIT 10");
+      ? env.GUESTBOOK_DB.prepare(`SELECT ${fields} FROM guestbook_messages m LEFT JOIN guestbook_users u ON u.user_id = m.user_id WHERE m.status = 'approved' AND m.source_type = 'instance' AND m.source_id = ? ORDER BY m.created_at DESC, m.id DESC LIMIT 10`).bind(sourceId)
+      : env.GUESTBOOK_DB.prepare(`SELECT ${fields} FROM guestbook_messages m LEFT JOIN guestbook_users u ON u.user_id = m.user_id WHERE m.status = 'approved' ORDER BY m.created_at DESC, m.id DESC LIMIT 10`);
     const result = await statement.all();
     return json({ enabled: available(env), messages: result.results || [], has_more: false });
   } catch { return json({ error: "unavailable" }, 503); }
@@ -33,9 +34,10 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "verification_failed" }, 400);
   }
   try {
+    const user = await getOrCreateGuestbookUser(request, env);
     await env.GUESTBOOK_DB.prepare(
-      "INSERT INTO guestbook_messages (id, body, created_at, status, source_type, source_id) VALUES (?, ?, ?, 'pending', ?, ?)"
-    ).bind(crypto.randomUUID(), body, new Date().toISOString(), sourceType, sourceId).run();
-    return json({ ok: true, status: "pending" }, 201);
+      "INSERT INTO guestbook_messages (id, body, created_at, status, source_type, source_id, user_id) VALUES (?, ?, ?, 'pending', ?, ?, ?)"
+    ).bind(crypto.randomUUID(), body, new Date().toISOString(), sourceType, sourceId, user.userId).run();
+    return json({ ok: true, status: "pending", author_name: user.displayName }, 201, { "Set-Cookie": user.cookie });
   } catch { return json({ error: "unavailable" }, 503); }
 }

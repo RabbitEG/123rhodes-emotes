@@ -21,12 +21,15 @@
     for (const message of messages) {
       const item = document.createElement("article");
       item.className = "guestbook-entry";
+      const author = document.createElement("strong");
+      author.className = "guestbook-author";
+      author.textContent = message.author_name || t("guest.legacyAuthor");
       const body = document.createElement("p");
       body.textContent = message.body;
       const time = document.createElement("time");
       time.dateTime = message.created_at;
       time.textContent = date(message.created_at);
-      item.append(body, time);
+      item.append(author, body, time);
       list.append(item);
     }
     if (!list.children.length) {
@@ -94,13 +97,13 @@
     feedback.textContent = t("guest.sending");
     try {
       const response = await fetch("/api/guestbook", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body, turnstile_token: token, source_type: sourceType, source_id: sourceId }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "unavailable");
       form.elements.body.value = "";
-      feedback.textContent = t("guest.sent");
+      feedback.textContent = t("guest.sent").replace("{author}", result.author_name || t("guest.legacyAuthor"));
       window.RhodesAnalytics?.track("guestbook_submit", { context: "unknown" });
     } catch (error) {
       feedback.textContent = t(error.message === "verification_failed" ? "guest.verifyError" : "guest.sendFailed");
