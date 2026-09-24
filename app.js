@@ -11,7 +11,9 @@
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
   const { validate, analyze, assetPath, officialURL } = RhodesStats;
   const isSearchPage = document.body.dataset.page === "search";
+  const isInstancePage = document.body.dataset.page === "instance";
   let release, stats, config = {}, state, visible = 36, matches = [], dataBase = "";
+  let suggestionItems = [], activeSuggestion = -1;
   let marqueePosition = 0, marqueeWidth = 0, lastFrame = 0, manualUntil = 0;
   let ribbonObserver;
   const publicAsset = path => dataBase ? new URL(path, dataBase).href : path;
@@ -46,23 +48,114 @@
     }
     return normalize(e.name).includes(query) || normalize(e.id) === query;
   }
+  function instanceURL(item) { return "/instance.html?id=" + encodeURIComponent(item.id); }
+  function suggestionScore(name, query, alias = false) {
+    const value = normalize(name);
+    if (!value || !value.includes(query)) return Infinity;
+    const category = value === query ? 0 : value.startsWith(query) ? 1 : 2;
+    return category + (alias ? 3 : 0) + Math.min(value.indexOf(query), 999) / 1000;
+  }
+  function collectSuggestions(query, mode) {
+    const characters = [...stats.characters.values()].map(character => {
+      const score = Math.min(suggestionScore(character.name, query), ...(character.aliases ?? []).map(alias => suggestionScore(alias, query, true)));
+      return Number.isFinite(score) ? { kind: "character", id: character.id, name: character.name, score, item: character } : null;
+    }).filter(Boolean);
+    if (mode === "expressions") return characters.sort((a, b) => a.score - b.score || a.name.localeCompare(b.name, "zh-CN")).slice(0, 8);
+
+    const episodes = [...stats.episodes.values()].map(episode => {
+      let score = suggestionScore(episode.name, query);
+      if (/^\d+$/.test(query) && matchesEpisode(episode, query)) score = Math.min(score, 0);
+      else if (normalize(episode.id) === query) score = Math.min(score, 0);
+      return Number.isFinite(score) ? { kind: "episode", id: episode.id, name: episode.name, score, item: episode } : null;
+    }).filter(Boolean);
+    return [...episodes, ...characters].sort((a, b) => a.score - b.score || (a.kind === b.kind ? 0 : a.kind === "episode" ? -1 : 1) || a.name.localeCompare(b.name, "zh-CN", { numeric: true })).slice(0, 8);
+  }
+  function closeSuggestions() {
+    const input = $("#site-search"), box = $("#search-suggestions");
+    if (!input || !box) return;
+    box.hidden = true;
+    input.setAttribute("aria-expanded", "false");
+    input.removeAttribute("aria-activedescendant");
+    activeSuggestion = -1;
+  }
+  function renderSuggestions() {
+    const input = $("#site-search"), box = $("#search-suggestions");
+    if (!input || !box) return;
+    const query = normalize(input.value);
+    if (!release || !stats || !query || document.activeElement !== input) { closeSuggestions(); return; }
+    suggestionItems = collectSuggestions(query, state.mode);
+    if (!suggestionItems.length) { closeSuggestions(); return; }
+    activeSuggestion = -1;
+    input.removeAttribute("aria-activedescendant");
+    box.innerHTML = suggestionItems.map((suggestion, index) => {
+      const isCharacter = suggestion.kind === "character";
+      const type = text(isCharacter ? "search.suggestionCharacter" : "search.suggestionEpisode");
+      const meta = isCharacter
+        ? text(state.mode === "episodes" ? "search.suggestionCharacterEpisodes" : "search.suggestionCharacterCount", { count: number(state.mode === "episodes" ? suggestion.item.episodes.size : suggestion.item.count) })
+        : text("search.suggestionEpisodeCount", { count: number(suggestion.item.count) });
+      return `<button type="button" role="option" tabindex="-1" class="search-suggestion" id="search-suggestion-${index}" aria-selected="false" data-suggestion-index="${index}"><span class="suggestion-primary"><span class="suggestion-kind">${type}</span><strong>${escape(suggestion.name)}</strong></span><span class="suggestion-meta">${meta}</span></button>`;
+    }).join("");
+    box.hidden = false;
+    input.setAttribute("aria-expanded", "true");
+  }
+  function activateSuggestion(index) {
+    if (!suggestionItems.length) return;
+    activeSuggestion = Math.max(0, Math.min(index, suggestionItems.length - 1));
+    const input = $("#site-search");
+    $$(".search-suggestion", $("#search-suggestions")).forEach((option, optionIndex) => {
+      const selected = optionIndex === activeSuggestion;
+      option.setAttribute("aria-selected", String(selected));
+      if (selected) input.setAttribute("aria-activedescendant", option.id);
+    });
+    $("#search-suggestion-" + activeSuggestion)?.scrollIntoView({ block: "nearest" });
+  }
+  function selectSuggestion(index) {
+    const suggestion = suggestionItems[index];
+    if (!suggestion) return;
+    const patch = suggestion.kind === "episode"
+      ? { mode: "episodes", q: suggestion.name, episode: suggestion.id }
+      : { mode: state.mode, q: suggestion.name, character: suggestion.id };
+    closeSuggestions();
+    go(patch, true);
+    closeSuggestions();
+  }
   function image(path, alt, eager = false) {
     const url = assetPath(path);
     return url ? `<img src="${escape(publicAsset(url))}" alt="${escape(alt)}" loading="${eager ? "eager" : "lazy"}" decoding="async">` : `<span class="image-missing">${text("card.unavailable")}</span>`;
   }
   function cropCard(item) {
     const c = stats.characters.get(item.character_id), e = stats.episodes.get(item.episode_id);
-    const url = officialURL(e.official_url);
-    return `<article class="expression-card" data-instance="${escape(item.id)}"><a class="crop-wrap" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-label="${text("card.cropAlt", { character: c.name })} · ${text("card.official")}">${image(item.crop_url, t("card.cropAlt", { character: c.name }))}</a><div class="expression-caption"><button class="name-button" data-character="${escape(c.id)}">${escape(c.name)}</button><button class="episode-button" data-episode="${escape(e.id)}">${escape(e.name)}</button></div><div class="source-detail"><button type="button" class="source-toggle" aria-expanded="false" aria-controls="preview-${escape(item.id)}">${text("card.source")} ↗</button><div class="source-peek" id="preview-${escape(item.id)}">${item.source_preview_url ? image(item.source_preview_url, t("card.previewAlt", { episode: e.name })) : `<p>${text("card.previewMissing")}</p>`}<strong>${escape(e.name)}</strong><a href="${escape(url)}" target="_blank" rel="noopener noreferrer">${text("card.official")}</a></div></div></article>`;
+    return `<article class="expression-card" data-instance="${escape(item.id)}"><a class="crop-wrap" href="${escape(instanceURL(item))}" aria-label="${text("detail.open", { character: c.name })}">${image(item.crop_url, t("card.cropAlt", { character: c.name }))}</a><div class="expression-caption"><button class="name-button" data-character="${escape(c.id)}">${escape(c.name)}</button><button class="episode-button" data-episode="${escape(e.id)}">${escape(e.name)}</button></div><div class="source-detail"><button type="button" class="source-toggle" aria-expanded="false" aria-controls="preview-${escape(item.id)}">${text("card.source")} ↗</button><div class="source-peek" id="preview-${escape(item.id)}">${item.source_preview_url ? image(item.source_preview_url, t("card.previewAlt", { episode: e.name })) : `<p>${text("card.previewMissing")}</p>`}<strong>${escape(e.name)}</strong></div></div></article>`;
+  }
+  function renderInstance() {
+    const status = $("#instance-status"), container = $("#instance-detail");
+    if (!status || !container || !release || !stats) return;
+    const requestedId = new URLSearchParams(location.search).get("id");
+    const item = release.instances.find(instance => instance.id === requestedId);
+    if (!item) {
+      status.hidden = false;
+      status.textContent = t("detail.missing");
+      container.hidden = true;
+      document.title = t("detail.pageTitle") + " · " + t("site.name");
+      return;
+    }
+    const character = stats.characters.get(item.character_id), episode = stats.episodes.get(item.episode_id);
+    const sourceURL = officialURL(episode.official_url);
+    document.title = t("detail.documentTitle", { character: character.name, episode: episode.name });
+    status.hidden = true;
+    container.hidden = false;
+    container.innerHTML = `<div class="instance-layout"><section class="paper-card instance-main"><div class="instance-heading"><span class="instance-kicker">${text("detail.kicker")}</span><h1>${escape(character.name)} · ${text("detail.pageTitle")}</h1><p>${text("detail.intro")}</p></div><div class="instance-art">${image(item.crop_url, t("card.cropAlt", { character: character.name }), true)}</div><dl class="instance-meta"><div><dt>${text("detail.character")}</dt><dd><button data-character="${escape(character.id)}">${escape(character.name)}</button></dd></div><div><dt>${text("detail.episode")}</dt><dd><button data-episode="${escape(episode.id)}">${escape(episode.name)}</button></dd></div><div><dt>instance_id</dt><dd><code>${escape(item.id)}</code></dd></div>${item.image_id ? `<div><dt>image_id</dt><dd><code>${escape(item.image_id)}</code></dd></div>` : ""}</dl></section><aside class="paper-card instance-source"><div class="instance-source-heading"><span aria-hidden="true">✦</span><div><p class="instance-kicker">${text("detail.sourceKicker")}</p><h2>${escape(episode.name)}</h2></div></div><div class="instance-source-art">${item.source_preview_url ? image(item.source_preview_url, t("card.previewAlt", { episode: episode.name }), true) : `<p>${text("card.previewMissing")}</p>`}</div><p class="instance-source-note">${text("detail.sourceNote")}</p><a class="primary instance-official-link" href="${escape(sourceURL)}" target="_blank" rel="noopener noreferrer">${text("detail.officialLink")} <span aria-hidden="true">↗</span></a></aside></div>`;
   }
   function episodeCard(e) {
     const first = release.instances.find(item => item.episode_id === e.id);
     return `<article class="episode-card">${first ? `<button class="episode-cover" data-episode="${escape(e.id)}" aria-label="${text("card.open")} · ${escape(e.name)}">${image(first.crop_url, e.name)}</button>` : '<span class="episode-cover empty-cover" aria-hidden="true">✦</span>'}<div><h3><button class="name-button" data-episode="${escape(e.id)}">${escape(e.name)}</button></h3><p>${text("card.episodeMeta", { crops: e.count, characters: e.characters.size })}</p><div class="episode-characters">${[...e.characters].slice(0, 5).map(cid => `<button data-character="${escape(cid)}">${escape(stats.characters.get(cid).name)}</button>`).join("")}</div><a href="${escape(officialURL(e.official_url))}" target="_blank" rel="noopener noreferrer">${text("card.official")}</a></div></article>`;
   }
   function renderSearch() {
+    if (isInstancePage || !$("#site-search")) return;
     $("#site-search").value = state.q;
     $("#site-search").placeholder = t(state.mode === "expressions" ? "search.placeholderExpressions" : "search.placeholderEpisodes");
     $$("[data-mode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode)));
+    renderSuggestions();
     if (!release) return;
     if (isSearchPage) $("#search-status").textContent = t("search.crops", { count: number(release.instances.length) });
     if (!isSearchPage) return;
@@ -73,7 +166,7 @@
     const pairIds = state.pair.split(",").filter(id => stats.characters.has(id));
     const shared = pairIds.length === 2 ? new Set([...stats.episodes.values()].filter(e => pairIds.every(id => e.characters.has(id))).map(e => e.id)) : null;
     if (state.mode === "episodes") {
-      matches = [...stats.episodes.values()].filter(e => !query || eids.has(e.id) || [...e.characters].some(cid => cids.has(cid))).sort((a, b) => a.name.localeCompare(b.name, "zh-CN", { numeric: true }));
+      matches = [...stats.episodes.values()].filter(e => state.episode ? e.id === state.episode : state.character ? e.characters.has(state.character) : !query || eids.has(e.id) || [...e.characters].some(cid => cids.has(cid))).sort((a, b) => a.name.localeCompare(b.name, "zh-CN", { numeric: true }));
     } else {
       matches = release.instances.filter(item => (!query || cids.has(item.character_id)) && (!state.character || item.character_id === state.character) && (!state.episode || item.episode_id === state.episode) && (!state.pair || (shared?.has(item.episode_id) && pairIds.includes(item.character_id)))).sort((a, b) => String(a.sort_key ?? a.id).localeCompare(String(b.sort_key ?? b.id), "zh-CN", { numeric: true }));
     }
@@ -130,7 +223,7 @@
     return items;
   }
   function drawRibbon() {
-    if (isSearchPage || !release?.instances.length || config.carousel?.enabled === false) return;
+    if (isSearchPage || isInstancePage || !release?.instances.length || config.carousel?.enabled === false) return;
     const max = Math.max(4, Math.min(32, Number(config.carousel?.maxItems) || 16));
     const byId = new Map(release.instances.map(item => [item.id, item]));
     let items = (release.featured_instance_ids || []).map(id => byId.get(String(id))).filter(Boolean);
@@ -141,8 +234,8 @@
     } else if (carouselMode === "random") shuffle(items);
     $("#ribbon-track").removeAttribute("aria-hidden");
     const cards = items.slice(0, max).map(item => {
-      const c = stats.characters.get(item.character_id), e = stats.episodes.get(item.episode_id);
-      return `<a class="sticker" data-instance="${escape(item.id)}" href="${escape(officialURL(e.official_url))}" target="_blank" rel="noopener noreferrer" aria-label="${text("card.cropAlt", { character: c.name })} · ${text("card.official")}">${image(item.crop_url, t("card.cropAlt", { character: c.name }), true)}<span class="sticker-label">${escape(c.name)}</span></a>`;
+      const c = stats.characters.get(item.character_id);
+      return `<a class="sticker" data-instance="${escape(item.id)}" href="${escape(instanceURL(item))}" aria-label="${text("detail.open", { character: c.name })}">${image(item.crop_url, t("card.cropAlt", { character: c.name }), true)}<span class="sticker-label">${escape(c.name)}</span></a>`;
     }).join("");
     const track = $("#ribbon-track");
     track.classList.add("is-marquee");
@@ -179,24 +272,54 @@
     requestAnimationFrame(animateRibbon);
   }
   async function load() {
-    $("#retry").hidden = true; $("#search-status").textContent = t("search.loading");
+    const status = $("#instance-status") || $("#search-status"), retry = $("#retry");
+    if (retry) retry.hidden = true;
+    if (status) status.textContent = t(isInstancePage ? "detail.loading" : "search.loading");
     try {
       const expectedOrigin = dataBase || location.origin;
       const url = new URL(config.releaseManifest || "/data/release.json", expectedOrigin);
       if (url.origin !== new URL(expectedOrigin).origin) throw new Error("Release origin mismatch");
       const response = await fetch(url, { cache: "no-cache" });
-      if (response.status === 404) { $("#search-status").textContent = t("search.unpublished"); return; }
+      if (response.status === 404) { if (status) status.textContent = t(isInstancePage ? "detail.unpublished" : "search.unpublished"); return; }
       if (!response.ok) throw new Error("Release unavailable");
       release = validate(await response.json()); stats = analyze(release);
-      renderSearch(); if (!isSearchPage) { renderStats(); drawRibbon(); }
+      if (isInstancePage) renderInstance();
+      else { renderSearch(); if (!isSearchPage) { renderStats(); drawRibbon(); } }
     } catch (error) {
       release = undefined; stats = undefined;
-      $("#search-status").textContent = t("search.failed"); $("#retry").hidden = false;
+      if (status) status.textContent = t(isInstancePage ? "detail.failed" : "search.failed");
+      if (retry) retry.hidden = false;
       console.warn("Public release unavailable:", error.message);
     }
   }
   function setupEvents() {
-    $("#search-form").addEventListener("submit", event => { event.preventDefault(); go({ q: $("#site-search").value.trim(), browse: !$("#site-search").value.trim() }, true); });
+    const searchInput = $("#site-search"), searchForm = $("#search-form");
+    if (searchInput) {
+      searchInput.addEventListener("input", renderSuggestions);
+      searchInput.addEventListener("focus", renderSuggestions);
+      searchInput.addEventListener("keydown", event => {
+        const box = $("#search-suggestions");
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          if (box.hidden) renderSuggestions();
+          if (box.hidden || !suggestionItems.length) return;
+          event.preventDefault();
+          const step = event.key === "ArrowDown" ? 1 : -1;
+          activateSuggestion(activeSuggestion < 0 ? (step > 0 ? 0 : suggestionItems.length - 1) : activeSuggestion + step);
+        } else if (event.key === "Enter" && !box.hidden && activeSuggestion >= 0) {
+          event.preventDefault();
+          selectSuggestion(activeSuggestion);
+        } else if (event.key === "Escape" && !box.hidden) {
+          event.preventDefault();
+          event.stopPropagation();
+          closeSuggestions();
+        }
+      });
+      searchForm.addEventListener("submit", event => {
+        event.preventDefault();
+        closeSuggestions();
+        go({ q: searchInput.value.trim(), browse: !searchInput.value.trim() }, true);
+      });
+    }
     $$("[data-mode]").forEach(b => b.addEventListener("click", () => {
       const patch = { mode: b.dataset.mode, q: $("#site-search").value.trim(), browse: state.browse };
       if (isSearchPage) go(patch);
@@ -204,9 +327,22 @@
     }));
     $("#clear-search")?.addEventListener("click", () => go({}));
     $("#load-more")?.addEventListener("click", () => { visible += Number(config.pageSize) || 36; renderMatches(); });
-    $("#ranking-kind")?.addEventListener("change", renderRanking); $("#retry").addEventListener("click", load);
+    $("#ranking-kind")?.addEventListener("change", renderRanking); $("#retry")?.addEventListener("click", load);
+    $("#detail-back")?.addEventListener("click", event => {
+      try {
+        const previous = new URL(document.referrer);
+        if (previous.origin === location.origin && previous.pathname === "/search.html") { event.preventDefault(); history.back(); }
+      } catch { /* Keep the search-page fallback link. */ }
+    });
     window.addEventListener("popstate", () => { state = readState(); visible = Number(config.pageSize) || 36; renderSearch(); window.RhodesBackground?.rotate(); });
     document.addEventListener("click", event => {
+      const suggestion = event.target.closest("[data-suggestion-index]");
+      if (suggestion) {
+        event.preventDefault();
+        selectSuggestion(Number(suggestion.dataset.suggestionIndex));
+        return;
+      }
+      if (!event.target.closest("#search-form")) closeSuggestions();
       const toggle = event.target.closest(".source-toggle");
       if (toggle) {
         const card = toggle.closest(".expression-card");
@@ -268,7 +404,7 @@
     } catch { config = {}; }
     carouselMode = config.carousel?.mode === "sequential" ? "sequential" : "random";
     visible = Number(config.pageSize) || 36; await load();
-    if (!isSearchPage && config.carousel?.enabled !== false) requestAnimationFrame(animateRibbon);
+    if (!isSearchPage && !isInstancePage && config.carousel?.enabled !== false) requestAnimationFrame(animateRibbon);
   }
   init().catch(() => { $("#search-status").textContent = document.body.dataset.error; });
 })();

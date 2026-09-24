@@ -56,8 +56,101 @@
     "note": "表情模式输入提示"
   },
   "search.placeholderEpisodes": {
-    "text": "输入角色名",
+    "text": "输入角色名、篇目名或编号",
     "note": "篇目模式输入提示"
+  },
+  "detail.pageTitle": {
+    "text": "表情详情",
+    "note": "单张表情详情页标题"
+  },
+  "detail.documentTitle": {
+    "text": "{character}的表情 · {episode}",
+    "note": "详情页浏览器标题",
+    "slots": ["character", "episode"]
+  },
+  "detail.description": {
+    "text": "查看收录表情、角色信息、篇目和原漫画出处。",
+    "note": "详情页搜索摘要"
+  },
+  "detail.open": {
+    "text": "打开{character}的表情详情",
+    "note": "表情卡片和首页轮播的链接名称",
+    "slots": ["character"]
+  },
+  "detail.kicker": {
+    "text": "表情档案",
+    "note": "详情页顶部小标题"
+  },
+  "detail.intro": {
+    "text": "收录于《123罗德岛！？》的表情记录。",
+    "note": "详情页主图说明"
+  },
+  "detail.loading": {
+    "text": "正在查找这张表情…",
+    "note": "详情页加载状态"
+  },
+  "detail.unpublished": {
+    "text": "公开图库暂时不可用。",
+    "note": "公开数据清单尚未发布"
+  },
+  "detail.failed": {
+    "text": "表情信息暂时没能打开，请稍后重试。",
+    "note": "详情页数据加载错误"
+  },
+  "detail.missing": {
+    "text": "没有找到这张表情，可能已从当前公开图库中移除。",
+    "note": "实例不存在或已不在公开索引中"
+  },
+  "detail.back": {
+    "text": "返回搜索结果",
+    "note": "详情页返回链接"
+  },
+  "detail.sourceKicker": {
+    "text": "原漫画出处",
+    "note": "来源漫画信息小标题"
+  },
+  "detail.sourceNote": {
+    "text": "右侧为对应原漫画缩略图；完整原图请前往泰拉记事社查看。",
+    "note": "详情页来源缩略图说明"
+  },
+  "detail.officialLink": {
+    "text": "点击前往泰拉记事社查看原图",
+    "note": "打开官方源站漫画原图的文字链接"
+  },
+  "detail.character": {
+    "text": "角色",
+    "note": "详情页角色字段名"
+  },
+  "detail.episode": {
+    "text": "篇目",
+    "note": "详情页篇目字段名"
+  },
+  "search.suggestionLabel": {
+    "text": "搜索建议",
+    "note": "搜索框自动补全列表标签"
+  },
+  "search.suggestionCharacter": {
+    "text": "角色",
+    "note": "搜索提示中的角色类型"
+  },
+  "search.suggestionEpisode": {
+    "text": "篇目",
+    "note": "搜索提示中的篇目类型"
+  },
+  "search.suggestionCharacterCount": {
+    "text": "{count} 张表情",
+    "note": "角色提示的表情数量",
+    "slots": ["count"]
+  },
+  "search.suggestionCharacterEpisodes": {
+    "text": "出现于 {count} 个篇目",
+    "note": "篇目检索中角色提示的篇目数量",
+    "slots": ["count"]
+  },
+  "search.suggestionEpisodeCount": {
+    "text": "{count} 个表情",
+    "note": "篇目提示的表情数量",
+    "slots": ["count"]
   },
   "search.submit": {
     "text": "搜索",

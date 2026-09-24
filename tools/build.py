@@ -55,7 +55,7 @@ def build(check=False):
     values = dict(copy, asset_version=version)
     payload = json.dumps(copy, ensure_ascii=False).replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026')
     outputs = {}
-    for name in ('index', 'search', 'about', 'privacy', '404', 'guestbook-admin'):
+    for name in ('index', 'search', 'instance', 'about', 'privacy', '404', 'guestbook-admin'):
         template = (ROOT / ('templates/' + name + '.html')).read_text(encoding='utf-8')
         template = re.sub(r'\{\{>(\w+)\}\}', lambda m: (ROOT / ('templates/partials/' + m[1] + '.html')).read_text(encoding='utf-8'), template)
         template = re.sub(r'\{\{([\w.]+)\}\}', lambda m: payload if m[1] == 'copy_json' else html.escape(values[m[1]], quote=True), template)

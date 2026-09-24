@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f5f2ff"><meta name="description" content="{{detail.description}}"><title>{{detail.pageTitle}} · {{site.name}}</title><link rel="icon" href="/assets/star.svg" type="image/svg+xml"><link rel="stylesheet" href="/styles.css?v={{asset_version}}"><script src="/background.js?v={{asset_version}}" defer></script><script src="/stats.js?v={{asset_version}}" defer></script><script src="/app.js?v={{asset_version}}" defer></script></head>
+<body data-page="instance" data-error="{{detail.failed}}">
+{{>header}}
+<main id="main" class="instance-page wrap">
+  <div class="instance-page-nav"><a class="back-link" href="/search.html" id="detail-back">← {{detail.back}}</a><span class="status-pill">{{detail.kicker}}</span></div>
+  <p id="instance-status" class="detail-status" role="status">{{detail.loading}}</p>
+  <button id="retry" class="pill" type="button" hidden>{{search.retry}}</button>
+  <div id="instance-detail" hidden></div>
+</main>
+{{>footer}}
+<script id="site-copy" type="application/json">{{copy_json}}</script>
+</body></html>

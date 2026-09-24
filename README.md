@@ -8,10 +8,10 @@
 
 ## 当前版本
 
-浅紫/粉色贴纸册风格，居中首页：顶部真实 instance 持续横向慢速滚动 → 一个搜索框切换表情/篇目 → 首页统计和榜单 → 留言区与来源说明。搜索后进入独立的 search.html 结果页。
+浅紫/粉色贴纸册风格，居中首页：顶部真实 instance 持续横向慢速滚动 → 一个搜索框切换表情/篇目 → 首页统计和榜单 → 留言区与来源说明。搜索后进入独立结果页，输入时可从下拉建议直接选角色或篇目；点击单张表情会打开站内详情页。
 
 - 名称、别名、篇目编号搜索；角色/篇目/组合过滤；URL 分享、刷新和前后退恢复。
-- 人物图片网格、继续加载、原始整列的低清出处预览、官方篇目外链。
+- 人物图片网格、继续加载、角色/篇目自动提示。单张表情详情展示 crop、角色与篇目信息、原漫画缩略图，并提供文字链接前往泰拉记事社。
 - 四项总量、前十位角色出场占比环形图、六种角色榜前 30、双向/单向篇目共现比例和单篇出场记录前 30。
 - 表情带按像素速度连续移动；随机/顺序控制实例排列，支持暂停/继续、手动往后看、悬停/聚焦暂停和系统减少动态效果。
 - 手机适配、图片失败提示、清单缺失/错误状态和重试。
@@ -42,12 +42,12 @@ python3 -m http.server 4173 --bind 127.0.0.1
 
 访问 <http://127.0.0.1:4173>。无需安装前端框架或 Python 依赖。
 
-构建生成根目录 index.html / search.html / about.html / privacy.html / 404.html，并同步生成 _headers。不要直接修改这些生成文件。确认效果后：
+构建生成根目录 index.html / search.html / instance.html / about.html / privacy.html / 404.html，并同步生成 _headers。不要直接修改这些生成文件。确认效果后：
 
 ```bash
 python3 tools/build.py --check
-git add content/copy.zh-CN.json index.html search.html about.html privacy.html 404.html guestbook-admin.html _headers
-git commit -m "docs: update site copy"
+git add app.js styles.css content/copy.zh-CN.json templates tools/build.py tools/preview.py index.html search.html instance.html about.html privacy.html 404.html guestbook-admin.html _headers README.md
+git commit -m "feat: add instance detail pages"
 git push
 ```
 
@@ -112,6 +112,7 @@ tools/upload_r2.py      上传公开展示资源，最后更新索引
 config/site.json        主题、轮播、分页、数据地址
 index.html              生成：首页、统一搜索、统计
 search.html             生成：独立搜索结果页
+instance.html           生成：单张表情信息与原漫画出处
 about.html              生成：关于和版权
 privacy.html            生成：隐私
 guestbook-admin.html    生成：私用留言审核入口（必须提供服务器密钥）

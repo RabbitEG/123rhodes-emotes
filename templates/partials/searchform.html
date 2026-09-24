@@ -1,5 +1,6 @@
         <form action="/search.html" method="get" id="search-form" class="search-box" role="search">
           <div class="search-modes" role="group" aria-label="{{search.label}}"><button type="button" data-mode="expressions" aria-pressed="true">{{search.expressions}}</button><button type="button" data-mode="episodes" aria-pressed="false">{{search.episodes}}</button></div>
-          <div class="search-field"><span aria-hidden="true" class="search-icon"></span><label for="site-search" class="sr-only">{{search.label}}</label><input id="site-search" name="q" type="search" autocomplete="off" placeholder="{{search.placeholderExpressions}}"><button class="primary" type="submit">{{search.submit}} <span aria-hidden="true">↗</span></button></div>
+          <div class="search-field"><span aria-hidden="true" class="search-icon"></span><label for="site-search" class="sr-only">{{search.label}}</label><input id="site-search" name="q" type="search" role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded="false" aria-controls="search-suggestions" autocomplete="off" placeholder="{{search.placeholderExpressions}}"><button class="primary" type="submit">{{search.submit}} <span aria-hidden="true">↗</span></button></div>
+          <div class="search-suggestions" id="search-suggestions" role="listbox" aria-label="{{search.suggestionLabel}}" hidden></div>
         </form>
         <p id="search-status" role="status">{{search.loading}}</p><button id="retry" class="pill" type="button" hidden>{{search.retry}}</button>
