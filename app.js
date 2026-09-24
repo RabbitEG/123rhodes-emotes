@@ -141,10 +141,18 @@
     }
     const character = stats.characters.get(item.character_id), episode = stats.episodes.get(item.episode_id);
     const sourceURL = officialURL(episode.official_url);
+    const otherCharacters = [...episode.characters]
+      .filter(characterId => characterId !== character.id)
+      .map(characterId => stats.characters.get(characterId))
+      .filter(Boolean)
+      .sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+    const otherCharacterLinks = otherCharacters.length
+      ? otherCharacters.map(other => `<button type="button" data-character="${escape(other.id)}">${escape(other.name)}</button>`).join("")
+      : `<span class="instance-related-empty">${text("detail.noEpisodeOthers")}</span>`;
     document.title = t("detail.documentTitle", { character: character.name, episode: episode.name });
     status.hidden = true;
     container.hidden = false;
-    container.innerHTML = `<div class="instance-layout"><section class="paper-card instance-main"><div class="instance-heading"><span class="instance-kicker">${text("detail.kicker")}</span><h1>${escape(character.name)} · ${text("detail.pageTitle")}</h1></div><div class="instance-art">${image(item.crop_url, t("card.cropAlt", { character: character.name }), true)}</div><dl class="instance-meta"><div><dt>${text("detail.character")}</dt><dd><button data-character="${escape(character.id)}">${escape(character.name)}</button></dd></div><div><dt>${text("detail.episode")}</dt><dd><button data-episode="${escape(episode.id)}">${escape(episode.name)}</button></dd></div></dl></section><aside class="paper-card instance-source"><div class="instance-source-heading"><span aria-hidden="true">✦</span><div><p class="instance-kicker">${text("detail.sourceKicker")}</p><h2>${escape(episode.name)}</h2></div></div><div class="instance-source-art">${item.source_preview_url ? image(item.source_preview_url, t("card.previewAlt", { episode: episode.name }), true) : `<p>${text("card.previewMissing")}</p>`}</div><p class="instance-source-note">${text("detail.sourceNote")}</p><a class="primary instance-official-link" href="${escape(sourceURL)}" target="_blank" rel="noopener noreferrer">${text("detail.officialLink")} <span aria-hidden="true">↗</span></a></aside></div>`;
+    container.innerHTML = `<div class="instance-layout"><section class="paper-card instance-main"><div class="instance-heading"><span class="instance-kicker">${text("detail.kicker")}</span><h1>${escape(character.name)}</h1></div><div class="instance-art">${image(item.crop_url, t("card.cropAlt", { character: character.name }), true)}</div><dl class="instance-meta"><div><dt>${text("detail.character")}</dt><dd><button data-character="${escape(character.id)}">${escape(character.name)}</button></dd></div><div><dt>${text("detail.episode")}</dt><dd><button data-episode="${escape(episode.id)}">${escape(episode.name)}</button></dd></div><div class="instance-related"><dt>${text("detail.episodeOthers")}</dt><dd><div class="instance-character-links">${otherCharacterLinks}</div></dd></div></dl></section><aside class="paper-card instance-source"><div class="instance-source-heading"><span aria-hidden="true">✦</span><div><p class="instance-kicker">${text("detail.sourceKicker")}</p><h2>${escape(episode.name)}</h2></div></div><div class="instance-source-art">${item.source_preview_url ? image(item.source_preview_url, t("card.previewAlt", { episode: episode.name }), true) : `<p>${text("card.previewMissing")}</p>`}</div><a class="primary instance-official-link" href="${escape(sourceURL)}" target="_blank" rel="noopener noreferrer">${text("detail.officialLink")} <span aria-hidden="true">↗</span></a></aside></div>`;
   }
   function episodeCard(e) {
     const first = release.instances.find(item => item.episode_id === e.id);

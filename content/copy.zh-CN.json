@@ -78,7 +78,7 @@
     "slots": ["character"]
   },
   "detail.kicker": {
-    "text": "表情档案",
+    "text": "表情详情",
     "note": "详情页顶部小标题"
   },
   "detail.loading": {
@@ -105,13 +105,17 @@
     "text": "原漫画出处",
     "note": "来源漫画信息小标题"
   },
-  "detail.sourceNote": {
-    "text": "右侧为对应原漫画缩略图；完整原图请前往泰拉记事社查看。",
-    "note": "详情页来源缩略图说明"
-  },
   "detail.officialLink": {
-    "text": "点击前往泰拉记事社查看原图",
+    "text": "点击查看原图",
     "note": "打开官方源站漫画原图的文字链接"
+  },
+  "detail.episodeOthers": {
+    "text": "本篇目其它角色",
+    "note": "详情页当前篇目的其它角色列表"
+  },
+  "detail.noEpisodeOthers": {
+    "text": "目前没有其它已收录角色",
+    "note": "篇目中没有其它已公开角色时"
   },
   "detail.character": {
     "text": "角色",
