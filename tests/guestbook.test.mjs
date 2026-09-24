@@ -32,6 +32,7 @@ const db = {
         return null;
       },
       async all() {
+        if (query === "SELECT display_name FROM guestbook_messages LIMIT 0") return { results: [] };
         const publicList = query.includes("m.status = 'approved'");
         let selected = publicList
           ? rows.filter(row => row.status === "approved" && (!query.includes("m.source_id = ?") || (row.source_type === "instance" && row.source_id === params[0])))
@@ -40,8 +41,8 @@ const db = {
         if (publicList) selected = selected.slice(0, 10);
         else selected = selected.slice(0, 100);
         return { results: selected.map(row => publicList
-          ? { body: row.body, created_at: row.created_at, author_name: users.find(user => user.user_id === row.user_id)?.display_name || "早期留言（未分配昵称）" }
-          : { id: row.id, body: row.body, created_at: row.created_at, status: row.status, reviewed_at: row.reviewed_at, source_type: row.source_type, source_id: row.source_id, author_name: users.find(user => user.user_id === row.user_id)?.display_name || "早期留言（未分配昵称）", first_author_name: users.find(user => user.user_id === row.user_id)?.first_display_name || "早期留言（未分配昵称）" }) };
+          ? { body: row.body, created_at: row.created_at, author_name: row.display_name || users.find(user => user.user_id === row.user_id)?.display_name || "早期留言（未分配昵称）" }
+          : { id: row.id, body: row.body, created_at: row.created_at, status: row.status, reviewed_at: row.reviewed_at, source_type: row.source_type, source_id: row.source_id, author_name: row.display_name || "早期留言（未分配昵称）", visitor_name: users.find(user => user.user_id === row.user_id)?.first_display_name || users.find(user => user.user_id === row.user_id)?.display_name || "早期留言（未分配昵称）" }) };
       },
       async run() {
         if (query.startsWith("INSERT OR IGNORE INTO guestbook_users")) {
@@ -51,8 +52,8 @@ const db = {
           return { meta: { changes: 1 } };
         }
         if (query.startsWith("INSERT INTO guestbook_messages")) {
-          const [id, body, created_at, source_type, source_id, user_id] = params;
-          rows.push({ id, body, created_at, status: "pending", reviewed_at: null, source_type, source_id, user_id });
+          const [id, body, created_at, source_type, source_id, user_id, display_name] = params;
+          rows.push({ id, body, created_at, status: "pending", reviewed_at: null, source_type, source_id, user_id, display_name });
           return { meta: { changes: 1 } };
         }
         if (query.startsWith("UPDATE guestbook_users")) {
@@ -81,10 +82,10 @@ const db = {
           throw new Error("simulated message write failure");
         }
         if (statement.query.startsWith("INSERT INTO guestbook_messages") && statement.query.includes("SELECT")) {
-          const [id, body, created_at, source_type, source_id, token_hash] = statement.params;
+          const [id, body, created_at, source_type, source_id, display_name, token_hash] = statement.params;
           const user = users.find(item => item.token_hash === token_hash);
           if (user) {
-            rows.push({ id, body, created_at, status: "pending", reviewed_at: null, source_type, source_id, user_id: user.user_id });
+            rows.push({ id, body, created_at, status: "pending", reviewed_at: null, source_type, source_id, user_id: user.user_id, display_name });
             result.push({ meta: { changes: 1 } });
           } else result.push({ meta: { changes: 0 } });
         } else result.push(await statement.run());
@@ -141,6 +142,7 @@ try {
   assert.equal(rows[0].source_type, "home");
   assert.equal(rows[0].source_id, "");
   assert.equal(rows[0].user_id, users[0].user_id);
+  assert.equal(rows[0].display_name, preview.author_name, "Each message stores its submitted display nickname");
   assert.equal(users[0].token_hash.length, 64);
   assert.equal(users[0].first_display_name, preview.author_name, "The first assigned nickname is kept separately");
   assert.equal(users[0].token_hash.includes(visitorCookie.split("=")[1]), false, "Only a hash of the cookie token is stored");
@@ -160,14 +162,15 @@ try {
   assert.equal(approvedHomeMessage.author_name, firstSubmissionData.author_name);
   assert.equal("token_hash" in approvedHomeMessage, false);
   assert.equal("user_id" in approvedHomeMessage, false);
-  assert.equal("first_author_name" in approvedHomeMessage, false, "Public comments expose only the current nickname");
+  assert.equal("visitor_name" in approvedHomeMessage, false, "Public comments expose only the per-message display nickname");
   await moderate({ request: request("/admin", "POST", { id: rows[0].id, status: "rejected" }, secret), env });
   assert.deepEqual((await (await listPublic({ request: request(), env })).json()).messages, []);
 
   const otherPreviewName = firstSubmissionData.author_name.startsWith("阿米娅") ? "提丰#999" : "阿米娅#999";
   const sameUserSubmission = await submit({ request: request("", "POST", { body: "详情页纠错", display_name: otherPreviewName, turnstile_token: "good", source_type: "instance", source_id: "instance-1" }, "", visitorCookie), env });
   assert.equal(sameUserSubmission.status, 201);
-  assert.equal((await sameUserSubmission.json()).author_name, firstSubmissionData.author_name, "A browser keeps its anonymous name across pages");
+  assert.equal((await sameUserSubmission.json()).author_name, firstSubmissionData.author_name, "A browser uses its current alias until it rerolls");
+  assert.equal(rows[1].display_name, firstSubmissionData.author_name);
   assert.equal(rows[1].source_type, "instance");
   assert.equal(rows[1].source_id, "instance-1");
   assert.equal(rows[1].user_id, rows[0].user_id);
@@ -188,11 +191,21 @@ try {
   assert.equal(users[0].first_display_name, firstSubmissionData.author_name, "Reroll preserves the first nickname");
   assert.equal(users[0].display_name, rerolledIdentity.author_name);
   const detailAfterReroll = (await (await listPublic({ request: request("?source_type=instance&source_id=instance-1"), env })).json()).messages;
-  assert.equal(detailAfterReroll[0].author_name, rerolledIdentity.author_name, "Previously published comments display the current nickname");
+  assert.equal(detailAfterReroll[0].author_name, firstSubmissionData.author_name, "Previously published comments keep the nickname used when sent");
   const approvedAdminMessages = (await (await listAdmin({ request: request("/admin?status=approved", "GET", null, secret), env })).json()).messages;
-  assert.equal(approvedAdminMessages.find(message => message.id === rows[1].id).first_author_name, firstSubmissionData.author_name);
-  assert.equal(approvedAdminMessages.find(message => message.id === rows[1].id).author_name, rerolledIdentity.author_name);
+  assert.equal(approvedAdminMessages.find(message => message.id === rows[1].id).visitor_name, firstSubmissionData.author_name);
+  assert.equal(approvedAdminMessages.find(message => message.id === rows[1].id).author_name, firstSubmissionData.author_name);
+  const newAliasSubmission = await submit({ request: request("", "POST", { body: "换名后的新留言", display_name: rerolledIdentity.author_name, turnstile_token: "good", source_type: "instance", source_id: "instance-1" }, "", visitorCookie), env });
+  assert.equal(newAliasSubmission.status, 201);
+  assert.equal(rows[2].display_name, rerolledIdentity.author_name, "A rerolled alias is snapshotted on the next message");
+  assert.equal(rows[2].user_id, rows[1].user_id, "Both aliases remain linked to the same visitor");
+  await moderate({ request: request("/admin", "POST", { id: rows[2].id, status: "approved" }, secret), env });
+  const twoNames = (await (await listPublic({ request: request("?source_type=instance&source_id=instance-1"), env })).json()).messages;
+  assert.equal(twoNames.find(message => message.body === "详情页纠错").author_name, firstSubmissionData.author_name);
+  assert.equal(twoNames.find(message => message.body === "换名后的新留言").author_name, rerolledIdentity.author_name);
+  assert.equal(twoNames.some(message => "visitor_name" in message), false, "The stable visitor alias is private to the admin API");
   await moderate({ request: request("/admin", "POST", { id: rows[1].id, status: "rejected" }, secret), env });
+  await moderate({ request: request("/admin", "POST", { id: rows[2].id, status: "rejected" }, secret), env });
   const userCountBeforeConflict = users.length, rowCountBeforeConflict = rows.length;
   const conflict = await submit({ request: request("", "POST", { body: "抢占失败的留言", display_name: firstSubmissionData.author_name, turnstile_token: "good" }), env });
   assert.equal(conflict.status, 409);

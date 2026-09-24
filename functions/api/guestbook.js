@@ -1,4 +1,4 @@
-import { available, json, prepareGuestbookSubmission, readSmallJson, sameOrigin, validMessage, verifyTurnstile, visitorCookie } from "../../lib/guestbook.mjs";
+import { available, hasMessageNameSnapshots, json, prepareGuestbookSubmission, readSmallJson, sameOrigin, validMessage, verifyTurnstile, visitorCookie } from "../../lib/guestbook.mjs";
 
 export async function onRequestGet({ request, env }) {
   if (!env.GUESTBOOK_DB) return json({ enabled: false, messages: [], has_more: false });
@@ -8,7 +8,11 @@ export async function onRequestGet({ request, env }) {
     return json({ error: "invalid_source" }, 400);
   }
   try {
-    const fields = "m.body, m.created_at, COALESCE(u.display_name, '早期留言（未分配昵称）') AS author_name";
+    const hasSnapshots = await hasMessageNameSnapshots(env.GUESTBOOK_DB);
+    const authorField = hasSnapshots
+      ? "COALESCE(m.display_name, u.display_name, '早期留言（未分配昵称）') AS author_name"
+      : "COALESCE(u.display_name, '早期留言（未分配昵称）') AS author_name";
+    const fields = `m.body, m.created_at, ${authorField}`;
     const statement = sourceType === "instance"
       ? env.GUESTBOOK_DB.prepare(`SELECT ${fields} FROM guestbook_messages m LEFT JOIN guestbook_users u ON u.user_id = m.user_id WHERE m.status = 'approved' AND m.source_type = 'instance' AND m.source_id = ? ORDER BY m.created_at DESC, m.id DESC LIMIT 10`).bind(sourceId)
       : env.GUESTBOOK_DB.prepare(`SELECT ${fields} FROM guestbook_messages m LEFT JOIN guestbook_users u ON u.user_id = m.user_id WHERE m.status = 'approved' ORDER BY m.created_at DESC, m.id DESC LIMIT 10`);
@@ -35,15 +39,24 @@ export async function onRequestPost({ request, env }) {
   }
   try {
     const user = await prepareGuestbookSubmission(request, env, input?.display_name);
+    const hasSnapshots = await hasMessageNameSnapshots(env.GUESTBOOK_DB);
     const messageId = crypto.randomUUID();
     const createdAt = new Date().toISOString();
     const messageForUser = user.existing
       ? env.GUESTBOOK_DB.prepare(
-        "INSERT INTO guestbook_messages (id, body, created_at, status, source_type, source_id, user_id) VALUES (?, ?, ?, 'pending', ?, ?, ?)"
-      ).bind(messageId, body, createdAt, sourceType, sourceId, user.userId)
+        hasSnapshots
+          ? "INSERT INTO guestbook_messages (id, body, created_at, status, source_type, source_id, user_id, display_name) VALUES (?, ?, ?, 'pending', ?, ?, ?, ?)"
+          : "INSERT INTO guestbook_messages (id, body, created_at, status, source_type, source_id, user_id) VALUES (?, ?, ?, 'pending', ?, ?, ?)"
+      ).bind(...(hasSnapshots
+        ? [messageId, body, createdAt, sourceType, sourceId, user.userId, user.displayName]
+        : [messageId, body, createdAt, sourceType, sourceId, user.userId]))
       : env.GUESTBOOK_DB.prepare(
-        "INSERT INTO guestbook_messages (id, body, created_at, status, source_type, source_id, user_id) SELECT ?, ?, ?, 'pending', ?, ?, user_id FROM guestbook_users WHERE token_hash = ?"
-      ).bind(messageId, body, createdAt, sourceType, sourceId, user.tokenHash);
+        hasSnapshots
+          ? "INSERT INTO guestbook_messages (id, body, created_at, status, source_type, source_id, user_id, display_name) SELECT ?, ?, ?, 'pending', ?, ?, user_id, ? FROM guestbook_users WHERE token_hash = ?"
+          : "INSERT INTO guestbook_messages (id, body, created_at, status, source_type, source_id, user_id) SELECT ?, ?, ?, 'pending', ?, ?, user_id FROM guestbook_users WHERE token_hash = ?"
+      ).bind(...(hasSnapshots
+        ? [messageId, body, createdAt, sourceType, sourceId, user.displayName, user.tokenHash]
+        : [messageId, body, createdAt, sourceType, sourceId, user.tokenHash]));
     const statements = user.existing ? [messageForUser] : [
       env.GUESTBOOK_DB.prepare(
         "INSERT OR IGNORE INTO guestbook_users (token_hash, display_name, first_display_name, created_at) VALUES (?, ?, ?, ?)"

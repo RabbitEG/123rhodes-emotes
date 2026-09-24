@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS guestbook_messages (
   reviewed_at TEXT,
   source_type TEXT NOT NULL DEFAULT 'home' CHECK (source_type IN ('home', 'instance')),
   source_id TEXT NOT NULL DEFAULT '',
-  user_id INTEGER REFERENCES guestbook_users(user_id)
+  user_id INTEGER REFERENCES guestbook_users(user_id),
+  display_name TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS guestbook_status_time ON guestbook_messages (status, created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS guestbook_user_time ON guestbook_messages (user_id, created_at DESC);
