@@ -702,6 +702,37 @@
     "text": "发起位置",
     "note": "管理页留言来源字段"
   },
+  "guest.adminId": {
+    "text": "留言 ID",
+    "note": "审核表格中的留言短 ID"
+  },
+  "guest.adminTime": {
+    "text": "留言时间",
+    "note": "审核表格中的提交时间"
+  },
+  "guest.adminBody": {
+    "text": "留言内容",
+    "note": "审核表格中的正文列"
+  },
+  "guest.adminActions": {
+    "text": "审核操作",
+    "note": "审核表格中的状态操作列"
+  },
+  "guest.adminCount": {
+    "text": "当前列表共 {count} 条",
+    "note": "审核表格当前筛选状态的留言数量",
+    "slots": [
+      "count"
+    ]
+  },
+  "guest.adminActionFor": {
+    "text": "{action}留言 {id}",
+    "note": "留言审核按钮的辅助标签",
+    "slots": [
+      "action",
+      "id"
+    ]
+  },
   "guest.adminOriginHome": {
     "text": "首页",
     "note": "留言来源：首页"
