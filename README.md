@@ -71,7 +71,7 @@ git push
 | releaseManifest | 发布清单路径，默认 /data/release.json |
 | publicDataBaseUrl | 保持空值，通过本站 Pages Function 的 media binding 读取 R2 |
 
-当前五张封面从本地 `../123罗德岛_官方原图/封面图` 按 1920×1080 原尺寸重新编码为高画质 WebP，放在 R2 的 `media/backgrounds/`，原始文件不进入 GitHub。浏览器每次载入页面（包括搜索跳转、刷新），以及结果页内再次搜索或前后退时，从列表中随机换封面；使用本标签页 sessionStorage 记住上一张并避免连续重复。只点开图片预览或滚动时不换。`theme.backgroundImage` 非空时固定使用单张图；清空 `theme.backgroundImages` 可以关闭随机封面。背景全页以 80% 透明度完整显示，不裁切。新增封面时运行 `.venv-publish312/bin/python tools/publish_backgrounds.py --upload`，将输出的新路径加入 `config/site.json` 的列表，再构建、提交和部署。具体卡片尺寸、字体大小等样式在 styles.css 中修改。
+当前五张封面从本地 `../123罗德岛_官方原图/封面图` 按 1920×1080 原尺寸重新编码为高画质 WebP，放在 R2 的 `media/backgrounds/`，原始文件不进入 GitHub。浏览器每次载入页面（包括搜索跳转、刷新），以及结果页内再次搜索或前后退时，从列表中随机换封面；使用本标签页 sessionStorage 记住上一张并避免连续重复。只点开图片预览或滚动时不换。`theme.backgroundImage` 非空时固定使用单张图；清空 `theme.backgroundImages` 可以关闭随机封面。背景全页以 90% 透明度完整显示，不裁切。新增封面时运行 `.venv-publish312/bin/python tools/publish_backgrounds.py --upload`，将输出的新路径加入 `config/site.json` 的列表，再构建、提交和部署。具体卡片尺寸、字体大小等样式在 styles.css 中修改。
 
 ## 统计与后续数据工作
 
