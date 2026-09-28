@@ -146,6 +146,42 @@
     }
     const desc = field => (a, b) => b[field] - a[field] || byName(a, b);
     const operatorRows = rows.filter(c => c.is_operator === true);
+    // Most alter forms are already folded into one public canonical row. These
+    // explicit family aliases cover the remaining base/alter pair in the
+    // roster, so absence rankings do not mistake the zero-instance base row
+    // for a character who appears through the alter form.
+    const operatorFamilyAliases = new Map([
+      ["推进之王", "维娜·维多利亚"]
+    ]);
+    const operatorRankingRows = [...operatorRows.reduce((families, row) => {
+      const familyName = operatorFamilyAliases.get(row.name) ?? row.name;
+      if (!families.has(familyName)) families.set(familyName, []);
+      families.get(familyName).push(row);
+      return families;
+    }, new Map())].map(([familyName, members]) => {
+      const preferred = members.find(row => row.name === familyName) ?? members[0];
+      const aggregate = {
+        ...preferred,
+        name: familyName,
+        count: 0,
+        episodes: new Set(),
+        perEpisode: new Map(),
+        homeEpisodes: new Set(),
+        homes: 0,
+        cameo: 0,
+        cameoEpisodes: new Set()
+      };
+      for (const member of members) {
+        aggregate.count += member.count;
+        member.episodes.forEach(episodeId => aggregate.episodes.add(episodeId));
+        member.homeEpisodes.forEach(episodeId => aggregate.homeEpisodes.add(episodeId));
+        member.cameoEpisodes.forEach(episodeId => aggregate.cameoEpisodes.add(episodeId));
+        aggregate.cameo += member.cameo;
+        for (const [episodeId, count] of member.perEpisode) aggregate.perEpisode.set(episodeId, (aggregate.perEpisode.get(episodeId) || 0) + count);
+      }
+      aggregate.homes = aggregate.homeEpisodes.size;
+      return aggregate;
+    });
     const rankings = {
       appearances: [...present].sort(desc("count")),
       searches: [],
@@ -153,8 +189,8 @@
       rare: [...present].sort((a, b) => a.count - b.count || byName(a, b)),
       cameo: castReady ? present.filter(c => c.cameo > 0).sort(desc("cameo")) : null,
       noHome: castReady ? present.filter(c => c.homes === 0).sort(desc("count")) : null,
-      noRhodes: castReady ? operatorRows.filter(c => c.homes === 0 && Number.isFinite(c.implementationAgeDays)).sort(desc("implementationAgeDays")) : null,
-      noAppearance: operatorRows.filter(c => c.count === 0).sort((a, b) =>
+      noRhodes: castReady ? operatorRankingRows.filter(c => c.homes === 0 && Number.isFinite(c.implementationAgeDays)).sort(desc("implementationAgeDays")) : null,
+      noAppearance: operatorRankingRows.filter(c => c.count === 0).sort((a, b) =>
         (Number.isFinite(b.implementationAgeDays) ? b.implementationAgeDays : -1) -
         (Number.isFinite(a.implementationAgeDays) ? a.implementationAgeDays : -1) || byName(a, b)),
       absence: (publishedReady || orderReady) ? [...present].sort(desc("absence")) : null
