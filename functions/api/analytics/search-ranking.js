@@ -11,18 +11,27 @@ export async function onRequestGet({ env }) {
   if (!env.ANALYTICS_DB) return response({ items: [] });
   try {
     const result = await env.ANALYTICS_DB.prepare(
-      `SELECT object_id AS id, SUM(event_count) AS searches
-       FROM analytics_daily_counts
-       WHERE event_type IN ('search_submit', 'suggestion_select')
-         AND object_type = 'character' AND object_id <> ''
-       GROUP BY object_id
-       ORDER BY searches DESC, id ASC
+      `SELECT id, SUM(event_count) AS hot
+       FROM (
+         SELECT CASE WHEN character_id <> '' THEN character_id
+                     WHEN object_type = 'character' THEN object_id ELSE '' END AS id,
+                event_count
+         FROM analytics_daily_counts
+         WHERE event_type IN (
+           'search_submit', 'search_results', 'suggestion_select', 'character_select',
+           'instance_impression', 'instance_link_click', 'instance_open', 'source_click'
+         )
+           AND (character_id <> '' OR (object_type = 'character' AND object_id <> ''))
+       )
+       WHERE id <> ''
+       GROUP BY id
+       ORDER BY hot DESC, id ASC
        LIMIT 100`
     ).all();
     const items = (result.results || []).flatMap(row => {
       const id = typeof row.id === "string" ? row.id : "";
-      const searches = Number(row.searches);
-      return id && Number.isSafeInteger(searches) && searches > 0 ? [{ id, searches }] : [];
+      const hot = Number(row.hot);
+      return id && Number.isSafeInteger(hot) && hot > 0 ? [{ id, hot }] : [];
     });
     return response({ items });
   } catch {

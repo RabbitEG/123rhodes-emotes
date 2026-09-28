@@ -94,10 +94,13 @@ assert.equal((await reportResponse.json()).configured, true);
 const searchRankingDb = {
   prepare(sql) {
     assert.match(sql, /analytics_daily_counts/);
-    assert.match(sql, /search_submit.*suggestion_select/s);
+    assert.match(sql, /search_submit.*search_results.*suggestion_select/s);
+    assert.match(sql, /character_id/);
+    assert.match(sql, /source_click/);
+    assert.match(sql, /object_type = 'character'/);
     return { async all() { return { results: [
-      { id: "char-amiya", searches: 14 },
-      { id: "char-doctor", searches: 6 },
+      { id: "char-amiya", hot: 14 },
+      { id: "char-doctor", hot: 6 },
     ] }; } };
   },
 };
@@ -105,7 +108,7 @@ const searchRankingResponse = await onRequestSearchRanking({ env: { ANALYTICS_DB
 assert.equal(searchRankingResponse.status, 200);
 assert.equal(searchRankingResponse.headers.get("Cache-Control"), "public, max-age=60, s-maxage=300");
 assert.deepEqual((await searchRankingResponse.json()).items, [
-  { id: "char-amiya", searches: 14 }, { id: "char-doctor", searches: 6 },
+  { id: "char-amiya", hot: 14 }, { id: "char-doctor", hot: 6 },
 ]);
 assert.deepEqual((await (await onRequestSearchRanking({ env: {} })).json()).items, [], "Missing analytics stays fail-soft for public pages");
 console.log("Analytics: allowlist, privacy stripping, DNT, same-origin, batching, idempotency, and admin auth passed");

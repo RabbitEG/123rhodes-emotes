@@ -32,7 +32,7 @@ export async function onRequestGet({ request, env }) {
   try {
     const [rangeTotals, allTimeTotals, daily, topInstances, topCharacters, topEpisodes,
       allTimeInstances, allTimeCharacters, allTimeEpisodes, sources, searches, searchTargets,
-      screens, countries, sessionCount] = await Promise.all([
+      hotCharacterEvents, screens, countries, sessionCount] = await Promise.all([
       all(env.ANALYTICS_DB,
         "SELECT event_type, COUNT(*) AS count FROM analytics_events WHERE received_at >= ? GROUP BY event_type", cutoff),
       all(env.ANALYTICS_DB,
@@ -90,6 +90,20 @@ export async function onRequestGet({ request, env }) {
            AND object_type IN ('character', 'episode') AND object_id <> ''
          GROUP BY object_type, object_id ORDER BY count DESC LIMIT 30`, cutoff),
       all(env.ANALYTICS_DB,
+        `SELECT CASE WHEN character_id <> '' THEN character_id
+                     WHEN object_type = 'character' THEN object_id ELSE '' END AS id,
+                event_type, COUNT(*) AS count
+         FROM analytics_events
+         WHERE received_at >= ?
+           AND event_type IN (
+             'search_submit', 'search_results', 'suggestion_select', 'character_select',
+             'instance_impression', 'instance_link_click', 'instance_open', 'source_click'
+           )
+           AND (character_id <> '' OR (object_type = 'character' AND object_id <> ''))
+         GROUP BY id, event_type
+         HAVING id <> ''
+         ORDER BY id, count DESC`, cutoff),
+      all(env.ANALYTICS_DB,
         `SELECT screen_class AS name, COUNT(*) AS count FROM analytics_events
          WHERE received_at >= ? AND event_type = 'page_view' GROUP BY screen_class ORDER BY count DESC`, cutoff),
       all(env.ANALYTICS_DB,
@@ -110,7 +124,8 @@ export async function onRequestGet({ request, env }) {
       unique_sessions_days: Math.min(days, RETAIN_SESSION_DAYS),
       daily, top_instances: topInstances, top_characters: topCharacters, top_episodes: topEpisodes,
       all_time_instances: allTimeInstances, all_time_characters: allTimeCharacters, all_time_episodes: allTimeEpisodes,
-      entry_sources: sources, searches, search_targets: searchTargets, screens, countries, configured: true,
+      entry_sources: sources, searches, search_targets: searchTargets, hot_character_events: hotCharacterEvents,
+      screens, countries, configured: true,
     });
   } catch {
     return json({ error: "analytics_unavailable" }, 503);

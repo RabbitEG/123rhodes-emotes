@@ -189,7 +189,7 @@
     if (sourceLink) {
       const episodeCard = sourceLink.closest(".episode-card[data-episode]");
       const episodeId = sourceLink.dataset.sourceEpisode || episodeCard?.dataset.episode || "";
-      if (episodeId) track("source_click", { object_type: "episode", object_id: episodeId, episode_id: episodeId, context: episodeCard ? "episode_card" : "detail_source" });
+      if (episodeId) track("source_click", { object_type: "episode", object_id: episodeId, character_id: sourceLink.dataset.sourceCharacter || "", episode_id: episodeId, context: episodeCard ? "episode_card" : "detail_source" });
       return;
     }
     const instanceLink = target.closest('a[href*="/instance.html?id="]');

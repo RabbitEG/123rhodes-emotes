@@ -120,7 +120,7 @@ const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4174";
     let analyticsAuthorization = "";
     await page.route("**/api/analytics/admin?*", route => {
       analyticsAuthorization = route.request().headers().authorization || "";
-      return route.fulfill({ json: { generated_at: new Date().toISOString(), days: 30, totals: {}, all_time_totals: {}, daily: [], top_instances: [], top_characters: [], top_episodes: [], all_time_instances: [], all_time_characters: [], all_time_episodes: [], entry_sources: [], searches: [], search_targets: [], screens: [], countries: [], unique_sessions: 0, unique_sessions_days: 30 } });
+      return route.fulfill({ json: { generated_at: new Date().toISOString(), days: 30, totals: {}, all_time_totals: {}, daily: [], top_instances: [], top_characters: [], top_episodes: [], all_time_instances: [], all_time_characters: [], all_time_episodes: [], entry_sources: [], searches: [], search_targets: [], hot_character_events: [], screens: [], countries: [], unique_sessions: 0, unique_sessions_days: 30 } });
     });
     await page.goto(base + "/admin.html");
     assert.equal(await page.locator("#admin-key").getAttribute("minlength"), "15", "The owner-selected 15-character key is accepted by the form");

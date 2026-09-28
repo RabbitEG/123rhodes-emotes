@@ -67,7 +67,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
       return route.fulfill({ status: 200, contentType: "text/html; charset=utf-8", body: fs.readFileSync(path.join(__dirname, "..", filename)), headers: { "content-security-policy": csp } });
     });
     await page.route(base + "/api/analytics/search-ranking", route => route.fulfill({ json: { items: [
-      { id: "c1", searches: 37 }, { id: "c0", searches: 12 }, { id: "retired-id", searches: 99 },
+      { id: "c1", hot: 37 }, { id: "c0", hot: 12 }, { id: "retired-id", hot: 99 },
     ] } }));
     await page.goto(base);
     await page.locator("#search-status:has-text('还没上架')").waitFor({ state: "attached" });
