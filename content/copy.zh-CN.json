@@ -326,7 +326,7 @@
     "note": "图表辅助名称"
   },
   "stats.chartValue": {
-    "text": "{count} 张 · {percent}%",
+    "text": "{count} 次 · {percent}%",
     "note": "图例数值",
     "slots": [
       "count",
@@ -405,6 +405,14 @@
     "text": "客串榜",
     "note": "榜单名称"
   },
+  "rank.guestValue": {
+    "text": "{episodes} 篇 · {count} 次",
+    "note": "客串榜数值",
+    "slots": [
+      "episodes",
+      "count"
+    ]
+  },
   "rank.noRhodes": {
     "text": "无本篇村",
     "note": "榜单名称"
@@ -450,7 +458,7 @@
    "note": "统计公式"
  },
   "rank.cropValue": {
-    "text": "{count} 张",
+    "text": "{count} 次",
     "note": "出场数单位",
     "slots": [
       "count"
@@ -464,7 +472,7 @@
     ]
   },
   "rank.cropEpisodeValue": {
-    "text": "{count} 张 · {episodes} 篇",
+    "text": "{count} 次 · {episodes} 篇",
     "note": "非本篇实例数与篇目数",
     "slots": [
       "count",
