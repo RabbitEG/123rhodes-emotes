@@ -162,8 +162,8 @@ body[data-page="home"] #search-status { display: none; }
 .publication-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start; gap: 22px; margin-top: 16px; }
 .publication-mini-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; }
 .publication-mini-card { min-width: 0; padding: 12px 11px 8px; border: 1px solid #ece5f2; border-radius: 11px; background: #fcfaffb8; }
-.publication-mini-card h4, .publication-calendar-heading h4 { color: #5c4c6c; font-size: 15px; font-weight: 800; line-height: 1.45; }
-.publication-chart-svg { display: block; width: 100%; height: auto; margin-top: 7px; overflow: visible; }
+.publication-mini-card h4, .publication-calendar-heading h4 { margin: 0; color: #5c4c6c; font-size: 15px; font-weight: 800; line-height: 1.45; }
+.publication-chart-svg { display: block; width: 100%; height: auto; margin-top: 3px; overflow: visible; }
 .publication-bar-value { fill: #79668b; font-size: 12px; font-weight: 700; text-anchor: middle; font-variant-numeric: tabular-nums; }
 .publication-bar-label { fill: #897f91; font-size: 12px; text-anchor: middle; }
 .publication-gridline { stroke: #eee7f3; stroke-width: 1; }
