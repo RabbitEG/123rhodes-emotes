@@ -10,7 +10,7 @@
     "九色鹿", "罗小黑", "泰拉大陆调查团", "焰狐龙梓兰", "雷狼龙S空爆",
     "莱欧斯", "玛露西尔", "齐尔查克", "森西",
     "结城理", "岳羽由加莉", "埃癸斯", "虎狼丸",
-    "三角初华", "丰川祥子", "八幡海铃", "祐天寺若麦", "若叶睦"
+    "三角初华", "丰川祥子", "八幡海铃", "祐天寺若麦", "若叶睦", "罗德岛隐秘队"
   ]);
   function assetPath(value) {
     if (typeof value !== "string" || !value.startsWith("/media/")) return "";
@@ -267,7 +267,8 @@
       searches: [],
       coverage: [...present].sort((a, b) => b.episodes.size - a.episodes.size || b.count - a.count || byName(a, b)),
       rare: [...present].sort((a, b) => a.count - b.count || byName(a, b)),
-      cameo: castReady ? present.filter(c => c.cameo > 0).sort(desc("cameo")) : null,
+      cameo: castReady ? present.filter(c => c.cameo > 0).sort((a, b) =>
+        b.cameoEpisodes.size - a.cameoEpisodes.size || b.cameo - a.cameo || byName(a, b)) : null,
       noHome: castReady ? present.filter(c => c.homes === 0).sort(desc("count")) : null,
       noRhodes: castReady ? operatorRankingRows.filter(c => c.homes === 0 && Number.isFinite(c.implementationAgeDays)).sort(operatorAbsenceSort) : null,
       noAppearance: operatorRankingRows.filter(c => c.count === 0).sort(operatorAbsenceSort),

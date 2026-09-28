@@ -251,7 +251,7 @@
   }
   function rankingValue(kind, character) {
     if (kind === "coverage") return character.episodes.size;
-    if (kind === "cameo") return character.cameo;
+    if (kind === "cameo") return character.cameoEpisodes.size;
     if (kind === "absence") return character.absence;
     if (kind === "noRhodes" || kind === "noAppearance") return character.implementationAgeDays;
     if (kind === "searches") return character.searches;
@@ -276,7 +276,7 @@
     list.innerHTML = rows === null ? `<p class="empty-copy">${text(kind === "absence" ? "stats.orderMissing" : "stats.castMissing")}</p>` : rows.length ? renderRankRows(rows,
       character => rankingValue(kind, character),
       (character, rank, value) => {
-        const shown = kind === "noAppearance" && !Number.isFinite(value) ? "—" : t(rankingValueKey(kind), { count: number(value), episodes: number(kind === "noHome" ? character.episodes.size : character.cameoEpisodes.size) });
+        const shown = kind === "noAppearance" && !Number.isFinite(value) ? "—" : t(rankingValueKey(kind), { count: number(kind === "cameo" ? character.cameo : value), episodes: number(kind === "noHome" ? character.episodes.size : character.cameoEpisodes.size) });
         const stars = (kind === "noRhodes" || kind === "noAppearance") && Number.isInteger(character.stars)
           ? character.stars
           : 0;
