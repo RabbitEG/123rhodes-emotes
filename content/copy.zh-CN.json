@@ -507,6 +507,13 @@
       "count"
     ]
   },
+  "rank.starOperator": {
+    "text": "{count}星干员",
+    "note": "查无此人榜中星级图标的无障碍说明",
+    "slots": [
+      "count"
+    ]
+  },
  "fun.title": {
     "text": "趣味榜",
     "note": "趣味榜标题"

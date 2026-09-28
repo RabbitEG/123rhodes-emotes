@@ -197,6 +197,8 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
 .rank-row:nth-child(-n+3) .rank-number { color: #a478af; }
 .rank-name { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank-row strong { font-size: 14px; font-weight: 700; color: #9679a4; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rank-row .rank-value { display: inline-flex; align-items: center; justify-self: end; gap: 6px; }
+.rank-stars { color: #d19a35; font-size: 11px; letter-spacing: .025em; line-height: 1; }
 .fun-heading { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 35px 0 21px; }
 .fun-heading h3 { font-size: 20px; letter-spacing: .05em; }
 .fun-heading > span { color: #d1b6e3; font-size: 25px; }

@@ -232,8 +232,8 @@
     $("#pagination-status").textContent = matches.length ? t("search.shown", { shown: Math.min(visible, matches.length), total: matches.length }) : "";
     $("#load-more").hidden = visible >= matches.length;
   }
-  function rankButton(label, value, attrs, rank) {
-    return `<button class="rank-row" ${attrs}><span class="rank-number">${String(rank).padStart(2, "0")}</span><span class="rank-name">${escape(label)}</span><strong>${escape(value)}</strong></button>`;
+  function rankButton(label, value, attrs, rank, valueExtra = "") {
+    return `<button class="rank-row" ${attrs}><span class="rank-number">${String(rank).padStart(2, "0")}</span><span class="rank-name">${escape(label)}</span><strong class="rank-value"><span>${escape(value)}</span>${valueExtra}</strong></button>`;
   }
   function renderRankRows(rows, valueOf, render) {
     let previous;
@@ -277,7 +277,14 @@
       character => rankingValue(kind, character),
       (character, rank, value) => {
         const shown = kind === "noAppearance" && !Number.isFinite(value) ? "—" : t(rankingValueKey(kind), { count: number(value), episodes: number(kind === "noHome" ? character.episodes.size : character.cameoEpisodes.size) });
-        return rankButton(character.name, shown, `data-character="${escape(character.id)}"`, rank);
+        const stars = (kind === "noRhodes" || kind === "noAppearance") && Number.isInteger(character.stars)
+          ? character.stars
+          : 0;
+        const starLabel = stars ? t("rank.starOperator", { count: stars }) : "";
+        const starMarkup = stars
+          ? `<span class="rank-stars" aria-label="${escape(starLabel)}" title="${escape(starLabel)}">${"★".repeat(stars)}</span>`
+          : "";
+        return rankButton(character.name, shown, `data-character="${escape(character.id)}"`, rank, starMarkup);
       }) : `<p class="empty-copy">${text(release.instances.length ? "stats.noRank" : "stats.empty")}</p>`;
   }
   function renderRanking() {
