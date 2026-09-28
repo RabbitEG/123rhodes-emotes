@@ -421,8 +421,8 @@
     ]
   },
   "rank.searchValue": {
-    "text": "{count} 次",
-    "note": "角色搜索次数",
+    "text": "热度指数 {count}",
+    "note": "本站主动操作热度指数",
     "slots": [
       "count"
     ]
@@ -478,19 +478,31 @@
     "note": "单相思公式：A 为低覆盖篇数，B 为高覆盖篇数，n 为共同篇数"
   },
   "fun.bidirectionalValue": {
-    "text": "{count} 篇 · {percent}%",
-    "note": "共同篇目和并集比例",
+    "text": "综合分 {score}",
+    "note": "双向奔赴综合分",
     "slots": [
-      "count",
-      "percent"
+      "score"
     ]
   },
   "fun.oneSidedValue": {
-    "text": "{sourcePercent}% · 共{count}篇",
-    "note": "低覆盖角色的共现比例与共同篇数",
+    "text": "综合分 {score}",
+    "note": "单相思综合分",
     "slots": [
-      "sourcePercent",
-      "count"
+      "score"
+    ]
+  },
+  "fun.recordValue": {
+    "text": "综合分 {score}",
+    "note": "单篇出场记录综合分",
+    "slots": [
+      "score"
+    ]
+  },
+  "fun.guestRecordValue": {
+    "text": "综合分 {score}",
+    "note": "单篇客串王综合分",
+    "slots": [
+      "score"
     ]
   },
   "fun.recordNote": {
