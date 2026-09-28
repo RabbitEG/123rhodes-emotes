@@ -42,17 +42,13 @@ Pages 项目 → Settings → Variables and Secrets → Add，创建加密 secre
 
 ## 3. 设置私用审核密钥
 
-在本机生成一条独立、足够长的随机密钥，例如：
+在 Cloudflare Pages 项目 `123rhodes-emotes` → **Settings → Variables and Secrets → Production**，新增加密 secret：
 
-```bash
-python3 -c 'import secrets; print(secrets.token_urlsafe(48))'
-```
+- `SITE_ADMIN_KEY` = 由你自己设定的管理员密钥，至少 32 个字符；建议使用你能记住的长口令，不要用四位 PIN、R2 密钥、GitHub token 或常用密码。
 
-把输出只保存到密码管理器，并在 Pages 的 Variables and Secrets 中创建另一个加密 secret：
+同一项 `SITE_ADMIN_KEY` 同时用于留言审核和访问统计。旧的 `GUESTBOOK_ADMIN_KEY`、`ANALYTICS_ADMIN_KEY` 只在尚未配置 `SITE_ADMIN_KEY` 时作为兼容回退；确认共享登录可用后可以删除这两个旧 secret。修改 Pages Secret 后需要触发一次新的部署。
 
-- `GUESTBOOK_ADMIN_KEY` = 刚生成的随机密钥（至少 32 字符）
-
-不要沿用 R2 密钥、GitHub token、四位 PIN 或个人常用密码。访问 `https://123rhodes-emotes.pages.dev/guestbook-admin.html`，输入密钥后查看待审核、通过或排除；也可以切到已通过/已排除列表，把误操作退回待审核。密钥仅在该页面当前内存中使用，刷新需重新输入；页面地址不在导航中，但**安全性依赖服务端密钥检查，不依赖地址隐藏**。
+登录统一入口 `https://123rhodes-emotes.pages.dev/admin.html`，输入一次即可进入留言审核或访问统计。当前标签页会话中暂存密钥，页面跳转和刷新后仍可用；关闭标签页或点击“退出管理”会清除。密钥不会放进 URL、Git、留言数据库或长期浏览器存储。两个子页面直接访问时会回到统一登录入口。
 
 ## 4. 构建与验收
 
@@ -61,14 +57,14 @@ python3 -c 'import secrets; print(secrets.token_urlsafe(48))'
 ```bash
 python3 tools/build.py
 python3 tools/build.py --check
-git add db/guestbook.sql db/migrations/0002_guestbook_anonymous_users.sql db/migrations/0003_guestbook_first_nickname.sql db/migrations/0004_guestbook_message_display_name.sql functions/api/guestbook.js functions/api/guestbook/admin.js functions/api/guestbook/identity.js lib/guestbook.mjs guestbook.js guestbook-admin.js styles.css content/copy.zh-CN.json templates index.html instance.html privacy.html guestbook-admin.html README.md docs/GUESTBOOK_SETUP.md tests
+git add db/guestbook.sql db/migrations functions/api lib admin.js admin-auth.js guestbook.js guestbook-admin.js analytics-admin.js styles.css content/copy.zh-CN.json templates tools/build.py tools/preview.py index.html instance.html privacy.html admin.html guestbook-admin.html analytics-admin.html _headers README.md docs tests
 git commit -m "feat: support rerollable anonymous guestbook names"
 git push
 ```
 
-Cloudflare 的 `GUESTBOOK_DB` binding、`TURNSTILE_SECRET_KEY`、`GUESTBOOK_ADMIN_KEY` 都要在生产环境配置。已有留言库应确认来源列已存在（最初版数据库才需要执行来源列迁移），并按缺失顺序完成 `0002`、`0003`、`0004`；**执行后再部署依赖新列的代码**。新建库运行当前 `db/guestbook.sql` 即可。管理页位于 `https://123rhodes-emotes.pages.dev/guestbook-admin.html`。上线检查：
+Cloudflare 的 `GUESTBOOK_DB` binding、`TURNSTILE_SECRET_KEY`、`SITE_ADMIN_KEY` 都要在生产环境配置。已有留言库应确认来源列已存在（最初版数据库才需要执行来源列迁移），并按缺失顺序完成 `0002`、`0003`、`0004`；**执行后再部署依赖新列的代码**。新建库运行当前 `db/guestbook.sql` 即可。管理员入口位于 `https://123rhodes-emotes.pages.dev/admin.html`。上线检查：
 
-1. 首页与具体表情详情的留言区出现输入框及 Turnstile；如果仍显示“准备中”，核对 `GUESTBOOK_DB`、`TURNSTILE_SECRET_KEY`、`GUESTBOOK_ADMIN_KEY`、sitekey 和重新部署。
+1. 首页与具体表情详情的留言区出现输入框及 Turnstile；如果仍显示“准备中”，核对 `GUESTBOOK_DB`、`TURNSTILE_SECRET_KEY`、`SITE_ADMIN_KEY`、sitekey 和重新部署。
 2. 用测试文字提交，访客列表**立即不应出现**。
 3. 审核页会标明后台识别名 → 本条显示名、`待审核 / 已公开 / 已排除` 和发起位置。访客重抽后，旧留言保留原昵称，新留言使用新显示名。通过后留言才公开；排除的留言始终不公开。公开区只显示最近 10 条。
 4. 试一次错误密钥，确保不能打开待审核列表。

@@ -14,7 +14,7 @@ with tempfile.TemporaryDirectory(prefix='rhodes-copy-test-') as directory:
     target = Path(directory)
     for name in ('content', 'templates', 'config'):
         shutil.copytree(str(ROOT / name), str(target / name))
-    for name in ('styles.css', 'background.js', 'analytics.js', 'analytics-admin.js', 'app.js', 'stats.js', 'guestbook.js', 'guestbook-admin.js'):
+    for name in ('styles.css', 'background.js', 'analytics.js', 'analytics-admin.js', 'app.js', 'stats.js', 'guestbook.js', 'guestbook-admin.js', 'admin.js', 'admin-auth.js'):
         shutil.copyfile(str(ROOT / name), str(target / name))
     builder.ROOT = target
     path = target / 'content/copy.zh-CN.json'
@@ -28,6 +28,9 @@ with tempfile.TemporaryDirectory(prefix='rhodes-copy-test-') as directory:
     assert '今日数据&lt;b&gt;&amp;&quot;' in output
     assert '<script>alert(1)</script>' not in output
     assert '\\u003c/script\\u003e' in output
+    admin_output = (target / 'guestbook-admin.html').read_text(encoding='utf-8')
+    assert 'id="admin-navigation"' in admin_output
+    assert '{{>admin-navigation}}' not in admin_output
     builder.build(check=True)
     config_path = target / 'config/site.json'
     config = json.loads(config_path.read_text(encoding='utf-8'))

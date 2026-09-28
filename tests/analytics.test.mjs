@@ -3,6 +3,7 @@ import { webcrypto } from "node:crypto";
 import { normalizeAnalyticsEvent, resultBucket } from "../lib/analytics.mjs";
 import { onRequestPost } from "../functions/api/analytics.js";
 import { onRequestGet } from "../functions/api/analytics/admin.js";
+import { onRequestGet as onRequestAdminSession } from "../functions/api/admin/session.js";
 import { onRequestGet as onRequestSearchRanking } from "../functions/api/analytics/search-ranking.js";
 
 globalThis.crypto ||= webcrypto;
@@ -47,7 +48,7 @@ const database = {
   },
 };
 const secret = "analytics-secret-".padEnd(48, "x");
-const env = { ANALYTICS_DB: database, ANALYTICS_ADMIN_KEY: secret };
+const env = { ANALYTICS_DB: database, SITE_ADMIN_KEY: secret };
 const endpoint = "https://123rhodes-emotes.pages.dev/api/analytics";
 const post = (body, headers = {}) => new Request(endpoint, {
   method: "POST",
@@ -78,6 +79,9 @@ const adminRequest = key => new Request(adminUrl, {
   headers: { Origin: "https://123rhodes-emotes.pages.dev", Authorization: "Bearer " + key },
 });
 assert.equal((await onRequestGet({ request: adminRequest("incorrect"), env })).status, 401);
+const adminSessionEndpoint = "https://123rhodes-emotes.pages.dev/api/admin/session";
+assert.equal((await onRequestAdminSession({ request: new Request(adminSessionEndpoint, { headers: { Authorization: "Bearer " + secret } }), env })).status, 200);
+assert.equal((await onRequestAdminSession({ request: new Request(adminSessionEndpoint, { headers: { Authorization: "Bearer incorrect" } }), env })).status, 401);
 const reportResponse = await onRequestGet({ request: adminRequest(secret), env });
 assert.equal(reportResponse.status, 200);
 assert.equal((await reportResponse.json()).configured, true);

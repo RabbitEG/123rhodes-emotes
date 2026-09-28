@@ -1,4 +1,4 @@
-import { adminAuthorized, json } from "../../../lib/guestbook.mjs";
+import { adminAuthorizedFor, getAdminSecret, json } from "../../../lib/guestbook.mjs";
 
 const RETAIN_SESSION_DAYS = 30;
 
@@ -18,10 +18,10 @@ function countByType(rows) {
 export async function onRequestGet({ request, env }) {
   const origin = request.headers.get("Origin");
   if (origin && origin !== new URL(request.url).origin) return json({ error: "forbidden" }, 403);
-  if (!env.ANALYTICS_DB || typeof env.ANALYTICS_ADMIN_KEY !== "string" || env.ANALYTICS_ADMIN_KEY.length < 32) {
+  if (!env.ANALYTICS_DB || !getAdminSecret(env, "ANALYTICS_ADMIN_KEY")) {
     return json({ error: "not_configured" }, 503);
   }
-  if (!(await adminAuthorized(request, env.ANALYTICS_ADMIN_KEY))) return json({ error: "unauthorized" }, 401);
+  if (!(await adminAuthorizedFor(request, env, "ANALYTICS_ADMIN_KEY"))) return json({ error: "unauthorized" }, 401);
 
   const days = Number(new URL(request.url).searchParams.get("days") || "30");
   if (![7, 30, 90].includes(days)) return json({ error: "invalid_range" }, 400);

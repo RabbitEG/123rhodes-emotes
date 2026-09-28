@@ -2,7 +2,6 @@
   "use strict";
   const copy = JSON.parse(document.querySelector("#site-copy").textContent);
   const t = (key, values = {}) => (copy[key] || key).replace(/\{(\w+)\}/g, (_match, name) => String(values[name] ?? ""));
-  const login = document.querySelector("#analytics-login");
   const panel = document.querySelector("#analytics-panel");
   const feedback = document.querySelector("#analytics-feedback");
   const days = document.querySelector("#analytics-days");
@@ -65,7 +64,10 @@
     });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      if (response.status === 401) throw new Error(t("analytics.unauthorized"));
+      if (response.status === 401) {
+        window.RhodesAdmin.expireSession("analytics");
+        throw new Error(t("analytics.unauthorized"));
+      }
       if (response.status === 503 || data.error === "not_configured") throw new Error(t("analytics.notConfigured"));
       throw new Error(t("analytics.failed"));
     }
@@ -125,21 +127,21 @@
     try {
       const data = await requestReport();
       render(data); feedback.textContent = "";
-      panel.hidden = false; login.hidden = true;
+      panel.hidden = false;
     } catch (error) {
       feedback.textContent = error.message;
-      if (error.message === t("analytics.unauthorized")) { key = ""; login.hidden = false; panel.hidden = true; }
+      if (error.message === t("analytics.unauthorized")) panel.hidden = true;
     }
   }
 
-  login.addEventListener("submit", async event => {
-    event.preventDefault(); key = login.elements.key.value.trim(); login.elements.key.value = "";
-    if (key.length < 32) { feedback.textContent = t("analytics.keyTooShort"); return; }
-    await loadCatalogs(); await load();
-  });
   document.querySelector("#analytics-refresh").addEventListener("click", load);
   days.addEventListener("change", load);
-  document.querySelector("#analytics-logout").addEventListener("click", () => {
-    key = ""; panel.hidden = true; login.hidden = false; feedback.textContent = t("analytics.loggedOut");
-  });
+
+  (async () => {
+    feedback.textContent = t("admin.checking");
+    key = await window.RhodesAdmin.requireSession("analytics");
+    if (!key) return;
+    await loadCatalogs();
+    await load();
+  })();
 })();

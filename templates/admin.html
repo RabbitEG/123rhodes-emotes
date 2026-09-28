@@ -1,0 +1,11 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#f5f2ff"><title>{{admin.title}} · {{site.name}}</title><link rel="icon" href="/assets/star.svg" type="image/svg+xml"><link rel="stylesheet" href="/styles.css?v={{asset_version}}"><script src="/background.js?v={{asset_version}}" defer></script><script src="/admin-auth.js?v={{asset_version}}" defer></script><script src="/admin.js?v={{asset_version}}" defer></script></head>
+<body>{{>header}}<main id="main" class="info-page paper-card admin-portal">
+{{>admin-navigation}}
+<h1>{{admin.title}}</h1><p>{{admin.description}}</p>
+<form id="admin-login" class="admin-login" method="post"><label for="admin-key">{{admin.keyLabel}}</label><input id="admin-key" name="key" type="password" required minlength="32" maxlength="256" autocomplete="current-password"><button class="primary" type="submit">{{admin.login}}</button></form>
+<p id="admin-feedback" class="admin-feedback" role="status" aria-live="polite"></p>
+<section id="admin-launcher" class="admin-launcher" hidden><h2>{{admin.chooseTitle}}</h2><div class="admin-launch-grid">
+  <a id="admin-open-guestbook" class="admin-launch-card" href="/guestbook-admin.html"><strong>{{admin.guestbook}}</strong><span>{{admin.guestbookNote}}</span><b aria-hidden="true">进入 →</b></a>
+  <a id="admin-open-analytics" class="admin-launch-card" href="/analytics-admin.html"><strong>{{admin.analytics}}</strong><span>{{admin.analyticsNote}}</span><b aria-hidden="true">进入 →</b></a>
+</div></section>
+</main>{{>footer}}<script id="site-copy" type="application/json">{{copy_json}}</script></body></html>

@@ -1,7 +1,7 @@
-import { adminAuthorized, hasMessageNameSnapshots, json, readSmallJson, sameOrigin } from "../../../lib/guestbook.mjs";
+import { adminAuthorizedFor, hasMessageNameSnapshots, json, readSmallJson, sameOrigin } from "../../../lib/guestbook.mjs";
 
 async function authorized(request, env) {
-  return env.GUESTBOOK_DB && await adminAuthorized(request, env.GUESTBOOK_ADMIN_KEY);
+  return env.GUESTBOOK_DB && await adminAuthorizedFor(request, env, "GUESTBOOK_ADMIN_KEY");
 }
 
 export async function onRequestGet({ request, env }) {

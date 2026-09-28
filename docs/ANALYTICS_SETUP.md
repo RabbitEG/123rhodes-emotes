@@ -15,21 +15,11 @@ Cloudflare 控制台 → **Workers & Pages** → **D1** → Create database，�
 
 ## 2. 设置后台查看密钥
 
-在本机生成一个仅用于此后台的随机密钥，并保存在密码管理器：
-
-```bash
-python3 -c 'import secrets; print(secrets.token_urlsafe(48))'
-```
-
-Pages 项目 → **Settings → Variables and Secrets**，新增加密 secret：
-
-- `ANALYTICS_ADMIN_KEY`：刚生成的字符串，至少 32 个字符。
-
-不要写入 Git、`config/site.json`、`.env`、网址参数或聊天。私用页面是 `/analytics-admin.html`；输入的密钥仅存于当前页面内存，退出或刷新即清除。后台 API 只返回聚合报告，不提供逐条事件下载，也不会把密钥放进 URL 或浏览器持久存储。
+和留言审核共用 `SITE_ADMIN_KEY`。在 Cloudflare Pages 项目 `123rhodes-emotes` → **Settings → Variables and Secrets → Production** 中由你自行设置这个加密 secret（至少 32 个字符），不要写入 Git、`config/site.json`、`.env`、网址参数或聊天。统一入口是 `/admin.html`：登录一次后可切换留言审核和访问统计。密钥仅保存在当前标签页的 `sessionStorage` 会话内；退出或关闭标签页后失效，不写入后台数据库。旧 `ANALYTICS_ADMIN_KEY` 仅作未配置共享密钥时的兼容回退。
 
 ## 3. 核对采集与隐私控制
 
-重新部署后，在生产站点搜索、打开几张详情、点击原站链接，再进入 `/analytics-admin.html` 查看。首次需要等有事件写入后才会出现数据。未绑定 D1 时，浏览不受影响，事件会被丢弃；不会在本机排队补传。
+部署生效后，在生产站点搜索、打开几张详情、点击原站链接，再从 `/admin.html` 进入“访问统计”。首次需要等有事件写入后才会出现数据。未绑定 D1 时，浏览不受影响，事件会被丢弃；不会在本机排队补传。
 
 浏览器端仅发送固定类型的事件：页面浏览、搜索提交/结果区间、角色/篇目建议选择、表情进入可视区、详情打开、原站跳转、匿名留言成功提交，以及公开清单加载失败。角色/篇目名称只在它精确命中公开目录时以公开 ID 聚合；自由文本搜索原文不会发送。搜索结果按 0、1–5、6–20、21–100、101+ 分桶。屏幕只分窄/宽两档，地区只用 Cloudflare 提供的国家代码。首页“搜索量榜”从长期按日聚合中统计角色搜索提交与角色提示选择，只公开每个角色的累计总次数，不公开逐人记录或原始搜索词。
 
@@ -66,4 +56,4 @@ python3 tools/build.py --check
 node tests/analytics.test.mjs
 ```
 
-`ANALYTICS_DB` 和 `ANALYTICS_ADMIN_KEY` 是 Cloudflare Pages 运行时配置，不需要写进仓库 `.env`。
+`ANALYTICS_DB` 和共享 `SITE_ADMIN_KEY` 是 Cloudflare Pages 运行时配置，不需要写进仓库 `.env`。保存或更换 Secret 后重新部署，使 Pages Functions 使用新配置。

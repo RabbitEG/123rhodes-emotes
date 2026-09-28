@@ -101,7 +101,7 @@ const db = {
 };
 const secret = "a".repeat(48);
 const env = {
-  GUESTBOOK_DB: db, TURNSTILE_SECRET_KEY: "test-secret", GUESTBOOK_ADMIN_KEY: secret,
+  GUESTBOOK_DB: db, TURNSTILE_SECRET_KEY: "test-secret", SITE_ADMIN_KEY: secret,
   media: { async get(key) { assert.equal(key, "data/release.json"); return { async json() { return { characters: roster }; } }; } },
 };
 const url = "https://123rhodes-emotes.pages.dev/api/guestbook";

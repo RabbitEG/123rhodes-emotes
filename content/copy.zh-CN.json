@@ -638,6 +638,94 @@
     "text": "没能寄出，请检查内容或稍后重试。",
     "note": "留言提交失败"
   },
+  "admin.title": {
+    "text": "站点管理",
+    "note": "统一管理员入口标题"
+  },
+  "admin.description": {
+    "text": "用同一把密钥进入留言审核或查看站内访问统计。",
+    "note": "统一管理员入口说明"
+  },
+  "admin.keyLabel": {
+    "text": "管理员密钥",
+    "note": "统一管理员登录密钥标签"
+  },
+  "admin.login": {
+    "text": "登录管理中心",
+    "note": "统一管理员登录按钮"
+  },
+  "admin.checking": {
+    "text": "正在确认管理员登录…",
+    "note": "管理员页面确认会话时的提示"
+  },
+  "admin.verifying": {
+    "text": "正在验证密钥…",
+    "note": "统一管理员验证中的状态"
+  },
+  "admin.notConfigured": {
+    "text": "管理员密钥尚未配置，请先在 Cloudflare Pages 设置 SITE_ADMIN_KEY。",
+    "note": "站点管理员密钥未配置"
+  },
+  "admin.invalid": {
+    "text": "密钥不正确，请再试一次。",
+    "note": "统一管理员密钥错误"
+  },
+  "admin.unavailable": {
+    "text": "暂时无法连接验证服务，请稍后重试。",
+    "note": "管理员验证网络错误"
+  },
+  "admin.sessionStorageUnavailable": {
+    "text": "浏览器无法保存当前标签页会话，请检查隐私设置后重试。",
+    "note": "管理员会话存储不可用"
+  },
+  "admin.keyLength": {
+    "text": "密钥长度应为 32 至 256 个字符。",
+    "note": "管理员密钥长度提示"
+  },
+  "admin.connected": {
+    "text": "已登录。密钥只保存在当前标签页会话中。",
+    "note": "统一管理员登录成功"
+  },
+  "admin.loggedOut": {
+    "text": "已退出管理中心。",
+    "note": "统一管理员退出成功"
+  },
+  "admin.sessionExpired": {
+    "text": "登录已失效，请重新登录。",
+    "note": "共享管理员会话失效"
+  },
+  "admin.chooseTitle": {
+    "text": "选择管理界面",
+    "note": "统一入口的后台页面选择标题"
+  },
+  "admin.navLabel": {
+    "text": "管理中心导航",
+    "note": "管理页面的后台导航辅助标签"
+  },
+  "admin.home": {
+    "text": "管理首页",
+    "note": "后台导航返回统一入口"
+  },
+  "admin.guestbook": {
+    "text": "留言审核",
+    "note": "统一入口中的留言管理"
+  },
+  "admin.guestbookNote": {
+    "text": "审核、公开或排除访客留言。",
+    "note": "留言管理入口说明"
+  },
+  "admin.analytics": {
+    "text": "访问统计",
+    "note": "统一入口中的访问统计"
+  },
+  "admin.analyticsNote": {
+    "text": "查看访问、搜索与表情详情热度。",
+    "note": "访问统计入口说明"
+  },
+  "admin.logout": {
+    "text": "退出管理",
+    "note": "共享管理员登出操作"
+  },
   "guest.adminTitle": {
     "text": "留言审核",
     "note": "私用审核页面标题"

@@ -105,7 +105,7 @@ git push
 
 站内统计记录页面类型、已知角色/篇目/instance 的匿名事件、搜索结果数量分桶、详情来源类别、窄/宽屏类别和粗略国家代码。精确命中公开目录的搜索目标可以汇总；自由文本原文、IP、完整 URL、User-Agent、Cookie、留言正文和逐人浏览轨迹不进入分析 D1。新事件写入时每天最多清理一次超过 90 天的事件明细、超过 30 天的会话关联；若网站一段时间没有新事件，清理会在下一次写入后继续。长期趋势仅保留按日计数。访客可在隐私页退出，浏览器 DNT/GPC 也会被遵循。
 
-配置独立 D1、`ANALYTICS_DB` binding 和私用 `ANALYTICS_ADMIN_KEY` 后，访问 `/analytics-admin.html` 查看页面浏览、热门表情/角色/篇目、搜索结果区间、已知搜索目标、来源、粗略设备地区与日趋势。操作步骤、统计口径、保留和清理方式见 [docs/ANALYTICS_SETUP.md](docs/ANALYTICS_SETUP.md)。它统计的是站内交互事件，不是全部 HTTP 静态资源请求；网络请求总量和页面性能请看 Cloudflare 提供的聚合分析。
+配置独立 D1、`ANALYTICS_DB` binding 和共享管理员 Secret `SITE_ADMIN_KEY` 后，从 `/admin.html` 登录一次即可切换“留言审核”和“访问统计”。统计页展示页面浏览、热门表情/角色/篇目、搜索结果区间、已知搜索目标、来源、粗略设备地区与日趋势。操作步骤、统计口径、保留和清理方式见 [docs/ANALYTICS_SETUP.md](docs/ANALYTICS_SETUP.md)。它统计的是站内交互事件，不是全部 HTTP 静态资源请求；网络请求总量和页面性能请看 Cloudflare 提供的聚合分析。
 
 ## 目录
 
@@ -124,11 +124,14 @@ about.html              生成：关于和版权
 privacy.html            生成：隐私
 guestbook-admin.html    生成：私用留言审核入口（必须提供服务器密钥）
 analytics-admin.html    生成：私用站内访问汇总（必须提供独立 D1 和服务器密钥）
+admin.html              生成：共享管理员登录与页面导航
 404.html                生成：缺失页；也避免 Pages 把缺失 JSON 回退成首页
 styles.css              共享视觉样式
 app.js                  页面交互与发布数据读取
 guestbook.js            留言提交和公开列表
 guestbook-admin.js      私用审核页
+admin.js                统一管理员登录页
+admin-auth.js           管理员会话与共享导航
 stats.js                纯公开数据统计与清单校验
 assets/                 自制装饰素材（当前只有 SVG 图标）
 docs/                   完整方案与数据协议

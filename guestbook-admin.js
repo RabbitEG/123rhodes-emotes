@@ -2,7 +2,6 @@
   "use strict";
   const copy = JSON.parse(document.querySelector("#site-copy").textContent);
   const t = (key, values = {}) => Object.entries(values).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, String(value)), copy[key] || key);
-  const login = document.querySelector("#moderator-login");
   const panel = document.querySelector("#moderator-panel");
   const list = document.querySelector("#moderator-list");
   const count = document.querySelector("#moderator-count");
@@ -16,7 +15,10 @@
       headers: { "Authorization": "Bearer " + key, ...(body ? { "Content-Type": "application/json" } : {}) },
       body: body ? JSON.stringify(body) : undefined,
     });
-    if (!response.ok) throw new Error(response.status === 401 ? t("guest.adminUnauthorized") : t("guest.unavailable"));
+    if (!response.ok) {
+      if (response.status === 401) window.RhodesAdmin.expireSession("guestbook");
+      throw new Error(response.status === 401 ? t("guest.adminUnauthorized") : t("guest.unavailable"));
+    }
     return response.json();
   }
 
@@ -112,15 +114,17 @@
     list.append(table);
   }
 
-  login.addEventListener("submit", async event => {
-    event.preventDefault();
-    key = login.elements.key.value;
-    login.elements.key.value = "";
-    try { await load(); login.hidden = true; panel.hidden = false; feedback.textContent = ""; }
-    catch (error) { key = ""; feedback.textContent = error.message; }
-  });
   filter.addEventListener("change", async () => {
     try { await load(); feedback.textContent = ""; }
     catch (error) { feedback.textContent = error.message; }
   });
+
+  (async () => {
+    feedback.textContent = t("admin.checking");
+    key = await window.RhodesAdmin.requireSession("guestbook");
+    if (!key) return;
+    panel.hidden = false;
+    try { await load(); feedback.textContent = ""; }
+    catch (error) { feedback.textContent = error.message; }
+  })();
 })();

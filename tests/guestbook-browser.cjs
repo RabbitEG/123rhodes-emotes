@@ -105,6 +105,10 @@ const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4174";
     assert.equal(await page.locator("#guestbook-list").textContent(), "", "Closed board should not invite an impossible submission");
 
     const pending = [{ id: "11111111-1111-1111-1111-111111111111", body: "请改错别字", created_at: "2026-09-23T00:00:00.000Z", status: "pending", source_type: "instance", source_id: "instance-1", visitor_name: "阿米娅#042", author_name: "提丰#328" }];
+    await page.route("**/api/admin/session", route => {
+      const key = route.request().headers().authorization;
+      return route.fulfill(key === "Bearer " + "a".repeat(48) ? { json: { ok: true } } : { status: 401, json: { error: "unauthorized" } });
+    });
     await page.route("**/api/guestbook/admin?*", route => route.fulfill({ json: { messages: pending } }));
     let approval;
     await page.route("**/api/guestbook/admin", route => {
@@ -112,10 +116,18 @@ const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4174";
       pending.length = 0;
       return route.fulfill({ json: { ok: true, changed: 1 } });
     });
-    await page.goto(base + "/guestbook-admin.html");
-    await page.locator("#moderator-key").fill("a".repeat(48));
-    await page.locator("#moderator-login button").click();
+    let analyticsAuthorization = "";
+    await page.route("**/api/analytics/admin?*", route => {
+      analyticsAuthorization = route.request().headers().authorization || "";
+      return route.fulfill({ json: { generated_at: new Date().toISOString(), days: 30, totals: {}, all_time_totals: {}, daily: [], top_instances: [], top_characters: [], top_episodes: [], all_time_instances: [], all_time_characters: [], all_time_episodes: [], entry_sources: [], searches: [], search_targets: [], screens: [], countries: [], unique_sessions: 0, unique_sessions_days: 30 } });
+    });
+    await page.goto(base + "/admin.html");
+    await page.locator("#admin-key").fill("a".repeat(48));
+    await page.locator("#admin-login button").click();
+    await page.locator("#admin-launcher").waitFor({ state: "visible" });
+    await page.locator("#admin-open-guestbook").click();
     await page.locator(".moderator-entry").waitFor();
+    assert.equal(await page.locator("#moderator-login").count(), 0, "Guestbook page reuses the shared admin session");
     assert.equal(await page.locator(".moderator-table thead th").count(), 8, "Admin list is rendered as a dense information table");
     const row = page.locator(".moderator-entry");
     assert.equal(await row.locator("td").nth(2).textContent(), "阿米娅#042", "Stable visitor alias is visible only in admin");
@@ -126,7 +138,13 @@ const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4174";
     await page.getByRole("button", { name: "通过并公开", exact: true }).click();
     await page.getByText("已保存审核结果。").waitFor();
     assert.equal(approval.status, "approved");
+    await page.locator(".admin-navigation a[href='/analytics-admin.html']").click();
+    await page.locator("#analytics-panel").waitFor({ state: "visible" });
+    assert.equal(analyticsAuthorization, "Bearer " + "a".repeat(48), "The same key reaches the analytics interface");
+    assert.equal(await page.locator("#analytics-login").count(), 0, "Analytics page has no second login prompt");
+    await page.locator("#admin-logout").click();
+    await page.locator("#admin-login").waitFor({ state: "visible" });
     assert.deepEqual(errors, []);
-    console.log("Browser: public form, escaped list, pending submission, admin approval and cover rotation passed");
+    console.log("Browser: public form, shared admin login, guestbook approval, analytics access and logout passed");
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
