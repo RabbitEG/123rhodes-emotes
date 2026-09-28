@@ -80,8 +80,8 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     await page.locator("#totals article:first-child strong:has-text('4')").waitFor();
     assert.deepEqual(await page.locator("#totals strong").allTextContents(), ["4", "50", "8", "4"]);
     assert.equal(await page.locator(".legend-row").count(), 7);
-    assert.equal(await page.locator(".ranking-panels > .ranking-card").count(), 4, "The four ranking columns should be present");
-    assert.equal(await page.locator("#ranking-kind option").count(), 3, "The main character ranking keeps three selectable views");
+    assert.equal(await page.locator(".ranking-panels > .ranking-card").count(), 3, "The ranking area should use three equal columns");
+    assert.equal(await page.locator("#ranking-kind option").count(), 4, "The character ranking includes the rare view");
     assert.equal(await page.locator("#missing-ranking-kind option").count(), 2, "The missing-character ranking keeps two selectable views");
     assert.equal(await page.locator("#results-section").count(), 0);
     await page.screenshot({ path: output + "/desktop-data.png", fullPage: true });
@@ -106,7 +106,8 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     await page.goBack();
     await page.waitForSelector(".episode-card");
     await page.goto(base); await page.waitForSelector(".legend-row");
-    assert(!(await page.locator("#rare-ranking").textContent()).includes("测试零"));
+    await page.locator("#ranking-kind").selectOption("rare");
+    assert(!(await page.locator("#character-ranking").textContent()).includes("测试零"));
     await page.locator("#ranking-kind").selectOption("searches");
     await page.waitForFunction(() => document.querySelector("#character-ranking")?.textContent.includes("37"));
     assert((await page.locator("#character-ranking .rank-row").first().textContent()).includes("测试乙"), "Search ranking should sort by aggregate counts");

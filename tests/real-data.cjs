@@ -11,8 +11,8 @@ const data = JSON.parse(fs.readFileSync(path.join(root, "publish/site/data/relea
     const errors=[]; page.on("pageerror", e=>errors.push(e.message));
     await page.goto("http://127.0.0.1:4174/");
     await page.waitForSelector(".legend-row");
-    assert.equal(await page.locator(".ranking-panels > .ranking-card").count(), 4);
-    assert.equal(await page.locator("#ranking-kind option").count(), 3);
+    assert.equal(await page.locator(".ranking-panels > .ranking-card").count(), 3);
+    assert.equal(await page.locator("#ranking-kind option").count(), 4);
     assert.equal(await page.locator("#missing-ranking-kind option").count(), 2);
     assert.deepEqual(await page.locator("#totals strong").allTextContents(), [data.episodes.length,data.instances.length,data.characters.length,data.images.length].map(n=>n.toLocaleString("zh-CN")));
     await page.waitForFunction(()=>[...document.querySelectorAll(".ribbon-group:first-child img")].every(i=>i.complete && i.naturalWidth>0));

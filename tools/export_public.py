@@ -91,8 +91,9 @@ def export(database, raw_root, output):
         'SELECT episode_id,published_at,source,source_url,source_record_id FROM episode_publication_metadata')}
     implementation_dates = {r['character_id']: dict(r) for r in c.execute(
         'SELECT character_id,implemented_at,source,source_url,confidence FROM character_implementation_dates')}
-    operator_character_ids = {r['character_id'] for r in c.execute(
-        'SELECT DISTINCT character_id FROM operator_roster')}
+    operator_roster_rows = [dict(r) for r in c.execute(
+        'SELECT character_id,stars FROM operator_roster')]
+    operator_character_ids = {r['character_id'] for r in operator_roster_rows}
     images = [dict(r) for r in c.execute('SELECT * FROM images WHERE active=1')]
     rows = [dict(r) for r in c.execute("""
         SELECT ci.instance_id,ci.crop_path,ci.tags,p.panel_id,p.bbox panel_bbox,
@@ -217,11 +218,17 @@ def export(database, raw_root, output):
         raise ValueError('Asset export failed for %d instances; no release manifest published' % len(problems))
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
     public_operator_ids = {resolve(cid) for cid in operator_character_ids if resolve(cid) in active}
+    operator_stars = collections.defaultdict(int)
+    for row in operator_roster_rows:
+        root = resolve(row['character_id'])
+        if root in public_operator_ids and row.get('stars') is not None:
+            operator_stars[root] = max(operator_stars[root], int(row['stars']))
     public_character_ids = set(used_characters) | public_operator_ids
     report['public_characters'] = len(public_character_ids)
     report['public_operator_characters'] = len(public_operator_ids)
     public_characters = [{'id': cid, 'name': active[cid]['canonical_name'], 'type': 'canonical',
                           'is_operator': cid in public_operator_ids,
+                          **({'stars': operator_stars[cid]} if cid in public_operator_ids and operator_stars[cid] else {}),
                           'aliases': sorted(aliases[cid]),
                           'home_episode_ids': sorted(home_episodes[cid], key=lambda eid: episode_order[eid]),
                           **({'implementation_date': implementation_dates[cid]['implemented_at']}

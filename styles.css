@@ -157,7 +157,7 @@ body[data-page="home"] #search-status { display: none; }
 .stat-panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: start; }
 .stat-panels:not(.fun-panels) { align-items: stretch; }
 .chart-panels { grid-template-columns: minmax(0, 1fr); }
-.ranking-panels { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
+.ranking-panels { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
 .fun-panels { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
 .paper-card { position: relative; border: 1px solid var(--line); border-radius: 16px; padding: 21px 22px; background: var(--card); box-shadow: 0 4px 0 #e6ddee66; }
 .paper-card::before { content: ""; position: absolute; left: 25px; top: -1px; width: 42px; height: 3px; background: #b19ad7; border-radius: 4px; }

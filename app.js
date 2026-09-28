@@ -286,7 +286,6 @@
     if (select) renderRankingList(select.value, "#character-ranking", "#rank-note");
     const missing = $("#missing-ranking-kind");
     if (missing) renderRankingList(missing.value, "#missing-ranking", "#missing-rank-note");
-    renderRankingList("rare", "#rare-ranking", null);
     renderRankingList("noHome", "#guest-ranking", null);
   }
   async function loadSearchRanking() {

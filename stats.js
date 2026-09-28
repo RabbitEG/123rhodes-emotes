@@ -47,6 +47,7 @@
     for (const c of release.characters) {
       if (c.type && c.type !== "canonical") throw new Error("Noncanonical public character");
       if (c.is_operator !== undefined && typeof c.is_operator !== "boolean") throw new Error("Invalid operator flag");
+      if (c.stars !== undefined && c.stars !== null && (!Number.isInteger(c.stars) || c.stars < 1 || c.stars > 6)) throw new Error("Invalid operator stars");
       if (c.aliases !== undefined && (!Array.isArray(c.aliases) || c.aliases.some(x => typeof x !== "string"))) throw new Error("Invalid aliases");
       if (c.home_episode_ids !== undefined && (!Array.isArray(c.home_episode_ids) || c.home_episode_ids.some(x => !episodes.has(id(x))))) throw new Error("Invalid home episodes");
       if (c.implementation_date !== undefined && c.implementation_date !== null && isoDate(c.implementation_date) === null) throw new Error("Invalid implementation date");
@@ -169,9 +170,11 @@
         homeEpisodes: new Set(),
         homes: 0,
         cameo: 0,
-        cameoEpisodes: new Set()
+        cameoEpisodes: new Set(),
+        stars: null
       };
       for (const member of members) {
+        if (Number.isInteger(member.stars)) aggregate.stars = Math.max(aggregate.stars || 0, member.stars);
         aggregate.count += member.count;
         member.episodes.forEach(episodeId => aggregate.episodes.add(episodeId));
         member.homeEpisodes.forEach(episodeId => aggregate.homeEpisodes.add(episodeId));
@@ -182,6 +185,10 @@
       aggregate.homes = aggregate.homeEpisodes.size;
       return aggregate;
     });
+    const operatorAbsenceSort = (a, b) =>
+      ((Number.isFinite(b.implementationAgeDays) ? b.implementationAgeDays : -1) -
+       (Number.isFinite(a.implementationAgeDays) ? a.implementationAgeDays : -1)) ||
+      ((b.stars || 0) - (a.stars || 0)) || byName(a, b);
     const rankings = {
       appearances: [...present].sort(desc("count")),
       searches: [],
@@ -189,10 +196,8 @@
       rare: [...present].sort((a, b) => a.count - b.count || byName(a, b)),
       cameo: castReady ? present.filter(c => c.cameo > 0).sort(desc("cameo")) : null,
       noHome: castReady ? present.filter(c => c.homes === 0).sort(desc("count")) : null,
-      noRhodes: castReady ? operatorRankingRows.filter(c => c.homes === 0 && Number.isFinite(c.implementationAgeDays)).sort(desc("implementationAgeDays")) : null,
-      noAppearance: operatorRankingRows.filter(c => c.count === 0).sort((a, b) =>
-        (Number.isFinite(b.implementationAgeDays) ? b.implementationAgeDays : -1) -
-        (Number.isFinite(a.implementationAgeDays) ? a.implementationAgeDays : -1) || byName(a, b)),
+      noRhodes: castReady ? operatorRankingRows.filter(c => c.homes === 0 && Number.isFinite(c.implementationAgeDays)).sort(operatorAbsenceSort) : null,
+      noAppearance: operatorRankingRows.filter(c => c.count === 0).sort(operatorAbsenceSort),
       absence: (publishedReady || orderReady) ? [...present].sort(desc("absence")) : null
     };
     const pairs = new Map();
