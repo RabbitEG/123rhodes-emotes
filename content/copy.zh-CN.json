@@ -381,11 +381,15 @@
     "text": "客串王",
     "note": "榜单名称"
   },
-  "rank.noHome": {
-    "text": "无本篇客串榜",
+ "rank.noHome": {
+   "text": "无本篇客串榜",
+   "note": "榜单名称"
+ },
+  "rank.noRhodes": {
+    "text": "无123罗德岛村榜",
     "note": "榜单名称"
   },
-  "rank.absence": {
+ "rank.absence": {
     "text": "久未出现榜",
     "note": "榜单名称"
   },
@@ -405,14 +409,18 @@
     "text": "客串实例数 = 非本篇 crop 数；客串篇数 = 非本篇篇目数（去重）",
     "note": "统计公式"
   },
-  "rank.noHomeNote": {
-    "text": "没有本篇的角色，按有效 crop 数降序",
+ "rank.noHomeNote": {
+   "text": "没有本篇的角色，按有效 crop 数降序",
+   "note": "统计公式"
+ },
+  "rank.noRhodesNote": {
+    "text": "没有登记本篇且有实装日期的角色，按距实装天数降序",
     "note": "统计公式"
   },
-  "rank.absenceNote": {
-    "text": "间隔篇目数 = 最新篇序 − 最后出现篇序",
-    "note": "统计公式"
-  },
+ "rank.absenceNote": {
+    "text": "间隔天数 = 今天 − 最后出现篇目的发布时间",
+   "note": "统计公式"
+ },
   "rank.cropValue": {
     "text": "{count} 张",
     "note": "出场数单位",
@@ -442,14 +450,21 @@
       "count"
     ]
   },
-  "rank.absenceValue": {
-    "text": "相隔 {count} 篇",
-    "note": "久未出现单位",
+ "rank.absenceValue": {
+    "text": "相隔 {count} 天",
+   "note": "久未出现单位",
+   "slots": [
+     "count"
+   ]
+ },
+  "rank.noRhodesValue": {
+    "text": "{count} 天",
+    "note": "距离干员实装日期的天数",
     "slots": [
       "count"
     ]
   },
-  "fun.title": {
+ "fun.title": {
     "text": "趣味榜",
     "note": "趣味榜标题"
   },

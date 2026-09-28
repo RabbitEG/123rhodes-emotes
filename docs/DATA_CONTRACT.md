@@ -4,8 +4,8 @@
 
 ## 必需内容
 
-- characters：`id`、`name`；可选 `aliases: string[]`、`type: "canonical"`，以及 `home_episode_ids: string[]`。本篇关系是角色与篇目的多对多映射；空数组表示当前没有登记本篇。只含已发布的具名角色；不发布 NPC、临时身份、历史错误身份。id 稳定且不含逗号（组合分享链接使用逗号分隔）。
-- episodes：`id`、`name`、`official_url`。链接必须核实为对应篇目；系列首页不代替具体篇目。前端仅允许 HTTPS comic.hypergryph.com / terra-historicus.hypergryph.com。
+- characters：`id`、`name`；可选 `aliases: string[]`、`type: "canonical"`、`implementation_date: "YYYY-MM-DD"`，以及 `home_episode_ids: string[]`。本篇关系是角色与篇目的多对多映射；空数组表示当前没有登记本篇。只含已发布的具名角色；不发布 NPC、临时身份、历史错误身份。id 稳定且不含逗号（组合分享链接使用逗号分隔）。
+- episodes：`id`、`name`、`official_url`、`order`、`published_at: "YYYY-MM-DD"`；可选 `source_record_id`、`cast_character_ids: string[]`。链接和发布时间必须核实为对应篇目；当前发布范围固定为本地 339 篇。前端仅允许 HTTPS comic.hypergryph.com / terra-historicus.hypergryph.com。
 - instances：`id`、`character_id`、`episode_id`、`crop_url`；可选 `image_id`、`source_preview_url`、`sort_key`。每一项是当前有效、人类 confirmed/trusted、经发布筛选的 canonical 实例。
 - 三个数组允许为空；重复 ID、未知角色/篇目关联、无效公开资源路径会让清单加载失败并显示重试，防止静默出现错误统计。
 
@@ -21,12 +21,12 @@ crop_url 和 source_preview_url 只接受 `/media/` 下 WebP/PNG/JPEG/AVIF 相�
 | instance.image_id | 两项都缺失时，若每张 crop 都有 image_id，按它去重计来源图数；覆盖不全显示 — |
 | characters[].home_episode_ids | 多对多本篇关系；统计还会将篇目标题去掉末尾“篇”后与角色正式名或别名完全相同的篇目视为本篇，并按 `stats.js` 中明确列出的异格篇名映射到同一 canonical character；其余已确认出场才计作客串，不根据一般出场反推本篇。不会使用模糊包含匹配 |
 | episode.cast_character_ids / cast_complete | 仅为旧清单兼容字段；新清单优先使用 characters[].home_episode_ids |
-| episode.order | 已核实的时间先后顺序数值，所有篇目完整且唯一时启用久未出现榜 |
+| episode.order / episode.published_at | 官方篇目顺序和发布时间；完整且唯一时启用久未出现榜 |
 | featured_instance_ids | 站长选定轮播实例，引用本发布包的 instance id |
 
 四个基础数的篇目/角色/实例直接取相应目录，角色榜和占比来自实际实例，不信任冗余的 instance_count 字段。所有统计只描述同一发布版本。
 
-`order` 不自动从文件名猜测；“相隔 N 篇”是本发布清单中位于最后收录篇目之后的篇目数，不是天数，也不声称官方漫画中一定没有其出场。
+`order` 不自动从文件名猜测；“久未出现榜”使用今天与角色最后出现篇目的 `published_at` 相差天数。实现日期榜只对公开清单中有 `implementation_date` 的正式角色计算，不为无日期的剧情人物猜测。
 
 导出只映射数据库已记录的 `home_episode`，不根据实际出场反推本篇。未登记本篇的角色，其现有出场全部计作客串；空数组与“已确认此角色没有本篇”遵循当前数据规则。
 

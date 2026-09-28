@@ -21,19 +21,35 @@ def official_catalog():
     request = urllib.request.Request(OFFICIAL, headers={'User-Agent': 'Mozilla/5.0'})
     with urllib.request.urlopen(request, timeout=40) as response:
         document = response.read().decode('utf-8')
-    by_url = {}
-    for href, body in re.findall(r'<a[^>]+href="([^"]+/6253/episode/[^"]+)"[^>]*>(.*?)</a>', document):
-        title = html.unescape(re.sub('<[^>]+>', '', body))
-        match = re.match('「(.+?)」篇', title)
-        if match:
-            # SSR includes desktop and mobile lists; deduplicate by verified URL.
-            by_url.setdefault(href, match[1] + '篇')
-    if not by_url:
-        raise ValueError('Official catalog could not be parsed; no links will be guessed')
+    # The rendered page embeds the authoritative chapter list.  It includes a few
+    # episodes newer than the local 339-episode corpus; export() only selects local
+    # rows below, so these records are never silently added to the public release.
+    match = re.search(r'window\.g_initialProps\s*=\s*(\{.*?\});\s*</script>', document, re.S)
+    if not match:
+        raise ValueError('Official catalog could not be parsed; missing g_initialProps')
+    try:
+        props = json.loads(match.group(1))
+        records = next(item for item in props.get('comic', {}).get('comicList', [])
+                       if str(item.get('cid')) == '6253')['detail']['episodes']
+    except (ValueError, KeyError, StopIteration, TypeError) as error:
+        raise ValueError('Official catalog could not be parsed: %s' % error)
+    if not records:
+        raise ValueError('Official catalog contains no 123 Rhodes episodes')
     names = collections.defaultdict(list)
-    for order, (href, title) in enumerate(reversed(list(by_url.items())), 1):
-        names[title].append({'official_url': 'https://comic.hypergryph.com' + href, 'order': order})
-    return names, len(by_url)
+    china = datetime.timezone(datetime.timedelta(hours=8))
+    for index, record in enumerate(records):
+        stamp = record.get('displayTime')
+        if not stamp:
+            raise ValueError('Official chapter has no displayTime: %s' % record.get('title'))
+        published = datetime.datetime.fromtimestamp(int(stamp), datetime.timezone.utc).astimezone(china).date().isoformat()
+        cid = str(record['cid'])
+        names[str(record['title']) + '篇'].append({
+            'official_url': 'https://comic.hypergryph.com/terra-historicus/comic/6253/episode/' + cid,
+            'order': len(records) - index,
+            'published_at': published,
+            'source_record_id': cid,
+        })
+    return names, len(records)
 
 
 def encoded(path, allowed_root, size, quality):
@@ -71,6 +87,10 @@ def export(database, raw_root, output):
     c.execute('BEGIN')
     characters = {r['character_id']: dict(r) for r in c.execute('SELECT * FROM characters')}
     episodes = [dict(r) for r in c.execute('SELECT * FROM episodes')]
+    publication_dates = {r['episode_id']: dict(r) for r in c.execute(
+        'SELECT episode_id,published_at,source,source_url,source_record_id FROM episode_publication_metadata')}
+    implementation_dates = {r['character_id']: dict(r) for r in c.execute(
+        'SELECT character_id,implemented_at,source,source_url,confidence FROM character_implementation_dates')}
     images = [dict(r) for r in c.execute('SELECT * FROM images WHERE active=1')]
     rows = [dict(r) for r in c.execute("""
         SELECT ci.instance_id,ci.crop_path,ci.tags,p.panel_id,p.bbox panel_bbox,
@@ -112,6 +132,9 @@ def export(database, raw_root, output):
         prefix = re.match(r'^(\d+)_', e['episode_name'])
         if not prefix or int(prefix[1]) != link['order']:
             raise ValueError('Local and official order disagree: ' + e['episode_name'])
+        metadata = publication_dates.get(e['episode_id'])
+        if not metadata or metadata['published_at'] != link['published_at']:
+            raise ValueError('Missing/stale local publication metadata: ' + e['episode_name'])
         public_episodes.append({'id': e['episode_id'], 'name': e['episode_name'], **link})
     public_episodes.sort(key=lambda e: e['order'])
     episode_order = {e['id']: e['order'] for e in public_episodes}
@@ -192,7 +215,9 @@ def export(database, raw_root, output):
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
     public_characters = [{'id': cid, 'name': active[cid]['canonical_name'], 'type': 'canonical',
                           'aliases': sorted(aliases[cid]),
-                          'home_episode_ids': sorted(home_episodes[cid], key=lambda eid: episode_order[eid])}
+                          'home_episode_ids': sorted(home_episodes[cid], key=lambda eid: episode_order[eid]),
+                          **({'implementation_date': implementation_dates[cid]['implemented_at']}
+                             if cid in implementation_dates else {})}
                          for cid in sorted(used_characters)]
     release = {
         'release_id': 'human-' + hashlib.sha256(json.dumps(instances, sort_keys=True).encode()).hexdigest()[:16],

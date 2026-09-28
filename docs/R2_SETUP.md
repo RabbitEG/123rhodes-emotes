@@ -74,6 +74,8 @@ python tools/export_public.py \
 python tools/upload_r2.py
 ```
 
+导出前运行私有索引项目的 `python3.11 tools/update_catalog_metadata.py`，把官方发布时间和干员实装日期写入本地元数据表。本轮导出严格只匹配本地已有的 339 篇；官方目录中更新的篇目不会被加入数据库或公开包。
+
 导出使用 global human confirmed/trusted 身份，解析已合并身份，保留当前 instance_id。对人物 crop 最长边限制 512px，对来源整列同时限制宽180px/长640px；重新编码去除元数据。只读 SQLite，不跑 detector、embedding 或 ranker。官方目录有新增也不会自动导入新的漫画；仅匹配数据库已有篇目。
 
 数据更新无需修改页面代码；release.json 缓存最长约60秒，图片名包含内容哈希。新增的展示文件上传，旧对象保留；此轮未实现或执行清理操作。

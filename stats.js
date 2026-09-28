@@ -15,6 +15,20 @@
       return url.protocol === "https:" && !url.username && !url.password && ["comic.hypergryph.com", "terra-historicus.hypergryph.com"].includes(url.hostname) ? url.href : "";
     } catch { return ""; }
   }
+  function isoDate(value) {
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+    const [year, month, day] = value.split("-").map(Number);
+    const stamp = Date.UTC(year, month - 1, day);
+    const check = new Date(stamp);
+    return check.getUTCFullYear() === year && check.getUTCMonth() === month - 1 && check.getUTCDate() === day ? stamp : null;
+  }
+  function chinaToday() {
+    return isoDate(new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10));
+  }
+  function daysSince(value, today = chinaToday()) {
+    const stamp = isoDate(value);
+    return stamp === null || today === null ? null : Math.max(0, Math.floor((today - stamp) / 86400000));
+  }
   function validate(raw) {
     if (!raw || typeof raw !== "object") throw new Error("Invalid release");
     const release = { ...raw };
@@ -34,9 +48,11 @@
       if (c.type && c.type !== "canonical") throw new Error("Noncanonical public character");
       if (c.aliases !== undefined && (!Array.isArray(c.aliases) || c.aliases.some(x => typeof x !== "string"))) throw new Error("Invalid aliases");
       if (c.home_episode_ids !== undefined && (!Array.isArray(c.home_episode_ids) || c.home_episode_ids.some(x => !episodes.has(id(x))))) throw new Error("Invalid home episodes");
+      if (c.implementation_date !== undefined && c.implementation_date !== null && isoDate(c.implementation_date) === null) throw new Error("Invalid implementation date");
     }
     for (const e of release.episodes) {
       if (!officialURL(e.official_url)) throw new Error("Missing verified official episode URL");
+      if (e.published_at !== undefined && e.published_at !== null && isoDate(e.published_at) === null) throw new Error("Invalid publication date");
       if (e.cast_character_ids !== undefined) {
         if (!Array.isArray(e.cast_character_ids) || e.cast_character_ids.some(x => !characters.has(id(x)))) throw new Error("Invalid cast");
         e.cast_character_ids = [...new Set(e.cast_character_ids.map(id))];
@@ -57,13 +73,14 @@
     return release;
   }
   function analyze(release) {
-    const rows = release.characters.map(c => ({ ...c, count: 0, episodes: new Set(), perEpisode: new Map(), cameo: 0, cameoEpisodes: new Set(), homes: 0, homeEpisodes: new Set((c.home_episode_ids ?? []).map(id)), absence: 0 }));
+    const rows = release.characters.map(c => ({ ...c, count: 0, episodes: new Set(), perEpisode: new Map(), cameo: 0, cameoEpisodes: new Set(), homes: 0, homeEpisodes: new Set((c.home_episode_ids ?? []).map(id)), absence: null, absenceDays: null, lastPublishedAt: null, implementationAgeDays: daysSince(c.implementation_date) }));
     const characters = new Map(rows.map(c => [c.id, c]));
     const episodes = new Map(release.episodes.map(e => [e.id, { ...e, count: 0, characters: new Set(), cast: new Set(e.cast_character_ids ?? []) }]));
     const homeReady = release.characters.every(c => Array.isArray(c.home_episode_ids));
     const legacyCastReady = release.cast_complete === true && release.episodes.every(e => Array.isArray(e.cast_character_ids));
     const castReady = homeReady || legacyCastReady;
     const orderReady = release.episodes.length > 0 && release.episodes.every(e => Number.isFinite(e.order)) && new Set(release.episodes.map(e => e.order)).size === release.episodes.length;
+    const publishedReady = release.episodes.length > 0 && release.episodes.every(e => isoDate(e.published_at) !== null);
     const sequence = [...episodes.values()].sort((a, b) => a.order - b.order);
     const orderIndex = new Map(sequence.map((e, i) => [e.id, i]));
     if (!homeReady && legacyCastReady) {
@@ -112,7 +129,20 @@
       }
     }
     const present = rows.filter(c => c.count > 0);
-    for (const c of present) c.absence = orderReady ? sequence.length - 1 - Math.max(...[...c.episodes].map(eid => orderIndex.get(eid))) : 0;
+    const today = chinaToday();
+    for (const c of present) {
+      if (publishedReady) {
+        const latest = Math.max(...[...c.episodes].map(eid => isoDate(episodes.get(eid).published_at)));
+        c.lastPublishedAt = new Date(latest).toISOString().slice(0, 10);
+        c.absenceDays = daysSince(c.lastPublishedAt, today);
+        c.absence = c.absenceDays;
+      } else if (orderReady) {
+        // Backward-compatible fallback for old releases without dates.  New
+        // 339-episode releases always take the date-based branch above.
+        c.absence = sequence.length - 1 - Math.max(...[...c.episodes].map(eid => orderIndex.get(eid)));
+        c.absenceDays = null;
+      }
+    }
     const desc = field => (a, b) => b[field] - a[field] || byName(a, b);
     const rankings = {
       appearances: [...present].sort(desc("count")),
@@ -121,7 +151,8 @@
       rare: [...present].sort((a, b) => a.count - b.count || byName(a, b)),
       cameo: castReady ? present.filter(c => c.cameo > 0).sort(desc("cameo")) : null,
       noHome: castReady ? present.filter(c => c.homes === 0).sort(desc("count")) : null,
-      absence: orderReady ? [...present].sort(desc("absence")) : null
+      noRhodes: castReady ? present.filter(c => c.homes === 0 && Number.isFinite(c.implementationAgeDays)).sort(desc("implementationAgeDays")) : null,
+      absence: (publishedReady || orderReady) ? [...present].sort(desc("absence")) : null
     };
     const pairs = new Map();
     for (const e of episodes.values()) {
@@ -173,7 +204,7 @@
     const chart = rankings.appearances.slice(0, 10).map(c => ({ id: c.id, name: c.name, count: c.count }));
     const other = release.instances.length - chart.reduce((sum, c) => sum + c.count, 0);
     if (other > 0) chart.push({ id: null, name: null, count: other });
-    return { characters, episodes, rankings, commonPairs, bidirectionalPairs, oneSidedPairs, records, guestRecords, chart, imageCount, castReady, orderReady };
+    return { characters, episodes, rankings, commonPairs, bidirectionalPairs, oneSidedPairs, records, guestRecords, chart, imageCount, castReady, orderReady, publishedReady };
   }
   globalThis.RhodesStats = { validate, analyze, assetPath, officialURL };
 })();
