@@ -233,7 +233,7 @@
     $("#load-more").hidden = visible >= matches.length;
   }
   function rankButton(label, value, attrs, rank, valueExtra = "") {
-    return `<button class="rank-row" ${attrs}><span class="rank-number">${String(rank).padStart(2, "0")}</span><span class="rank-name">${escape(label)}</span><strong class="rank-value"><span>${escape(value)}</span>${valueExtra}</strong></button>`;
+    return `<button class="rank-row" ${attrs}><span class="rank-number">${String(rank).padStart(2, "0")}</span><span class="rank-name">${escape(label)}</span><strong class="rank-value">${valueExtra}<span>${escape(value)}</span></strong></button>`;
   }
   function renderRankRows(rows, valueOf, render) {
     let previous;
