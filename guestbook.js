@@ -109,7 +109,7 @@
         return;
       }
       await refreshIdentity();
-      status.textContent = t("guest.open");
+      status.hidden = true;
       form.hidden = false;
       startTurnstile(sitekey);
     } catch { status.textContent = t("guest.unavailable"); }
