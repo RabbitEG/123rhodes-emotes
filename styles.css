@@ -157,7 +157,7 @@ body[data-page="home"] #search-status { display: none; }
 .stat-panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: start; }
 .stat-panels:not(.fun-panels) { align-items: stretch; }
 .chart-panels { grid-template-columns: minmax(0, 1fr); }
-.ranking-panels { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.ranking-panels { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
 .fun-panels { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
 .paper-card { position: relative; border: 1px solid var(--line); border-radius: 16px; padding: 21px 22px; background: var(--card); box-shadow: 0 4px 0 #e6ddee66; }
 .paper-card::before { content: ""; position: absolute; left: 25px; top: -1px; width: 42px; height: 3px; background: #b19ad7; border-radius: 4px; }
@@ -188,7 +188,8 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
 .rank-list { margin-top: 12px; }
 .ranking-card { display: flex; flex-direction: column; min-height: 0; }
 .ranking-card .rank-list { flex: 1 1 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #dfd2ed transparent; }
-.ranking-panels .rank-list { max-height: 35vh; }
+.ranking-panels .rank-list { height: 35vh; min-height: 0; max-height: 35vh; }
+.ranking-panels .card-note { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rank-row { width: 100%; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 7px; min-height: 42px; padding: 7px 3px; background: transparent; text-align: left; border-bottom: 1px dashed #eee6f3; }
 .rank-row:last-child { border-bottom: 0; }
 .rank-row:hover { background: #f8f1fc; border-radius: 6px; }
