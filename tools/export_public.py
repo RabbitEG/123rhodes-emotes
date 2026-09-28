@@ -91,6 +91,8 @@ def export(database, raw_root, output):
         'SELECT episode_id,published_at,source,source_url,source_record_id FROM episode_publication_metadata')}
     implementation_dates = {r['character_id']: dict(r) for r in c.execute(
         'SELECT character_id,implemented_at,source,source_url,confidence FROM character_implementation_dates')}
+    operator_character_ids = {r['character_id'] for r in c.execute(
+        'SELECT DISTINCT character_id FROM operator_roster')}
     images = [dict(r) for r in c.execute('SELECT * FROM images WHERE active=1')]
     rows = [dict(r) for r in c.execute("""
         SELECT ci.instance_id,ci.crop_path,ci.tags,p.panel_id,p.bbox panel_bbox,
@@ -206,19 +208,25 @@ def export(database, raw_root, output):
         if (index + 1) % 500 == 0:
             print('Processed %d / %d' % (index + 1, len(rows)), flush=True)
     report = {'human_confirmed_active': len(rows), 'public_instances': len(instances),
-              'public_characters': len(used_characters), 'episodes': len(public_episodes),
+              'public_characters': None, 'public_operator_characters': None,
+              'episodes': len(public_episodes),
               'images': len(images), 'previews': len(previews),
               'official_catalog_episodes': catalog_size, 'exclusions': dict(exclusions), 'problems': problems}
     (output.parent / 'export-report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
     if problems:
         raise ValueError('Asset export failed for %d instances; no release manifest published' % len(problems))
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    public_operator_ids = {resolve(cid) for cid in operator_character_ids if resolve(cid) in active}
+    public_character_ids = set(used_characters) | public_operator_ids
+    report['public_characters'] = len(public_character_ids)
+    report['public_operator_characters'] = len(public_operator_ids)
     public_characters = [{'id': cid, 'name': active[cid]['canonical_name'], 'type': 'canonical',
+                          'is_operator': cid in public_operator_ids,
                           'aliases': sorted(aliases[cid]),
                           'home_episode_ids': sorted(home_episodes[cid], key=lambda eid: episode_order[eid]),
                           **({'implementation_date': implementation_dates[cid]['implemented_at']}
                              if cid in implementation_dates else {})}
-                         for cid in sorted(used_characters)]
+                         for cid in sorted(public_character_ids)]
     release = {
         'release_id': 'human-' + hashlib.sha256(json.dumps(instances, sort_keys=True).encode()).hexdigest()[:16],
         'generated_at': now, 'characters': public_characters, 'episodes': public_episodes,

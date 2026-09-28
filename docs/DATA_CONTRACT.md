@@ -4,7 +4,7 @@
 
 ## 必需内容
 
-- characters：`id`、`name`；可选 `aliases: string[]`、`type: "canonical"`、`implementation_date: "YYYY-MM-DD"`，以及 `home_episode_ids: string[]`。本篇关系是角色与篇目的多对多映射；空数组表示当前没有登记本篇。只含已发布的具名角色；不发布 NPC、临时身份、历史错误身份。id 稳定且不含逗号（组合分享链接使用逗号分隔）。
+- characters：`id`、`name`；可选 `is_operator: boolean`、`aliases: string[]`、`type: "canonical"`、`implementation_date: "YYYY-MM-DD"`，以及 `home_episode_ids: string[]`。`is_operator` 角色即使没有任何漫画实例也可以存在，实例数为 0；本篇关系是角色与篇目的多对多映射；空数组表示当前没有登记本篇。不发布 NPC、临时身份、历史错误身份。id 稳定且不含逗号（组合分享链接使用逗号分隔）。
 - episodes：`id`、`name`、`official_url`、`order`、`published_at: "YYYY-MM-DD"`；可选 `source_record_id`、`cast_character_ids: string[]`。链接和发布时间必须核实为对应篇目；当前发布范围固定为本地 339 篇。前端仅允许 HTTPS comic.hypergryph.com / terra-historicus.hypergryph.com。
 - instances：`id`、`character_id`、`episode_id`、`crop_url`；可选 `image_id`、`source_preview_url`、`sort_key`。每一项是当前有效、人类 confirmed/trusted、经发布筛选的 canonical 实例。
 - 三个数组允许为空；重复 ID、未知角色/篇目关联、无效公开资源路径会让清单加载失败并显示重试，防止静默出现错误统计。
@@ -26,7 +26,7 @@ crop_url 和 source_preview_url 只接受 `/media/` 下 WebP/PNG/JPEG/AVIF 相�
 
 四个基础数的篇目/角色/实例直接取相应目录，角色榜和占比来自实际实例，不信任冗余的 instance_count 字段。所有统计只描述同一发布版本。
 
-`order` 不自动从文件名猜测；“久未出现榜”使用今天与角色最后出现篇目的 `published_at` 相差天数。实现日期榜只对公开清单中有 `implementation_date` 的正式角色计算，不为无日期的剧情人物猜测。
+`order` 不自动从文件名猜测；“久未出现榜”使用今天与角色最后出现篇目的 `published_at` 相差天数。`is_operator` 角色即使没有 instance 也保留在清单中；无本篇村只对有 `implementation_date` 的干员计算，无出场村可以包含无日期干员并将其排在有日期者之后。
 
 导出只映射数据库已记录的 `home_episode`，不根据实际出场反推本篇。未登记本篇的角色，其现有出场全部计作客串；空数组与“已确认此角色没有本篇”遵循当前数据规则。
 

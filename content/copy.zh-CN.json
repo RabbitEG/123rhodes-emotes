@@ -386,7 +386,11 @@
    "note": "榜单名称"
  },
   "rank.noRhodes": {
-    "text": "无123罗德岛村榜",
+    "text": "无本篇村",
+    "note": "榜单名称"
+  },
+  "rank.noAppearance": {
+    "text": "无出场村",
     "note": "榜单名称"
   },
  "rank.absence": {
@@ -415,6 +419,10 @@
  },
   "rank.noRhodesNote": {
     "text": "没有登记本篇且有实装日期的角色，按距实装天数降序",
+    "note": "统计公式"
+  },
+  "rank.noAppearanceNote": {
+    "text": "没有有效实例的干员，按距实装天数降序",
     "note": "统计公式"
   },
  "rank.absenceNote": {
@@ -458,6 +466,13 @@
    ]
  },
   "rank.noRhodesValue": {
+    "text": "{count} 天",
+    "note": "距离干员实装日期的天数",
+    "slots": [
+      "count"
+    ]
+  },
+  "rank.noAppearanceValue": {
     "text": "{count} 天",
     "note": "距离干员实装日期的天数",
     "slots": [

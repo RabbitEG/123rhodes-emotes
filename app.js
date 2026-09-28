@@ -255,10 +255,11 @@
     $("#rank-note").textContent = t("rank." + kind + "Note");
    const rows = stats.rankings[kind];
     $("#character-ranking").innerHTML = rows === null ? `<p class="empty-copy">${text(kind === "absence" ? "stats.orderMissing" : "stats.castMissing")}</p>` : rows.length ? renderRankRows(rows,
-      c => kind === "coverage" ? c.episodes.size : kind === "cameo" ? c.cameo : kind === "absence" ? c.absence : kind === "noRhodes" ? c.implementationAgeDays : kind === "searches" ? c.searches : c.count,
+      c => kind === "coverage" ? c.episodes.size : kind === "cameo" ? c.cameo : kind === "absence" ? c.absence : kind === "noRhodes" || kind === "noAppearance" ? c.implementationAgeDays : kind === "searches" ? c.searches : c.count,
       (c, rank, value) => {
-        const valueKey = kind === "coverage" ? "rank.episodeValue" : kind === "absence" ? "rank.absenceValue" : kind === "noRhodes" ? "rank.noRhodesValue" : kind === "cameo" ? "rank.cropEpisodeValue" : kind === "searches" ? "rank.searchValue" : "rank.cropValue";
-        return rankButton(c.name, t(valueKey, { count: number(value), episodes: number(c.cameoEpisodes.size) }), `data-character="${escape(c.id)}"`, rank);
+        const valueKey = kind === "coverage" ? "rank.episodeValue" : kind === "absence" ? "rank.absenceValue" : kind === "noRhodes" ? "rank.noRhodesValue" : kind === "noAppearance" ? "rank.noAppearanceValue" : kind === "cameo" ? "rank.cropEpisodeValue" : kind === "searches" ? "rank.searchValue" : "rank.cropValue";
+        const shown = kind === "noAppearance" && !Number.isFinite(value) ? "—" : t(valueKey, { count: number(value), episodes: number(c.cameoEpisodes.size) });
+        return rankButton(c.name, shown, `data-character="${escape(c.id)}"`, rank);
       }) : `<p class="empty-copy">${text(release.instances.length ? "stats.noRank" : "stats.empty")}</p>`;
   }
   async function loadSearchRanking() {
