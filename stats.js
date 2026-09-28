@@ -129,10 +129,10 @@
       const character = characters.get(id(form.character_id));
       if (!character || character.is_operator !== true || crossoverOnlyOperators.has(character.name)) continue;
       const year = Number(form.implementation_date.slice(0, 4));
-      if (!cohorts.has(year)) cohorts.set(year, { year, base: { total: 0, home: 0 }, alter: { total: 0, home: 0 } });
-      const series = cohorts.get(year)[form.is_alter ? "alter" : "base"];
-      series.total++;
-      if (character.homeEpisodes.size > 0) series.home++;
+      if (!cohorts.has(year)) cohorts.set(year, { year, total: 0, home: 0 });
+      const cohort = cohorts.get(year);
+      cohort.total++;
+      if (character.homeEpisodes.size > 0) cohort.home++;
     }
     return {
       episodeCount: datedEpisodes.length,

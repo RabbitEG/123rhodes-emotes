@@ -13,6 +13,7 @@ const data = JSON.parse(fs.readFileSync(path.join(root, "publish/site/data/relea
     await page.waitForSelector(".legend-row");
     assert.equal(await page.locator(".ranking-panels > .ranking-card").count(), 3);
     assert.equal(await page.locator(".publication-mini-card").count(), 4);
+    assert.equal(await page.locator(".publication-series-legend").count(), 0);
     assert.equal(await page.locator(".publication-calendar-svg .publication-year-label").count(), 5);
     assert.equal(await page.locator(".publication-calendar-svg rect").count(), 5 * 53);
     assert.equal(await page.locator("#publication-total").textContent(), "339 篇");

@@ -358,14 +358,6 @@
     "text": "有本篇的形态数 ÷ 有实装日期形态数",
     "note": "干员本篇覆盖率统计口径"
   },
-  "stats.operatorBase": {
-    "text": "本体",
-    "note": "干员本体图例"
-  },
-  "stats.operatorAlter": {
-    "text": "异格",
-    "note": "干员异格图例"
-  },
   "stats.publicationEmpty": {
     "text": "暂无可用的发布日期数据",
     "note": "发布日期图表空状态"

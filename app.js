@@ -331,31 +331,23 @@
   }
   function operatorCoverageChart(rows) {
     const width = 260, height = 126, left = 25, right = 258, top = 17, baseline = 97, plotHeight = 68;
-    if (!rows.length) return `<section class="publication-mini-card"><h4>${text("stats.operatorCoverage")}</h4><div class="publication-series-legend"><span><i class="coverage-base"></i>${text("stats.operatorBase")}</span><span><i class="coverage-alter"></i>${text("stats.operatorAlter")}</span></div><p class="publication-chart-empty">${text("stats.publicationEmpty")}</p></section>`;
-    const groupWidth = (right - left) / rows.length, barWidth = Math.min(10, groupWidth * .22);
+    if (!rows.length) return `<section class="publication-mini-card"><h4>${text("stats.operatorCoverage")}</h4><p class="publication-chart-empty">${text("stats.publicationEmpty")}</p></section>`;
+    const groupWidth = (right - left) / rows.length, barWidth = Math.min(16, groupWidth * .42);
     const guides = [0, .5, 1].map(rate => {
       const y = baseline - plotHeight * rate;
       return `<line class="publication-gridline" x1="${left}" y1="${y}" x2="${right}" y2="${y}"/><text class="publication-axis-label" x="1" y="${y + 3}">${Math.round(rate * 100)}%</text>`;
     }).join("");
     const columns = rows.map((row, index) => {
       const center = left + groupWidth * (index + .5);
-      const series = [
-        { key: "base", color: "#8a72c7", offset: -barWidth - 1 },
-        { key: "alter", color: "#df9bb8", offset: 1 }
-      ].map(item => {
-        const cohort = row[item.key], rate = cohort.total ? cohort.home / cohort.total : 0;
-        const h = cohort.total ? rate * plotHeight : 0;
-        const x = center + item.offset;
-        const tip = `${row.year} · ${t(item.key === "base" ? "stats.operatorBase" : "stats.operatorAlter")}：${cohort.home}/${cohort.total}（${cohort.total ? (rate * 100).toFixed(1) : "0.0"}%）`;
-        if (!cohort.total) return "";
-        const mark = h > 0
-          ? `<rect x="${x.toFixed(1)}" y="${(baseline - h).toFixed(1)}" width="${barWidth}" height="${h.toFixed(1)}" rx="2" fill="${item.color}"/>`
-          : `<circle cx="${(x + barWidth / 2).toFixed(1)}" cy="${baseline}" r="1.2" fill="${item.color}"/>`;
-        return `<g><title>${escape(tip)}</title>${mark}</g>`;
-      }).join("");
-      return `<g>${series}<text class="publication-bar-label" x="${center.toFixed(1)}" y="115">${row.year}</text></g>`;
+      const rate = row.total ? row.home / row.total : 0;
+      const h = rate * plotHeight, x = center - barWidth / 2;
+      const tip = `${row.year}：${row.home}/${row.total}（${(rate * 100).toFixed(1)}%）`;
+      const mark = h > 0
+        ? `<rect x="${x.toFixed(1)}" y="${(baseline - h).toFixed(1)}" width="${barWidth}" height="${h.toFixed(1)}" rx="2" fill="#8a72c7"/>`
+        : `<circle cx="${center.toFixed(1)}" cy="${baseline}" r="1.2" fill="#8a72c7"/>`;
+      return `<g><title>${escape(tip)}</title>${mark}<text class="publication-bar-label" x="${center.toFixed(1)}" y="115">${row.year}</text></g>`;
     }).join("");
-    return `<section class="publication-mini-card"><h4>${text("stats.operatorCoverage")}</h4><div class="publication-series-legend"><span><i class="coverage-base"></i>${text("stats.operatorBase")}</span><span><i class="coverage-alter"></i>${text("stats.operatorAlter")}</span></div><svg class="publication-chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${text("stats.operatorCoverageNote")}">${guides}${columns}</svg></section>`;
+    return `<section class="publication-mini-card"><h4>${text("stats.operatorCoverage")}</h4><svg class="publication-chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${text("stats.operatorCoverageNote")}">${guides}${columns}</svg></section>`;
   }
   function publicationCalendarSvg(yearRows) {
     if (!yearRows.length) return `<p class="publication-chart-empty">${text("stats.publicationEmpty")}</p>`;

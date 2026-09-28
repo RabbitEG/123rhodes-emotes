@@ -56,8 +56,8 @@ assert.equal(publicationFixtureStats.weekdays[4].count, 1);
 assert.equal(publicationFixtureStats.weekdays[5].count, 1);
 assert.deepEqual(publicationFixtureStats.calendarYears.map(row => row.year), [2023, 2022]);
 assert.equal(publicationFixtureStats.calendarYears.flatMap(row => row.weeks).reduce((sum, week) => sum + week.count, 0), 3);
-assert.equal(publicationFixtureStats.operatorCoverage.find(row => row.year === 2019).base.home, 1);
-assert.equal(publicationFixtureStats.operatorCoverage.find(row => row.year === 2021).alter.total, 1);
+assert.deepEqual(publicationFixtureStats.operatorCoverage.find(row => row.year === 2019), { year: 2019, total: 1, home: 1 });
+assert.deepEqual(publicationFixtureStats.operatorCoverage.find(row => row.year === 2021), { year: 2021, total: 1, home: 1 });
 const browserData = {
   ...data,
   characters: characters.map((character, index) => ({
