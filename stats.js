@@ -2,6 +2,15 @@
 (() => {
   const id = value => String(value);
   const byName = (a, b) => a.name.localeCompare(b.name, "zh-CN", { numeric: true });
+  // Crossover-only identities are excluded from the two "missing" operator
+  // rankings. Canonical Arknights operators Yato and Noir Corne stay included:
+  // their Monster Hunter forms are already folded into those existing people.
+  const crossoverOnlyOperators = new Set([
+    "灰烬", "战车", "闪击", "霜华", "艾拉", "双月", "医生", "导火索",
+    "九色鹿", "罗小黑", "泰拉大陆调查团", "焰狐龙梓兰", "雷狼龙S空爆",
+    "莱欧斯", "玛露西尔", "齐尔查克", "森西",
+    "结城理", "岳羽由加莉", "埃癸斯", "虎狼丸"
+  ]);
   function assetPath(value) {
     if (typeof value !== "string" || !value.startsWith("/media/")) return "";
     try {
@@ -146,7 +155,7 @@
       }
     }
     const desc = field => (a, b) => b[field] - a[field] || byName(a, b);
-    const operatorRows = rows.filter(c => c.is_operator === true);
+    const operatorRows = rows.filter(c => c.is_operator === true && !crossoverOnlyOperators.has(c.name));
     // The local roster folds named alters into their base canonical character.
     // Only the distinct-name pairs below need an explicit family for rankings.
     // These names come from the official alternate-operator set; is_alter alone

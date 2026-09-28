@@ -446,11 +446,11 @@
    "note": "统计公式"
  },
   "rank.noRhodesNote": {
-    "text": "没有登记本篇且有实装日期的角色，按距实装天数降序",
+    "text": "按实装天数排序，不含联动干员",
     "note": "统计公式"
   },
   "rank.noAppearanceNote": {
-    "text": "没有有效实例的干员，按距实装天数降序",
+    "text": "按实装天数排序，不含联动干员",
     "note": "统计公式"
   },
  "rank.absenceNote": {
