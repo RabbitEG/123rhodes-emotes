@@ -10,6 +10,9 @@ function response(value, status = 200) {
 export async function onRequestGet({ env }) {
   if (!env.ANALYTICS_DB) return response({ items: [] });
   try {
+    // The public heat list is intentionally action-based. Automatic result,
+    // detail-load, and viewport-exposure events remain available in the admin
+    // report but must not make a character look popular by merely being loaded.
     const result = await env.ANALYTICS_DB.prepare(
       `SELECT id, SUM(event_count) AS hot
        FROM (
@@ -18,8 +21,8 @@ export async function onRequestGet({ env }) {
                 event_count
          FROM analytics_daily_counts
          WHERE event_type IN (
-           'search_submit', 'search_results', 'suggestion_select', 'character_select',
-           'instance_impression', 'instance_link_click', 'instance_open', 'source_click'
+           'search_submit', 'suggestion_select', 'character_select',
+           'instance_link_click', 'source_click'
          )
            AND (character_id <> '' OR (object_type = 'character' AND object_id <> ''))
        )

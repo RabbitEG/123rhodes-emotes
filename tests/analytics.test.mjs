@@ -94,10 +94,11 @@ assert.equal((await reportResponse.json()).configured, true);
 const searchRankingDb = {
   prepare(sql) {
     assert.match(sql, /analytics_daily_counts/);
-    assert.match(sql, /search_submit.*search_results.*suggestion_select/s);
+    assert.match(sql, /search_submit.*suggestion_select.*character_select.*instance_link_click.*source_click/s);
     assert.match(sql, /character_id/);
     assert.match(sql, /source_click/);
     assert.match(sql, /object_type = 'character'/);
+    assert.doesNotMatch(sql, /search_results|instance_impression|instance_open/);
     return { async all() { return { results: [
       { id: "char-amiya", hot: 14 },
       { id: "char-doctor", hot: 6 },
