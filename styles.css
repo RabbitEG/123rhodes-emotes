@@ -337,7 +337,7 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
 .analytics-report-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; align-items: start; }
 .analytics-card { min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: #fffefd; }
 .analytics-card h2 { margin: 0 0 10px; color: #554767; font-size: 17px; }
-.analytics-card > div { max-width: 100%; overflow-x: auto; }
+.analytics-card > div { max-width: 100%; max-height: min(55vh, 460px); overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .analytics-table { width: 100%; border-collapse: collapse; font-size: 13px; line-height: 1.45; }
 .analytics-table th, .analytics-table td { padding: 8px 9px; border-bottom: 1px solid #eee8f3; text-align: left; vertical-align: top; }
 .analytics-table th { position: sticky; top: 0; color: #796d87; background: #f8f5fb; font-weight: 750; white-space: nowrap; }
