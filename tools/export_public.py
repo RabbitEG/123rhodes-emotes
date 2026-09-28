@@ -92,7 +92,7 @@ def export(database, raw_root, output):
     implementation_dates = {r['character_id']: dict(r) for r in c.execute(
         'SELECT character_id,implemented_at,source,source_url,confidence FROM character_implementation_dates')}
     operator_roster_rows = [dict(r) for r in c.execute(
-        'SELECT character_id,stars FROM operator_roster')]
+        'SELECT character_id,stars,is_alter,implemented_at FROM operator_roster')]
     operator_character_ids = {r['character_id'] for r in operator_roster_rows}
     images = [dict(r) for r in c.execute('SELECT * FROM images WHERE active=1')]
     rows = [dict(r) for r in c.execute("""
@@ -234,11 +234,21 @@ def export(database, raw_root, output):
                           **({'implementation_date': implementation_dates[cid]['implemented_at']}
                              if cid in implementation_dates else {})}
                          for cid in sorted(public_character_ids)]
+    operator_forms = [
+        {
+            'character_id': resolve(row['character_id']),
+            'is_alter': bool(row.get('is_alter')),
+            'implementation_date': row.get('implemented_at'),
+        }
+        for row in operator_roster_rows
+        if row.get('implemented_at') and resolve(row['character_id']) in public_operator_ids
+    ]
     release = {
         'release_id': 'human-' + hashlib.sha256(json.dumps(instances, sort_keys=True).encode()).hexdigest()[:16],
         'generated_at': now, 'characters': public_characters, 'episodes': public_episodes,
         'instances': sorted(instances, key=lambda item: item['sort_key']),
         'images': [{'id': image['image_id']} for image in images],
+        'operator_forms': operator_forms,
         'cast_complete': False, 'featured_instance_ids': []
     }
     content = {key: value for key, value in release.items() if key not in ('release_id', 'generated_at')}

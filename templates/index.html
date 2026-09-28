@@ -34,6 +34,20 @@
       <div class="stat-panels chart-panels">
         <article class="paper-card chart-card"><div class="card-heading"><span class="mini-star" aria-hidden="true">✧</span><h3>{{stats.chartTitle}}</h3></div><p class="card-note">{{stats.chartNote}}</p><div id="distribution" class="distribution"><div class="donut-empty" aria-hidden="true"><span>…</span></div><p class="empty-copy">{{stats.empty}}</p></div></article>
       </div>
+      <div class="stat-panels publication-panels">
+        <article class="paper-card publication-card">
+          <div class="card-heading"><h3>{{stats.publicationTitle}}</h3></div>
+          <p class="card-note">{{stats.publicationNote}}</p>
+          <div class="publication-layout">
+            <div class="publication-mini-charts" id="publication-charts" aria-label="{{stats.publicationTitle}}"></div>
+            <section class="publication-calendar" aria-labelledby="publication-calendar-title">
+              <div class="publication-calendar-heading"><h4 id="publication-calendar-title">{{stats.publicationCalendar}}</h4><span id="publication-total"></span></div>
+              <div class="publication-calendar-scroll" id="publication-calendar" role="img" aria-label="{{stats.publicationCalendar}}"></div>
+              <div class="publication-heat-legend"><span>{{stats.publicationLess}}</span><i class="heat-level-0"></i><i class="heat-level-1"></i><i class="heat-level-2"></i><i class="heat-level-3"></i><i class="heat-level-4"></i><span>{{stats.publicationMore}}</span></div>
+            </section>
+          </div>
+        </article>
+      </div>
       <div class="stat-panels ranking-panels">
         <article class="paper-card ranking-card"><div class="card-heading"><h3>{{stats.rankTitle}}</h3><select id="ranking-kind" aria-label="{{stats.rankLabel}}"><option value="appearances">{{rank.appearances}}</option><option value="coverage">{{rank.primaryCoverage}}</option><option value="searches">{{rank.primarySearches}}</option><option value="rare">{{rank.rare}}</option></select></div><p id="rank-note" class="card-note">{{rank.appearancesNote}}</p><div id="character-ranking" class="rank-list"><p class="empty-copy">{{stats.empty}}</p></div></article>
         <article class="paper-card ranking-card"><div class="card-heading"><h3>{{rank.guest}}</h3></div><p class="card-note">{{rank.noHomeNote}}</p><div id="guest-ranking" class="rank-list"><p class="empty-copy">{{stats.empty}}</p></div></article>

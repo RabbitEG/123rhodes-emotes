@@ -47,7 +47,8 @@ try:
         path.parent.mkdir(parents=True)
         path.write_bytes(data)
         (bundle / 'data').mkdir()
-        release = {'release_id':'test', 'characters':[], 'episodes':[], 'images':[],
+        release = {'release_id':'test', 'characters':[{'id':'c1'}], 'episodes':[], 'images':[],
+                   'operator_forms':[{'character_id':'c1','is_alter':False,'implementation_date':'2020-01-01'}],
                    'instances':[{'crop_url':'/' + asset, 'source_preview_url':'/' + asset}]}
         manifest = bundle / 'data/release.json'
         manifest.write_text(json.dumps(release), encoding='utf-8')
@@ -71,6 +72,14 @@ try:
             assert 'hash mismatch' in str(error)
         else:
             raise AssertionError('Hash mismatch should be rejected')
+        release['operator_forms'][0]['is_alter'] = 'false'
+        manifest.write_text(json.dumps(release), encoding='utf-8')
+        try:
+            uploader.files_for(bundle)
+        except ValueError as error:
+            assert 'Invalid operator form metadata' in str(error)
+        else:
+            raise AssertionError('Malformed operator form metadata should be rejected')
         release['private_database'] = 'not allowed'
         manifest.write_text(json.dumps(release), encoding='utf-8')
         try:

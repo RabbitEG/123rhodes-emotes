@@ -313,6 +313,83 @@
       if ($("#ranking-kind")?.value === "searches") renderRanking();
     } catch { /* Analytics rankings are optional; the rest of the site remains available. */ }
   }
+  function miniCountChart(titleKey, items, color = "#8a72c7") {
+    const title = t(titleKey);
+    if (!items.length || !items.some(item => item.count > 0)) return `<section class="publication-mini-card"><h4>${text(titleKey)}</h4><p class="publication-chart-empty">${text("stats.publicationEmpty")}</p></section>`;
+    const width = 260, height = 126, top = 15, baseline = 94, plotHeight = 62;
+    const max = Math.max(1, ...items.map(item => item.count));
+    const groupWidth = width / items.length, barWidth = Math.min(16, groupWidth * .58);
+    const bars = items.map((item, index) => {
+      const x = index * groupWidth + (groupWidth - barWidth) / 2;
+      const barHeight = item.count > 0 ? Math.max(2, item.count / max * plotHeight) : 0;
+      const label = item.displayLabel ?? item.label;
+      const tip = `${label}：${number(item.count)} 篇`;
+      const valueY = Math.max(top + 7, baseline - barHeight - 4);
+      return `<g><title>${escape(tip)}</title><rect x="${x.toFixed(1)}" y="${(baseline - barHeight).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${barHeight.toFixed(1)}" rx="3" fill="${color}"/><text class="publication-bar-value" x="${(x + barWidth / 2).toFixed(1)}" y="${valueY.toFixed(1)}">${number(item.count)}</text><text class="publication-bar-label" x="${(index * groupWidth + groupWidth / 2).toFixed(1)}" y="115">${escape(label)}</text></g>`;
+    }).join("");
+    return `<section class="publication-mini-card"><h4>${text(titleKey)}</h4><svg class="publication-chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escape(title)}">${bars}</svg></section>`;
+  }
+  function operatorCoverageChart(rows) {
+    const width = 260, height = 126, left = 25, right = 258, top = 17, baseline = 97, plotHeight = 68;
+    if (!rows.length) return `<section class="publication-mini-card"><h4>${text("stats.operatorCoverage")}</h4><div class="publication-series-legend"><span><i class="coverage-base"></i>${text("stats.operatorBase")}</span><span><i class="coverage-alter"></i>${text("stats.operatorAlter")}</span></div><p class="publication-chart-empty">${text("stats.publicationEmpty")}</p></section>`;
+    const groupWidth = (right - left) / rows.length, barWidth = Math.min(10, groupWidth * .22);
+    const guides = [0, .5, 1].map(rate => {
+      const y = baseline - plotHeight * rate;
+      return `<line class="publication-gridline" x1="${left}" y1="${y}" x2="${right}" y2="${y}"/><text class="publication-axis-label" x="1" y="${y + 3}">${Math.round(rate * 100)}%</text>`;
+    }).join("");
+    const columns = rows.map((row, index) => {
+      const center = left + groupWidth * (index + .5);
+      const series = [
+        { key: "base", color: "#8a72c7", offset: -barWidth - 1 },
+        { key: "alter", color: "#df9bb8", offset: 1 }
+      ].map(item => {
+        const cohort = row[item.key], rate = cohort.total ? cohort.home / cohort.total : 0;
+        const h = cohort.total ? rate * plotHeight : 0;
+        const x = center + item.offset;
+        const tip = `${row.year} · ${t(item.key === "base" ? "stats.operatorBase" : "stats.operatorAlter")}：${cohort.home}/${cohort.total}（${cohort.total ? (rate * 100).toFixed(1) : "0.0"}%）`;
+        if (!cohort.total) return "";
+        const mark = h > 0
+          ? `<rect x="${x.toFixed(1)}" y="${(baseline - h).toFixed(1)}" width="${barWidth}" height="${h.toFixed(1)}" rx="2" fill="${item.color}"/>`
+          : `<circle cx="${(x + barWidth / 2).toFixed(1)}" cy="${baseline}" r="1.2" fill="${item.color}"/>`;
+        return `<g><title>${escape(tip)}</title>${mark}</g>`;
+      }).join("");
+      return `<g>${series}<text class="publication-bar-label" x="${center.toFixed(1)}" y="115">${row.year}</text></g>`;
+    }).join("");
+    return `<section class="publication-mini-card"><h4>${text("stats.operatorCoverage")}</h4><div class="publication-series-legend"><span><i class="coverage-base"></i>${text("stats.operatorBase")}</span><span><i class="coverage-alter"></i>${text("stats.operatorAlter")}</span></div><svg class="publication-chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${text("stats.operatorCoverageNote")}">${guides}${columns}</svg></section>`;
+  }
+  function publicationCalendarSvg(yearRows) {
+    if (!yearRows.length) return `<p class="publication-chart-empty">${text("stats.publicationEmpty")}</p>`;
+    const xStart = 40, cell = 9, step = 11, rowTop = 29, rowStep = 21, width = xStart + 53 * step + 2, height = rowTop + yearRows.length * rowStep + 2;
+    const labels = Array.from({ length: 12 }, (_, month) => {
+      const x = xStart + (yearRows[0].monthPositions[month] || 0) * step;
+      return `<text class="publication-month-label" x="${x}" y="13">${text("stats.monthLabel", { month: month + 1 })}</text>`;
+    }).join("");
+    const rows = yearRows.map((row, rowIndex) => {
+      const y = rowTop + rowIndex * rowStep;
+      const cells = row.weeks.map(week => {
+        const level = week.count <= 0 ? 0 : Math.min(4, week.count);
+        const x = xStart + week.index * step;
+        const title = `${row.year}-${week.monday.slice(5)}—${week.sunday.slice(5)}：${week.count} 篇`;
+        return `<g><title>${escape(title)}</title><rect class="heat-level-${level}" x="${x}" y="${y}" width="${cell}" height="${cell}" rx="2"/></g>`;
+      }).join("");
+      return `<g><text class="publication-year-label" x="0" y="${y + 9}">${row.year}</text>${cells}</g>`;
+    }).join("");
+    return `<svg class="publication-calendar-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${text("stats.publicationCalendar")}">${labels}${rows}</svg>`;
+  }
+  function renderPublicationStats() {
+    const publication = stats.publication;
+    const weekdayNames = t("stats.weekdays").split("、");
+    const weekdayRows = publication.weekdays.map((row, index) => ({ ...row, displayLabel: weekdayNames[index] || row.label }));
+    const charts = [
+      miniCountChart("stats.publicationYear", publication.years),
+      miniCountChart("stats.publicationMonth", publication.months.map(row => ({ ...row, displayLabel: t("stats.monthLabel", { month: row.label }) })), "#d89ab5"),
+      miniCountChart("stats.publicationWeekday", weekdayRows, "#6fa89e"),
+      operatorCoverageChart(publication.operatorCoverage)
+    ];
+    $("#publication-charts").innerHTML = charts.join("");
+    $("#publication-calendar").innerHTML = publicationCalendarSvg(publication.calendarYears);
+    $("#publication-total").textContent = t("stats.publicationTotal", { count: number(publication.episodeCount) });
+  }
   function renderStats() {
     $("#totals").innerHTML = [["episodes", release.episodes.length], ["instances", release.instances.length], ["characters", release.characters.length], ["images", stats.imageCount]].map(([key, value]) => `<article><strong>${value === null ? "—" : number(value)}</strong><span>${text("stats." + key)}</span></article>`).join("");
     if (stats.chart.length) {
@@ -325,6 +402,7 @@
       const legend = stats.chart.map((row, index) => `<${row.id ? "button" : "div"} class="legend-row" ${row.id ? `data-character="${escape(row.id)}"` : ""}><span class="legend-dot chart-color-${index}" aria-hidden="true"></span><span>${escape(row.name || t("stats.other"))}</span><small>${text("stats.chartValue", { count: number(row.count), percent: (100 * row.count / release.instances.length).toFixed(1) })}</small></${row.id ? "button" : "div"}>`).join("");
       $("#distribution").innerHTML = `<div class="donut"><svg viewBox="0 0 180 180" role="img" aria-label="${text("stats.chartLabel")}"><title>${text("stats.chartLabel")}</title>${arcs}</svg><div class="donut-center"><strong>${number(release.instances.length)}</strong><span>${text("stats.chartTotal")}</span></div></div><div class="legend">${legend}</div>`;
     }
+    renderPublicationStats();
     renderRanking();
     $("#pair-ranking").innerHTML = stats.bidirectionalPairs.length ? renderRankRows(stats.bidirectionalPairs, p => Number(p.bidirectionalScore.toFixed(3)), (p, rank) => rankButton(t("fun.pairName", { first: stats.characters.get(p.first).name, second: stats.characters.get(p.second).name }), t("fun.bidirectionalValue", { score: score(p.bidirectionalScore) }), `data-pair="${escape(p.first + "," + p.second)}"`, rank)) : `<p class="empty-copy">${text("stats.noRank")}</p>`;
     $("#one-sided-ranking").innerHTML = stats.oneSidedPairs.length ? renderRankRows(stats.oneSidedPairs, p => Number(p.oneSidedScore.toFixed(3)), (p, rank) => rankButton(t("fun.directionName", { source: stats.characters.get(p.source).name, target: stats.characters.get(p.target).name }), t("fun.oneSidedValue", { score: score(p.oneSidedScore) }), `data-pair="${escape(p.first + "," + p.second)}"`, rank)) : `<p class="empty-copy">${text("stats.noRank")}</p>`;

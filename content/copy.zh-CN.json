@@ -313,6 +313,72 @@
     "text": "占比 = 角色实例数 ÷ 全部实例数",
     "note": "统计公式"
   },
+  "stats.publicationTitle": {
+    "text": "篇目发布与干员本篇",
+    "note": "发布日期和干员本篇覆盖统计标题"
+  },
+  "stats.publicationNote": {
+    "text": "按官方发布时间统计；每格代表一周",
+    "note": "发布日期统计说明"
+  },
+  "stats.publicationCalendar": {
+    "text": "每周发布篇目",
+    "note": "周级热力图标题"
+  },
+  "stats.publicationLess": {
+    "text": "少",
+    "note": "热力图图例低值"
+  },
+  "stats.publicationMore": {
+    "text": "多",
+    "note": "热力图图例高值"
+  },
+  "stats.publicationTotal": {
+    "text": "{count} 篇",
+    "note": "热力图关联的篇目总数",
+    "slots": ["count"]
+  },
+  "stats.publicationYear": {
+    "text": "发布年份",
+    "note": "发布日期按年统计"
+  },
+  "stats.publicationMonth": {
+    "text": "发布月份",
+    "note": "发布日期按月统计"
+  },
+  "stats.publicationWeekday": {
+    "text": "发布星期",
+    "note": "发布日期按星期统计"
+  },
+  "stats.operatorCoverage": {
+    "text": "干员本篇覆盖率",
+    "note": "干员实装年份与本篇覆盖率"
+  },
+  "stats.operatorCoverageNote": {
+    "text": "有本篇的形态数 ÷ 有实装日期形态数",
+    "note": "干员本篇覆盖率统计口径"
+  },
+  "stats.operatorBase": {
+    "text": "本体",
+    "note": "干员本体图例"
+  },
+  "stats.operatorAlter": {
+    "text": "异格",
+    "note": "干员异格图例"
+  },
+  "stats.publicationEmpty": {
+    "text": "暂无可用的发布日期数据",
+    "note": "发布日期图表空状态"
+  },
+  "stats.monthLabel": {
+    "text": "{month}月",
+    "note": "日历月份标签",
+    "slots": ["month"]
+  },
+  "stats.weekdays": {
+    "text": "周一、周二、周三、周四、周五、周六、周日",
+    "note": "周统计图横轴"
+  },
   "stats.other": {
     "text": "其他角色",
     "note": "环形图合并项"

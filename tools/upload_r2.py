@@ -27,21 +27,31 @@ def load_env(path):
 def files_for(bundle):
     manifest = bundle / 'data/release.json'
     release = json.loads(manifest.read_text(encoding='utf-8'))
-    allowed = {'release_id', 'generated_at', 'characters', 'episodes', 'instances', 'images', 'cast_complete', 'featured_instance_ids'}
+    allowed = {'release_id', 'generated_at', 'characters', 'episodes', 'instances', 'images', 'operator_forms', 'cast_complete', 'featured_instance_ids'}
     if set(release) - allowed:
         raise ValueError('Unexpected manifest fields')
     allowed_rows = {
         'characters': {'id', 'name', 'type', 'is_operator', 'stars', 'aliases', 'home_episode_ids', 'implementation_date'},
         'episodes': {'id', 'name', 'official_url', 'order', 'published_at', 'source_record_id', 'cast_character_ids'},
         'instances': {'id', 'character_id', 'episode_id', 'image_id', 'crop_url', 'source_preview_url', 'sort_key'},
-        'images': {'id'}
+        'images': {'id'},
+        'operator_forms': {'character_id', 'is_alter', 'implementation_date'}
     }
     for name, keys in allowed_rows.items():
+        if name == 'operator_forms' and name not in release:
+            continue
         if not isinstance(release.get(name), list):
             raise ValueError('Invalid manifest table: ' + name)
         for row in release[name]:
             if set(row) - keys:
                 raise ValueError('Unexpected fields in ' + name)
+    character_ids = {str(row['id']) for row in release['characters']}
+    for row in release.get('operator_forms', []):
+        if (str(row.get('character_id')) not in character_ids or
+                not isinstance(row.get('is_alter'), bool) or
+                (row.get('implementation_date') is not None and
+                 not re.fullmatch(r'\d{4}-\d{2}-\d{2}', str(row['implementation_date'])))):
+            raise ValueError('Invalid operator form metadata')
     keys = set()
     for item in release['instances']:
         for field in ('crop_url', 'source_preview_url'):

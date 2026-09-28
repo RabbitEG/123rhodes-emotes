@@ -12,6 +12,12 @@ const data = JSON.parse(fs.readFileSync(path.join(root, "publish/site/data/relea
     await page.goto("http://127.0.0.1:4174/");
     await page.waitForSelector(".legend-row");
     assert.equal(await page.locator(".ranking-panels > .ranking-card").count(), 3);
+    assert.equal(await page.locator(".publication-mini-card").count(), 4);
+    assert.equal(await page.locator(".publication-calendar-svg .publication-year-label").count(), 5);
+    assert.equal(await page.locator(".publication-calendar-svg rect").count(), 5 * 53);
+    assert.equal(await page.locator("#publication-total").textContent(), "339 篇");
+    assert((await page.locator(".publication-year-label").first().textContent()).includes("2026"));
+    assert((await page.locator(".publication-year-label").last().textContent()).includes("2022"));
     assert.equal(await page.locator("#ranking-kind option").count(), 4);
     assert.equal(await page.locator("#missing-ranking-kind option").count(), 2);
     assert.deepEqual(await page.locator("#totals strong").allTextContents(), [data.episodes.length,data.instances.length,data.characters.length,data.images.length].map(n=>n.toLocaleString("zh-CN")));

@@ -61,6 +61,13 @@
       if (c.home_episode_ids !== undefined && (!Array.isArray(c.home_episode_ids) || c.home_episode_ids.some(x => !episodes.has(id(x))))) throw new Error("Invalid home episodes");
       if (c.implementation_date !== undefined && c.implementation_date !== null && isoDate(c.implementation_date) === null) throw new Error("Invalid implementation date");
     }
+    if (release.operator_forms !== undefined) {
+      if (!Array.isArray(release.operator_forms)) throw new Error("Invalid operator forms");
+      for (const form of release.operator_forms) {
+        if (!form || !characters.has(id(form.character_id)) || typeof form.is_alter !== "boolean" ||
+            (form.implementation_date != null && isoDate(form.implementation_date) === null)) throw new Error("Invalid operator form");
+      }
+    }
     for (const e of release.episodes) {
       if (!officialURL(e.official_url)) throw new Error("Missing verified official episode URL");
       if (e.published_at !== undefined && e.published_at !== null && isoDate(e.published_at) === null) throw new Error("Invalid publication date");
@@ -82,6 +89,59 @@
       if (release.instances.some(x => x.image_id && !ids.includes(x.image_id))) throw new Error("Unknown image ID");
     }
     return release;
+  }
+  function publicationSummary(release, characters) {
+    const datedEpisodes = release.episodes.filter(episode => isoDate(episode.published_at) !== null);
+    const years = new Map(), months = Array.from({ length: 12 }, (_, index) => ({ label: String(index + 1), count: 0 }));
+    const weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"].map(label => ({ label, count: 0 }));
+    const weekCounts = new Map(), calendarYearSet = new Set();
+    for (const episode of datedEpisodes) {
+      const stamp = isoDate(episode.published_at), date = new Date(stamp);
+      const year = date.getUTCFullYear(), month = date.getUTCMonth();
+      years.set(year, (years.get(year) || 0) + 1);
+      months[month].count++;
+      weekdays[(date.getUTCDay() + 6) % 7].count++;
+      const monday = stamp - ((date.getUTCDay() + 6) % 7) * 86400000;
+      const weekKey = new Date(monday).toISOString().slice(0, 10);
+      const weekYear = new Date(monday + 3 * 86400000).getUTCFullYear();
+      calendarYearSet.add(weekYear);
+      const key = `${weekYear}|${weekKey}`;
+      weekCounts.set(key, (weekCounts.get(key) || 0) + 1);
+    }
+    const calendarYears = [...calendarYearSet].sort((a, b) => b - a).map(year => {
+      const jan4 = Date.UTC(year, 0, 4), firstDay = new Date(jan4).getUTCDay();
+      const anchor = jan4 - ((firstDay + 6) % 7) * 86400000;
+      const weeks = Array.from({ length: 53 }, (_, index) => {
+        const monday = anchor + index * 7 * 86400000;
+        const weekKey = new Date(monday).toISOString().slice(0, 10);
+        const sunday = monday + 6 * 86400000;
+        return { index, monday: weekKey, sunday: new Date(sunday).toISOString().slice(0, 10), count: weekCounts.get(`${year}|${weekKey}`) || 0 };
+      });
+      const monthPositions = Array.from({ length: 12 }, (_, month) => {
+        const first = Date.UTC(year, month, 1);
+        return Math.max(0, Math.floor((first - anchor) / (7 * 86400000)));
+      });
+      return { year, weeks, monthPositions };
+    });
+    const cohorts = new Map();
+    for (const form of release.operator_forms ?? []) {
+      if (isoDate(form.implementation_date) === null) continue;
+      const character = characters.get(id(form.character_id));
+      if (!character || character.is_operator !== true || crossoverOnlyOperators.has(character.name)) continue;
+      const year = Number(form.implementation_date.slice(0, 4));
+      if (!cohorts.has(year)) cohorts.set(year, { year, base: { total: 0, home: 0 }, alter: { total: 0, home: 0 } });
+      const series = cohorts.get(year)[form.is_alter ? "alter" : "base"];
+      series.total++;
+      if (character.homeEpisodes.size > 0) series.home++;
+    }
+    return {
+      episodeCount: datedEpisodes.length,
+      years: [...years].sort((a, b) => a[0] - b[0]).map(([year, count]) => ({ label: String(year), count })),
+      months,
+      weekdays,
+      calendarYears,
+      operatorCoverage: [...cohorts.values()].sort((a, b) => a.year - b.year)
+    };
   }
   function analyze(release) {
     const rows = release.characters.map(c => ({ ...c, count: 0, episodes: new Set(), perEpisode: new Map(), cameo: 0, cameoEpisodes: new Set(), homes: 0, homeEpisodes: new Set((c.home_episode_ids ?? []).map(id)), absence: null, absenceDays: null, lastPublishedAt: null, implementationAgeDays: daysSince(c.implementation_date) }));
@@ -262,7 +322,8 @@
     const chart = rankings.appearances.slice(0, 10).map(c => ({ id: c.id, name: c.name, count: c.count }));
     const other = release.instances.length - chart.reduce((sum, c) => sum + c.count, 0);
     if (other > 0) chart.push({ id: null, name: null, count: other });
-    return { characters, episodes, rankings, commonPairs, bidirectionalPairs, oneSidedPairs, records, guestRecords, chart, imageCount, castReady, orderReady, publishedReady };
+    const publication = publicationSummary(release, characters);
+    return { characters, episodes, rankings, commonPairs, bidirectionalPairs, oneSidedPairs, records, guestRecords, chart, imageCount, castReady, orderReady, publishedReady, publication };
   }
   globalThis.RhodesStats = { validate, analyze, assetPath, officialURL };
 })();

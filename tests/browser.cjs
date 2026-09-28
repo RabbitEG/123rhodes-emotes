@@ -34,6 +34,43 @@ assert.equal(analyze(validate({ ...data, episodes: episodes.map(e => ({ ...e, or
 assert.throws(() => validate({ ...data, instances: [...instances, instances[0]] }));
 assert.throws(() => validate({ ...data, instances: [{ ...instances[0], crop_url: "https://example.com/tracking.png" }] }));
 assert.throws(() => validate({ ...data, episodes: [{ ...episodes[0], official_url: "javascript:alert(1)" }] }));
+const publicationFixture = validate({
+  characters: [{ id: "op", name: "测试干员", is_operator: true, aliases: [], home_episode_ids: ["e22"] }],
+  episodes: [
+    { id: "e22", name: "001_测试篇", order: 1, published_at: "2022-01-14", official_url: "https://comic.hypergryph.com/comic/6253/a" },
+    { id: "e23", name: "002_测试篇", order: 2, published_at: "2022-01-15", official_url: "https://comic.hypergryph.com/comic/6253/b" },
+    { id: "e24", name: "003_测试篇", order: 3, published_at: "2023-02-20", official_url: "https://comic.hypergryph.com/comic/6253/c" }
+  ],
+  instances: [],
+  operator_forms: [
+    { character_id: "op", is_alter: false, implementation_date: "2019-04-29" },
+    { character_id: "op", is_alter: true, implementation_date: "2021-02-05" },
+    { character_id: "op", is_alter: false, implementation_date: null }
+  ]
+});
+const publicationFixtureStats = analyze(publicationFixture).publication;
+assert.equal(publicationFixtureStats.episodeCount, 3);
+assert.deepEqual(publicationFixtureStats.years.map(row => [row.label, row.count]), [["2022", 2], ["2023", 1]]);
+assert.equal(publicationFixtureStats.months[0].count, 2);
+assert.equal(publicationFixtureStats.weekdays[4].count, 1);
+assert.equal(publicationFixtureStats.weekdays[5].count, 1);
+assert.deepEqual(publicationFixtureStats.calendarYears.map(row => row.year), [2023, 2022]);
+assert.equal(publicationFixtureStats.calendarYears.flatMap(row => row.weeks).reduce((sum, week) => sum + week.count, 0), 3);
+assert.equal(publicationFixtureStats.operatorCoverage.find(row => row.year === 2019).base.home, 1);
+assert.equal(publicationFixtureStats.operatorCoverage.find(row => row.year === 2021).alter.total, 1);
+const browserData = {
+  ...data,
+  characters: characters.map((character, index) => ({
+    ...character,
+    is_operator: index < 2,
+    home_episode_ids: index === 0 ? ["e0"] : [],
+  })),
+  episodes: episodes.map((episode, index) => ({ ...episode, published_at: ["2022-01-14", "2022-01-15", "2023-02-20", "2026-09-05"][index] })),
+  operator_forms: [
+    { character_id: "c0", is_alter: false, implementation_date: "2019-04-29" },
+    { character_id: "c0", is_alter: true, implementation_date: "2021-02-05" },
+  ]
+};
 const selfCameo = analyze(validate({
   characters: [
     { id: "amiya", name: "阿米娅", aliases: [], home_episode_ids: [] },
@@ -75,7 +112,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     await page.screenshot({ path: output + "/desktop-empty.png", fullPage: true });
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><rect x="10" y="10" width="160" height="160" rx="45" fill="#d7c7ee"/><circle cx="65" cy="75" r="7" fill="#665078"/><circle cx="115" cy="75" r="7" fill="#665078"/><path d="M70 115 Q90 135 110 115" stroke="#665078" stroke-width="5" fill="none"/></svg>';
     await page.route("**/media/**", route => route.fulfill({ contentType: "image/svg+xml", body: svg }));
-    await page.route("**/data/release.json", route => route.fulfill({ json: data }));
+    await page.route("**/data/release.json", route => route.fulfill({ json: browserData }));
     await page.reload();
     await page.locator("#totals article:first-child strong:has-text('4')").waitFor();
     assert.deepEqual(await page.locator("#totals strong").allTextContents(), ["4", "50", "8", "4"]);
@@ -156,7 +193,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     await page.keyboard.press("Escape");
     assert.equal(await page.locator(".expression-card.preview-open").count(), 0);
-    await page.route("**/data/release.json", route => route.fulfill({ json: { ...data, cast_complete: false, episodes: episodes.map(e => ({ ...e, order: undefined })) } }));
+    await page.route("**/data/release.json", route => route.fulfill({ json: { ...browserData, cast_complete: false, episodes: browserData.episodes.map(e => ({ ...e, order: undefined })) } }));
     await page.goto(base);
     await page.waitForSelector(".legend-row");
     assert((await page.locator("#guest-ranking").textContent()).includes("本篇关系"));
@@ -164,7 +201,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     assert((await page.locator("#missing-ranking").textContent()).includes("本篇关系"));
     await page.route("**/data/release.json", route => route.fulfill({ status: 500, body: "error" }));
     await page.reload(); await page.waitForSelector("#retry");
-    await page.route("**/data/release.json", route => route.fulfill({ json: data }));
+    await page.route("**/data/release.json", route => route.fulfill({ json: browserData }));
     await page.locator("#retry").click(); await page.waitForSelector(".legend-row");
     await page.route("**/data/release.json", route => route.fulfill({ json: { invalid: true } }));
     await page.reload(); await page.waitForSelector("#retry");
@@ -176,7 +213,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     }
     csp = csp.replace("img-src 'self' data:;", "img-src 'self' data: https://media.example.test;").replace("connect-src 'self';", "connect-src 'self' https://media.example.test;");
     await page.route("**/config/site.json", route => route.fulfill({ json: { publicDataBaseUrl: "https://media.example.test", pageSize: 36 } }));
-    await page.route("https://media.example.test/data/release.json", route => route.fulfill({ json: data, headers: { "Access-Control-Allow-Origin": base } }));
+    await page.route("https://media.example.test/data/release.json", route => route.fulfill({ json: browserData, headers: { "Access-Control-Allow-Origin": base } }));
     await page.goto(base); await page.waitForSelector(".legend-row");
     assert((await page.locator(".ribbon-group img").first().getAttribute("src")).startsWith("https://media.example.test/media/"));
     await page.locator("#site-search").fill("别名甲"); await page.locator("#site-search").press("Enter");
