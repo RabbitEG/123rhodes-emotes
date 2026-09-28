@@ -15,7 +15,7 @@ Cloudflare 控制台 → **Workers & Pages** → **D1** → Create database，�
 
 ## 2. 设置后台查看密钥
 
-和留言审核共用 `SITE_ADMIN_KEY`。在 Cloudflare Pages 项目 `123rhodes-emotes` → **Settings → Variables and Secrets → Production** 中由你自行设置这个加密 secret（至少 32 个字符），不要写入 Git、`config/site.json`、`.env`、网址参数或聊天。统一入口是 `/admin.html`：登录一次后可切换留言审核和访问统计。密钥仅保存在当前标签页的 `sessionStorage` 会话内；退出或关闭标签页后失效，不写入后台数据库。旧 `ANALYTICS_ADMIN_KEY` 仅作未配置共享密钥时的兼容回退。
+和留言审核共用 `SITE_ADMIN_KEY`。在 Cloudflare Pages 项目 `123rhodes-emotes` → **Settings → Variables and Secrets → Production** 中由你自行设置这个加密 secret（至少 15 个字符，最多 256 个字符），不要写入 Git、`config/site.json`、`.env`、网址参数或聊天。统一入口是 `/admin.html`：登录一次后可切换留言审核和访问统计。密钥仅保存在当前标签页的 `sessionStorage` 会话内；退出或关闭标签页后失效，不写入后台数据库。旧 `ANALYTICS_ADMIN_KEY` 仅作未配置共享密钥时的兼容回退。
 
 ## 3. 核对采集与隐私控制
 

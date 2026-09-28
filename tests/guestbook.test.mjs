@@ -99,7 +99,7 @@ const db = {
     }
   },
 };
-const secret = "a".repeat(48);
+const secret = "test-only-12345";
 const env = {
   GUESTBOOK_DB: db, TURNSTILE_SECRET_KEY: "test-secret", SITE_ADMIN_KEY: secret,
   media: { async get(key) { assert.equal(key, "data/release.json"); return { async json() { return { characters: roster }; } }; } },
@@ -122,6 +122,7 @@ try {
   assert.equal((await submit({ request: request("", "POST", { body: "https://spam.example", turnstile_token: "good" }), env })).status, 400);
   assert.equal((await submit({ request: request("", "POST", { body: "你好", turnstile_token: "bad" }), env })).status, 400);
   assert.equal((await submit({ request: request("", "POST", { body: "你好", turnstile_token: "good", source_type: "instance", source_id: "bad id" }), env })).status, 400);
+  assert.equal((await listAdmin({ request: request("/admin", "GET", null, "a".repeat(14)), env })).status, 401, "Admin keys shorter than 15 characters are rejected");
   const previewResponse = await identity({ request: request("/identity"), env });
   assert.equal(previewResponse.status, 200);
   const preview = await previewResponse.json();

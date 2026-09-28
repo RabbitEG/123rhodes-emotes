@@ -19,7 +19,7 @@
     try { sessionStorage.removeItem(storageKey); } catch { /* Storage can be disabled by the browser. */ }
   }
   async function verify(key) {
-    if (typeof key !== "string" || key.length < 32 || key.length > 256) return { ok: false, status: 401 };
+    if (typeof key !== "string" || key.length < 15 || key.length > 256) return { ok: false, status: 401 };
     try {
       const response = await fetch("/api/admin/session", {
         cache: "no-store", headers: { Authorization: "Bearer " + key },

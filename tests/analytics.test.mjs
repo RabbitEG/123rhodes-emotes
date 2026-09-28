@@ -82,6 +82,11 @@ assert.equal((await onRequestGet({ request: adminRequest("incorrect"), env })).s
 const adminSessionEndpoint = "https://123rhodes-emotes.pages.dev/api/admin/session";
 assert.equal((await onRequestAdminSession({ request: new Request(adminSessionEndpoint, { headers: { Authorization: "Bearer " + secret } }), env })).status, 200);
 assert.equal((await onRequestAdminSession({ request: new Request(adminSessionEndpoint, { headers: { Authorization: "Bearer incorrect" } }), env })).status, 401);
+const minimumSecret = "test-only-12345";
+const minimumSecretEnv = { ...env, SITE_ADMIN_KEY: minimumSecret };
+assert.equal((await onRequestAdminSession({ request: new Request(adminSessionEndpoint, { headers: { Authorization: "Bearer " + minimumSecret } }), env: minimumSecretEnv })).status, 200, "A 15-character owner-selected key is accepted");
+assert.equal((await onRequestAdminSession({ request: new Request(adminSessionEndpoint, { headers: { Authorization: "Bearer " + "a".repeat(14) } }), env: minimumSecretEnv })).status, 401, "A provided key shorter than 15 characters is rejected");
+assert.equal((await onRequestAdminSession({ request: new Request(adminSessionEndpoint, { headers: { Authorization: "Bearer " + minimumSecret } }), env: { ...env, SITE_ADMIN_KEY: "a".repeat(14) } })).status, 503, "A configured key shorter than 15 characters is treated as unset");
 const reportResponse = await onRequestGet({ request: adminRequest(secret), env });
 assert.equal(reportResponse.status, 200);
 assert.equal((await reportResponse.json()).configured, true);

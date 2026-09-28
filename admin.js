@@ -39,7 +39,7 @@
   form.addEventListener("submit", async event => {
     event.preventDefault();
     const key = input.value.trim();
-    if (key.length < 32 || key.length > 256) {
+    if (key.length < 15 || key.length > 256) {
       feedback.textContent = t("admin.keyLength");
       return;
     }

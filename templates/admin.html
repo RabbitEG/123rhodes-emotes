@@ -2,7 +2,7 @@
 <body>{{>header}}<main id="main" class="info-page paper-card admin-portal">
 {{>admin-navigation}}
 <h1>{{admin.title}}</h1><p>{{admin.description}}</p>
-<form id="admin-login" class="admin-login" method="post"><label for="admin-key">{{admin.keyLabel}}</label><input id="admin-key" name="key" type="password" required minlength="32" maxlength="256" autocomplete="current-password"><button class="primary" type="submit">{{admin.login}}</button></form>
+<form id="admin-login" class="admin-login" method="post"><label for="admin-key">{{admin.keyLabel}}</label><input id="admin-key" name="key" type="password" required minlength="15" maxlength="256" autocomplete="current-password"><button class="primary" type="submit">{{admin.login}}</button></form>
 <p id="admin-feedback" class="admin-feedback" role="status" aria-live="polite"></p>
 <section id="admin-launcher" class="admin-launcher" hidden><h2>{{admin.chooseTitle}}</h2><div class="admin-launch-grid">
   <a id="admin-open-guestbook" class="admin-launch-card" href="/guestbook-admin.html"><strong>{{admin.guestbook}}</strong><span>{{admin.guestbookNote}}</span><b aria-hidden="true">进入 →</b></a>

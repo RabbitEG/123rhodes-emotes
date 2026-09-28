@@ -679,7 +679,7 @@
     "note": "管理员会话存储不可用"
   },
   "admin.keyLength": {
-    "text": "密钥长度应为 32 至 256 个字符。",
+    "text": "密钥长度应为 15 至 256 个字符。",
     "note": "管理员密钥长度提示"
   },
   "admin.connected": {
@@ -1226,7 +1226,7 @@
     "note": "后台认证失败"
   },
   "analytics.keyTooShort": {
-    "text": "密钥至少需要 32 个字符。",
+    "text": "密钥至少需要 15 个字符。",
     "note": "密钥输入校验"
   },
   "analytics.loggedOut": {

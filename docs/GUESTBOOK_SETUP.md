@@ -44,7 +44,7 @@ Pages 项目 → Settings → Variables and Secrets → Add，创建加密 secre
 
 在 Cloudflare Pages 项目 `123rhodes-emotes` → **Settings → Variables and Secrets → Production**，新增加密 secret：
 
-- `SITE_ADMIN_KEY` = 由你自己设定的管理员密钥，至少 32 个字符；建议使用你能记住的长口令，不要用四位 PIN、R2 密钥、GitHub token 或常用密码。
+- `SITE_ADMIN_KEY` = 由你自己设定的管理员密钥，至少 15 个字符（最多 256 个字符）；不要用四位 PIN、R2 密钥或 GitHub token。为避免本站密码泄露牵连其他账户，建议不要复用其他服务的密码。
 
 同一项 `SITE_ADMIN_KEY` 同时用于留言审核和访问统计。旧的 `GUESTBOOK_ADMIN_KEY`、`ANALYTICS_ADMIN_KEY` 只在尚未配置 `SITE_ADMIN_KEY` 时作为兼容回退；确认共享登录可用后可以删除这两个旧 secret。修改 Pages Secret 后需要触发一次新的部署。
 
