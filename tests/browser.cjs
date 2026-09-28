@@ -106,7 +106,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     await page.locator("#ranking-kind").selectOption("rare");
     assert(!(await page.locator("#character-ranking").textContent()).includes("测试零"));
     await page.locator("#ranking-kind").selectOption("searches");
-    await page.waitForFunction(() => document.querySelector("#character-ranking")?.textContent.includes("热度指数 37"));
+    await page.waitForFunction(() => document.querySelector("#character-ranking")?.textContent.includes("37"));
     assert((await page.locator("#character-ranking .rank-row").first().textContent()).includes("测试乙"), "Search ranking should sort by aggregate counts");
     assert.equal(await page.locator("#character-ranking .rank-row").count(), 2, "Unknown/retired IDs should not appear in the public ranking");
     await page.locator("#pair-ranking .rank-row").first().click();

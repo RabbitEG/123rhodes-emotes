@@ -366,7 +366,7 @@
     "note": "榜单名称"
   },
   "rank.searchesNote": {
-    "text": "本站主动操作累计次数",
+    "text": "相关页面访问量",
     "note": "本站热门榜统计口径"
   },
   "rank.coverage": {
@@ -421,8 +421,8 @@
     ]
   },
   "rank.searchValue": {
-    "text": "热度指数 {count}",
-    "note": "本站主动操作热度指数",
+    "text": "{count}",
+    "note": "相关页面访问量",
     "slots": [
       "count"
     ]
@@ -478,28 +478,28 @@
     "note": "单相思公式：A 为低覆盖篇数，B 为高覆盖篇数，n 为共同篇数"
   },
   "fun.bidirectionalValue": {
-    "text": "综合分 {score}",
+    "text": "{score}",
     "note": "双向奔赴综合分",
     "slots": [
       "score"
     ]
   },
   "fun.oneSidedValue": {
-    "text": "综合分 {score}",
+    "text": "{score}",
     "note": "单相思综合分",
     "slots": [
       "score"
     ]
   },
   "fun.recordValue": {
-    "text": "综合分 {score}",
+    "text": "{score}",
     "note": "单篇出场记录综合分",
     "slots": [
       "score"
     ]
   },
   "fun.guestRecordValue": {
-    "text": "综合分 {score}",
+    "text": "{score}",
     "note": "单篇客串王综合分",
     "slots": [
       "score"
