@@ -262,6 +262,7 @@
     if (kind === "absence") return "rank.absenceValue";
     if (kind === "noRhodes") return "rank.noRhodesValue";
     if (kind === "noAppearance") return "rank.noAppearanceValue";
+    if (kind === "noHome") return "rank.guestValue";
     if (kind === "cameo") return "rank.cropEpisodeValue";
     if (kind === "searches") return "rank.searchValue";
     return "rank.cropValue";
@@ -275,7 +276,7 @@
     list.innerHTML = rows === null ? `<p class="empty-copy">${text(kind === "absence" ? "stats.orderMissing" : "stats.castMissing")}</p>` : rows.length ? renderRankRows(rows,
       character => rankingValue(kind, character),
       (character, rank, value) => {
-        const shown = kind === "noAppearance" && !Number.isFinite(value) ? "—" : t(rankingValueKey(kind), { count: number(value), episodes: number(character.cameoEpisodes.size) });
+        const shown = kind === "noAppearance" && !Number.isFinite(value) ? "—" : t(rankingValueKey(kind), { count: number(value), episodes: number(kind === "noHome" ? character.episodes.size : character.cameoEpisodes.size) });
         return rankButton(character.name, shown, `data-character="${escape(character.id)}"`, rank);
       }) : `<p class="empty-copy">${text(release.instances.length ? "stats.noRank" : "stats.empty")}</p>`;
   }
