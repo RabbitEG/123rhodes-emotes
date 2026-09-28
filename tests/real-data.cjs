@@ -44,6 +44,6 @@ const data = JSON.parse(fs.readFileSync(path.join(root, "publish/site/data/relea
     for(const url of ["/.env","/tools/export_public.py","/publish/export-report.json","/../character_index/database/index.sqlite"]){
       const response=await page.request.get("http://127.0.0.1:4174"+url);assert.equal(response.status(),404);
     }
-    console.log("Real release: public gallery, four ranking columns, separate search, exact episode number, actual images, previews, mobile and preview isolation passed");
+    console.log("Real release: public gallery, three ranking columns, separate search, exact episode number, actual images, previews, mobile and preview isolation passed");
   } finally { await browser.close(); }
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -147,12 +147,13 @@
     }
     const desc = field => (a, b) => b[field] - a[field] || byName(a, b);
     const operatorRows = rows.filter(c => c.is_operator === true);
-    // Most alter forms are already folded into one public canonical row. These
-    // explicit family aliases cover the remaining base/alter pair in the
-    // roster, so absence rankings do not mistake the zero-instance base row
-    // for a character who appears through the alter form.
+    // The local roster folds named alters into their base canonical character.
+    // Only the distinct-name pairs below need an explicit family for rankings.
+    // These names come from the official alternate-operator set; is_alter alone
+    // is not enough because the source game flag also covers unrelated operators.
     const operatorFamilyAliases = new Map([
-      ["推进之王", "维娜·维多利亚"]
+      ["推进之王", "维娜·维多利亚"],
+      ["傀影", "酒神"]
     ]);
     const operatorRankingRows = [...operatorRows.reduce((families, row) => {
       const familyName = operatorFamilyAliases.get(row.name) ?? row.name;
@@ -171,10 +172,12 @@
         homes: 0,
         cameo: 0,
         cameoEpisodes: new Set(),
-        stars: null
+        stars: null,
+        implementationAgeDays: null
       };
       for (const member of members) {
         if (Number.isInteger(member.stars)) aggregate.stars = Math.max(aggregate.stars || 0, member.stars);
+        if (Number.isFinite(member.implementationAgeDays)) aggregate.implementationAgeDays = Math.max(aggregate.implementationAgeDays ?? -1, member.implementationAgeDays);
         aggregate.count += member.count;
         member.episodes.forEach(episodeId => aggregate.episodes.add(episodeId));
         member.homeEpisodes.forEach(episodeId => aggregate.homeEpisodes.add(episodeId));

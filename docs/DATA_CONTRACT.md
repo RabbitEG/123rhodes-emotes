@@ -26,7 +26,7 @@ crop_url 和 source_preview_url 只接受 `/media/` 下 WebP/PNG/JPEG/AVIF 相�
 
 四个基础数的篇目/角色/实例直接取相应目录，角色榜和占比来自实际实例，不信任冗余的 instance_count 字段。所有统计只描述同一发布版本。
 
-`order` 不自动从文件名猜测；“久未出现榜”使用今天与角色最后出现篇目的 `published_at` 相差天数。`is_operator` 角色即使没有 instance 也保留在清单中；无本篇村只对有 `implementation_date` 的干员计算，无出场村可以包含无日期干员并将其排在有日期者之后。
+`order` 不自动从文件名猜测；“久未出现榜”使用今天与角色最后出现篇目的 `published_at` 相差天数。`is_operator` 角色即使没有 instance 也保留在清单中；无本篇村只对有 `implementation_date` 的干员计算，无出场村可以包含无日期干员并将其排在有日期者之后；本体与异格合并计算后，实装天数相同时按星级从高到低排列。
 
 导出只映射数据库已记录的 `home_episode`，不根据实际出场反推本篇。未登记本篇的角色，其现有出场全部计作客串；空数组与“已确认此角色没有本篇”遵循当前数据规则。
 
