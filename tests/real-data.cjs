@@ -11,6 +11,9 @@ const data = JSON.parse(fs.readFileSync(path.join(root, "publish/site/data/relea
     const errors=[]; page.on("pageerror", e=>errors.push(e.message));
     await page.goto("http://127.0.0.1:4174/");
     await page.waitForSelector(".legend-row");
+    assert.equal(await page.locator(".ranking-panels > .ranking-card").count(), 4);
+    assert.equal(await page.locator("#ranking-kind option").count(), 3);
+    assert.equal(await page.locator("#missing-ranking-kind option").count(), 2);
     assert.deepEqual(await page.locator("#totals strong").allTextContents(), [data.episodes.length,data.instances.length,data.characters.length,data.images.length].map(n=>n.toLocaleString("zh-CN")));
     await page.waitForFunction(()=>[...document.querySelectorAll(".ribbon-group:first-child img")].every(i=>i.complete && i.naturalWidth>0));
     await page.screenshot({path:path.join(root,"test-results/real-home.png"),fullPage:true});
@@ -41,6 +44,6 @@ const data = JSON.parse(fs.readFileSync(path.join(root, "publish/site/data/relea
     for(const url of ["/.env","/tools/export_public.py","/publish/export-report.json","/../character_index/database/index.sqlite"]){
       const response=await page.request.get("http://127.0.0.1:4174"+url);assert.equal(response.status(),404);
     }
-    console.log("Real release: 4803 crops, 368 characters, 339 episodes, 683 images; separate search, exact episode number, actual images, previews, mobile and preview isolation passed");
+    console.log("Real release: public gallery, four ranking columns, separate search, exact episode number, actual images, previews, mobile and preview isolation passed");
   } finally { await browser.close(); }
 })().catch(e=>{console.error(e);process.exitCode=1;});

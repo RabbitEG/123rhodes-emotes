@@ -341,6 +341,14 @@
     "text": "选择角色榜单",
     "note": "榜单选择器辅助名称"
   },
+  "stats.missingRankTitle": {
+    "text": "查无此人榜",
+    "note": "无出场与无本篇榜标题"
+  },
+  "stats.missingRankLabel": {
+    "text": "选择查无此人榜",
+    "note": "无出场与无本篇榜选择器辅助名称"
+  },
   "stats.empty": {
     "text": "有了收录，就能在这里看看排行。",
     "note": "统计无数据时"
@@ -365,6 +373,10 @@
     "text": "本站热门榜",
     "note": "榜单名称"
   },
+  "rank.primarySearches": {
+    "text": "本站热门度",
+    "note": "角色榜选择项名称"
+  },
   "rank.searchesNote": {
     "text": "相关页面访问量",
     "note": "本站热门榜统计口径"
@@ -372,6 +384,10 @@
   "rank.coverage": {
     "text": "篇目覆盖榜",
     "note": "榜单名称"
+  },
+  "rank.primaryCoverage": {
+    "text": "出场篇目榜",
+    "note": "角色榜选择项名称"
   },
   "rank.rare": {
     "text": "稀客榜",
@@ -385,6 +401,10 @@
    "text": "无本篇客串榜",
    "note": "榜单名称"
  },
+  "rank.guest": {
+    "text": "客串榜",
+    "note": "榜单名称"
+  },
   "rank.noRhodes": {
     "text": "无本篇村",
     "note": "榜单名称"

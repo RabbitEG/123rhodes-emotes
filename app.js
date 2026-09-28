@@ -245,22 +245,48 @@
       return render(row, rank, value);
     }).join("");
   }
- function score(value) {
-   const numeric = Number(value);
-   return Number.isFinite(numeric) ? String(Number(numeric.toFixed(3))) : "0";
- }
- function renderRanking() {
+  function score(value) {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? String(Number(numeric.toFixed(3))) : "0";
+  }
+  function rankingValue(kind, character) {
+    if (kind === "coverage") return character.episodes.size;
+    if (kind === "cameo") return character.cameo;
+    if (kind === "absence") return character.absence;
+    if (kind === "noRhodes" || kind === "noAppearance") return character.implementationAgeDays;
+    if (kind === "searches") return character.searches;
+    return character.count;
+  }
+  function rankingValueKey(kind) {
+    if (kind === "coverage") return "rank.episodeValue";
+    if (kind === "absence") return "rank.absenceValue";
+    if (kind === "noRhodes") return "rank.noRhodesValue";
+    if (kind === "noAppearance") return "rank.noAppearanceValue";
+    if (kind === "cameo") return "rank.cropEpisodeValue";
+    if (kind === "searches") return "rank.searchValue";
+    return "rank.cropValue";
+  }
+  function renderRankingList(kind, listSelector, noteSelector) {
     if (!stats) return;
-    const kind = $("#ranking-kind").value;
-    $("#rank-note").textContent = t("rank." + kind + "Note");
-   const rows = stats.rankings[kind];
-    $("#character-ranking").innerHTML = rows === null ? `<p class="empty-copy">${text(kind === "absence" ? "stats.orderMissing" : "stats.castMissing")}</p>` : rows.length ? renderRankRows(rows,
-      c => kind === "coverage" ? c.episodes.size : kind === "cameo" ? c.cameo : kind === "absence" ? c.absence : kind === "noRhodes" || kind === "noAppearance" ? c.implementationAgeDays : kind === "searches" ? c.searches : c.count,
-      (c, rank, value) => {
-        const valueKey = kind === "coverage" ? "rank.episodeValue" : kind === "absence" ? "rank.absenceValue" : kind === "noRhodes" ? "rank.noRhodesValue" : kind === "noAppearance" ? "rank.noAppearanceValue" : kind === "cameo" ? "rank.cropEpisodeValue" : kind === "searches" ? "rank.searchValue" : "rank.cropValue";
-        const shown = kind === "noAppearance" && !Number.isFinite(value) ? "—" : t(valueKey, { count: number(value), episodes: number(c.cameoEpisodes.size) });
-        return rankButton(c.name, shown, `data-character="${escape(c.id)}"`, rank);
+    const list = $(listSelector), note = $(noteSelector);
+    if (!list) return;
+    if (note) note.textContent = t("rank." + kind + "Note");
+    const rows = stats.rankings[kind];
+    list.innerHTML = rows === null ? `<p class="empty-copy">${text(kind === "absence" ? "stats.orderMissing" : "stats.castMissing")}</p>` : rows.length ? renderRankRows(rows,
+      character => rankingValue(kind, character),
+      (character, rank, value) => {
+        const shown = kind === "noAppearance" && !Number.isFinite(value) ? "—" : t(rankingValueKey(kind), { count: number(value), episodes: number(character.cameoEpisodes.size) });
+        return rankButton(character.name, shown, `data-character="${escape(character.id)}"`, rank);
       }) : `<p class="empty-copy">${text(release.instances.length ? "stats.noRank" : "stats.empty")}</p>`;
+  }
+  function renderRanking() {
+    if (!stats) return;
+    const select = $("#ranking-kind");
+    if (select) renderRankingList(select.value, "#character-ranking", "#rank-note");
+    const missing = $("#missing-ranking-kind");
+    if (missing) renderRankingList(missing.value, "#missing-ranking", "#missing-rank-note");
+    renderRankingList("rare", "#rare-ranking", null);
+    renderRankingList("noHome", "#guest-ranking", null);
   }
   async function loadSearchRanking() {
     if (!stats || isSearchPage || isInstancePage) return;
@@ -414,7 +440,7 @@
     }));
     $("#clear-search")?.addEventListener("click", () => go({}));
     $("#load-more")?.addEventListener("click", () => { visible += Number(config.pageSize) || 36; renderMatches(); });
-    $("#ranking-kind")?.addEventListener("change", renderRanking); $("#retry")?.addEventListener("click", load);
+    $("#ranking-kind")?.addEventListener("change", renderRanking); $("#missing-ranking-kind")?.addEventListener("change", renderRanking); $("#retry")?.addEventListener("click", load);
     $("#detail-back")?.addEventListener("click", event => {
       try {
         const previous = new URL(document.referrer);
