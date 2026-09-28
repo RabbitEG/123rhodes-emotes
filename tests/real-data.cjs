@@ -16,6 +16,11 @@ const data = JSON.parse(fs.readFileSync(path.join(root, "publish/site/data/relea
     assert.equal(await page.locator(".publication-series-legend").count(), 0);
     assert.equal(await page.locator(".publication-calendar-svg .publication-year-label").count(), 5);
     assert.equal(await page.locator(".publication-calendar-svg rect").count(), 5 * 53);
+    const firstWeeks = await page.locator(".publication-calendar-svg rect").evaluateAll(els => els.slice(0, 4).map(el => ({ x: el.getAttribute("x"), y: el.getAttribute("y") })));
+    assert.equal(firstWeeks[0].x, firstWeeks[1].x, "Weeks 1–2 should share a column");
+    assert.equal(firstWeeks[2].x, firstWeeks[3].x, "Weeks 3–4 should share a column");
+    assert(Number(firstWeeks[2].x) > Number(firstWeeks[0].x));
+    assert(Number(firstWeeks[1].y) > Number(firstWeeks[0].y));
     assert.equal(await page.locator("#publication-total").textContent(), "339 篇");
     assert((await page.locator(".publication-year-label").first().textContent()).includes("2026"));
     assert((await page.locator(".publication-year-label").last().textContent()).includes("2022"));

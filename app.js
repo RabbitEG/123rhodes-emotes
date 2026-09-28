@@ -316,26 +316,26 @@
   function miniCountChart(titleKey, items, color = "#8a72c7") {
     const title = t(titleKey);
     if (!items.length || !items.some(item => item.count > 0)) return `<section class="publication-mini-card"><h4>${text(titleKey)}</h4><p class="publication-chart-empty">${text("stats.publicationEmpty")}</p></section>`;
-    const width = 260, height = 126, top = 15, baseline = 94, plotHeight = 62;
+    const width = 320, height = 150, top = 18, baseline = 116, plotHeight = 78;
     const max = Math.max(1, ...items.map(item => item.count));
-    const groupWidth = width / items.length, barWidth = Math.min(16, groupWidth * .58);
+    const groupWidth = width / items.length, barWidth = Math.min(20, groupWidth * .62);
     const bars = items.map((item, index) => {
       const x = index * groupWidth + (groupWidth - barWidth) / 2;
       const barHeight = item.count > 0 ? Math.max(2, item.count / max * plotHeight) : 0;
       const label = item.displayLabel ?? item.label;
       const tip = `${label}：${number(item.count)} 篇`;
-      const valueY = Math.max(top + 7, baseline - barHeight - 4);
-      return `<g><title>${escape(tip)}</title><rect x="${x.toFixed(1)}" y="${(baseline - barHeight).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${barHeight.toFixed(1)}" rx="3" fill="${color}"/><text class="publication-bar-value" x="${(x + barWidth / 2).toFixed(1)}" y="${valueY.toFixed(1)}">${number(item.count)}</text><text class="publication-bar-label" x="${(index * groupWidth + groupWidth / 2).toFixed(1)}" y="115">${escape(label)}</text></g>`;
+      const valueY = Math.max(top + 9, baseline - barHeight - 5);
+      return `<g><title>${escape(tip)}</title><rect x="${x.toFixed(1)}" y="${(baseline - barHeight).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${barHeight.toFixed(1)}" rx="3" fill="${color}"/><text class="publication-bar-value" x="${(x + barWidth / 2).toFixed(1)}" y="${valueY.toFixed(1)}">${number(item.count)}</text><text class="publication-bar-label" x="${(index * groupWidth + groupWidth / 2).toFixed(1)}" y="140">${escape(label)}</text></g>`;
     }).join("");
     return `<section class="publication-mini-card"><h4>${text(titleKey)}</h4><svg class="publication-chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escape(title)}">${bars}</svg></section>`;
   }
   function operatorCoverageChart(rows) {
-    const width = 260, height = 126, left = 25, right = 258, top = 17, baseline = 97, plotHeight = 68;
+    const width = 320, height = 150, left = 34, right = 316, top = 20, baseline = 119, plotHeight = 82;
     if (!rows.length) return `<section class="publication-mini-card"><h4>${text("stats.operatorCoverage")}</h4><p class="publication-chart-empty">${text("stats.publicationEmpty")}</p></section>`;
-    const groupWidth = (right - left) / rows.length, barWidth = Math.min(16, groupWidth * .42);
+    const groupWidth = (right - left) / rows.length, barWidth = Math.min(21, groupWidth * .48);
     const guides = [0, .5, 1].map(rate => {
       const y = baseline - plotHeight * rate;
-      return `<line class="publication-gridline" x1="${left}" y1="${y}" x2="${right}" y2="${y}"/><text class="publication-axis-label" x="1" y="${y + 3}">${Math.round(rate * 100)}%</text>`;
+      return `<line class="publication-gridline" x1="${left}" y1="${y}" x2="${right}" y2="${y}"/><text class="publication-axis-label" x="1" y="${y + 4}">${Math.round(rate * 100)}%</text>`;
     }).join("");
     const columns = rows.map((row, index) => {
       const center = left + groupWidth * (index + .5);
@@ -345,26 +345,29 @@
       const mark = h > 0
         ? `<rect x="${x.toFixed(1)}" y="${(baseline - h).toFixed(1)}" width="${barWidth}" height="${h.toFixed(1)}" rx="2" fill="#8a72c7"/>`
         : `<circle cx="${center.toFixed(1)}" cy="${baseline}" r="1.2" fill="#8a72c7"/>`;
-      return `<g><title>${escape(tip)}</title>${mark}<text class="publication-bar-label" x="${center.toFixed(1)}" y="115">${row.year}</text></g>`;
+      return `<g><title>${escape(tip)}</title>${mark}<text class="publication-bar-label" x="${center.toFixed(1)}" y="140">${row.year}</text></g>`;
     }).join("");
     return `<section class="publication-mini-card"><h4>${text("stats.operatorCoverage")}</h4><svg class="publication-chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${text("stats.operatorCoverageNote")}">${guides}${columns}</svg></section>`;
   }
   function publicationCalendarSvg(yearRows) {
     if (!yearRows.length) return `<p class="publication-chart-empty">${text("stats.publicationEmpty")}</p>`;
-    const xStart = 40, cell = 9, step = 11, rowTop = 29, rowStep = 21, width = xStart + 53 * step + 2, height = rowTop + yearRows.length * rowStep + 2;
+    const xStart = 48, cell = 13, pairGap = 3, groupGap = 6, pairStep = cell + groupGap, pairCount = Math.ceil(53 / 2);
+    const rowTop = 31, rowStep = cell * 2 + pairGap + 7, width = xStart + pairCount * pairStep + 4;
+    const height = rowTop + Math.max(0, yearRows.length - 1) * rowStep + cell * 2 + pairGap + 4;
     const labels = Array.from({ length: 12 }, (_, month) => {
-      const x = xStart + (yearRows[0].monthPositions[month] || 0) * step;
-      return `<text class="publication-month-label" x="${x}" y="13">${text("stats.monthLabel", { month: month + 1 })}</text>`;
+      const x = xStart + Math.floor((yearRows[0].monthPositions[month] || 0) / 2) * pairStep;
+      return `<text class="publication-month-label" x="${x}" y="15">${text("stats.monthLabel", { month: month + 1 })}</text>`;
     }).join("");
     const rows = yearRows.map((row, rowIndex) => {
       const y = rowTop + rowIndex * rowStep;
       const cells = row.weeks.map(week => {
         const level = week.count <= 0 ? 0 : Math.min(4, week.count);
-        const x = xStart + week.index * step;
-        const title = `${row.year}-${week.monday.slice(5)}—${week.sunday.slice(5)}：${week.count} 篇`;
-        return `<g><title>${escape(title)}</title><rect class="heat-level-${level}" x="${x}" y="${y}" width="${cell}" height="${cell}" rx="2"/></g>`;
+        const x = xStart + Math.floor(week.index / 2) * pairStep;
+        const weekY = y + (week.index % 2) * (cell + pairGap);
+        const title = `${row.year} 第 ${week.index + 1} 周 · ${week.monday.slice(5)}—${week.sunday.slice(5)}：${week.count} 篇`;
+        return `<g><title>${escape(title)}</title><rect class="heat-level-${level}" x="${x}" y="${weekY}" width="${cell}" height="${cell}" rx="3"/></g>`;
       }).join("");
-      return `<g><text class="publication-year-label" x="0" y="${y + 9}">${row.year}</text>${cells}</g>`;
+      return `<g><text class="publication-year-label" x="0" y="${y + cell + 5}">${row.year}</text>${cells}</g>`;
     }).join("");
     return `<svg class="publication-calendar-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${text("stats.publicationCalendar")}">${labels}${rows}</svg>`;
   }
