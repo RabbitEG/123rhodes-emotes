@@ -21,7 +21,8 @@ const data = JSON.parse(fs.readFileSync(path.join(root, "publish/site/data/relea
     assert.equal(firstWeeks[2].x, firstWeeks[3].x, "Weeks 3–4 should share a column");
     assert(Number(firstWeeks[2].x) > Number(firstWeeks[0].x));
     assert(Number(firstWeeks[1].y) > Number(firstWeeks[0].y));
-    assert.equal(await page.locator("#publication-total").textContent(), "339 篇");
+    const datedEpisodeCount = data.episodes.filter(episode => /^\d{4}-\d{2}-\d{2}$/.test(episode.published_at || "")).length;
+    assert.equal(await page.locator("#publication-total").textContent(), `${datedEpisodeCount} 篇`);
     assert((await page.locator(".publication-year-label").first().textContent()).includes("2026"));
     assert((await page.locator(".publication-year-label").last().textContent()).includes("2022"));
     assert.equal(await page.locator("#ranking-kind option").count(), 4);

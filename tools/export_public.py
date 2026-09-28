@@ -21,9 +21,9 @@ def official_catalog():
     request = urllib.request.Request(OFFICIAL, headers={'User-Agent': 'Mozilla/5.0'})
     with urllib.request.urlopen(request, timeout=40) as response:
         document = response.read().decode('utf-8')
-    # The rendered page embeds the authoritative chapter list.  It includes a few
-    # episodes newer than the local 339-episode corpus; export() only selects local
-    # rows below, so these records are never silently added to the public release.
+    # The rendered page embeds the authoritative chapter list. It may include
+    # chapters not indexed locally; export() only selects local database rows,
+    # so official-catalog updates never add episodes to the release by themselves.
     match = re.search(r'window\.g_initialProps\s*=\s*(\{.*?\});\s*</script>', document, re.S)
     if not match:
         raise ValueError('Official catalog could not be parsed; missing g_initialProps')

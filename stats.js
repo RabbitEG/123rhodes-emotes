@@ -209,8 +209,8 @@
         c.absenceDays = daysSince(c.lastPublishedAt, today);
         c.absence = c.absenceDays;
       } else if (orderReady) {
-        // Backward-compatible fallback for old releases without dates.  New
-        // 339-episode releases always take the date-based branch above.
+        // Backward-compatible fallback for legacy releases without dates.
+        // Complete releases use the publication-date branch above.
         c.absence = sequence.length - 1 - Math.max(...[...c.episodes].map(eid => orderIndex.get(eid)));
         c.absenceDays = null;
       }
