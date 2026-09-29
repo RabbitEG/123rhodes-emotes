@@ -13,6 +13,7 @@ const release = {
     { id: "vina", name: "维娜·维多利亚", aliases: [], is_operator: true, stars: 6 },
     { id: "phantom", name: "傀影", aliases: [], is_operator: true, stars: 6 },
     { id: "booze", name: "酒神", aliases: [], is_operator: true, stars: 6 },
+    { id: "lingzhi", name: "灵知", aliases: [], is_operator: true },
   ],
   episodes: [{ id: "e1", name: "001_测试篇", order: 1, official_url: "https://comic.hypergryph.com/comic/6253/test" }],
   instances: [
@@ -22,6 +23,7 @@ const release = {
     { id: "i4", character_id: "vina", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "004" },
     { id: "i5", character_id: "phantom", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "005" },
     { id: "i6", character_id: "booze", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "006" },
+    { id: "i7", character_id: "lingzhi", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "007" },
   ],
   operator_forms: [
     { character_id: "push", is_alter: false, implementation_date: "2019-04-30" },
@@ -59,6 +61,14 @@ const release = {
     await page.waitForURL("**/character.html?id=eyfl");
     await page.locator(".character-gallery .expression-card").waitFor();
     assert.equal(await page.locator(".character-gallery .expression-card").count(), 1);
+
+    await page.goto(base);
+    await page.locator("#site-search").fill("灵芝");
+    candidate = page.locator(".search-suggestion").filter({ hasText: "灵知" });
+    await candidate.waitFor({ timeout: 10000 });
+    assert((await candidate.textContent()).includes("同音拼写"), "Two-character exact-pinyin match should appear in the live dropdown");
+    await candidate.click();
+    await page.waitForURL("**/character.html?id=lingzhi");
 
     await page.goto(base);
     await page.locator("#site-search").fill("ayfl");

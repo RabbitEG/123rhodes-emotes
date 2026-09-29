@@ -229,7 +229,7 @@
     const direct = collectSuggestions(query, state.mode);
     if (direct.length) { renderSuggestionItems(direct); return; }
     closeSuggestions();
-    if (Array.from(query).length < 3 || !window.RhodesSearch?.findFuzzy) return;
+    if (Array.from(query).length < 2 || !window.RhodesSearch?.findFuzzy) return;
     fuzzyMatches(query, state.mode).then(found => {
       if (revision !== suggestionRevision || normalize(input.value) !== query || document.activeElement !== input) return;
       renderSuggestionItems(found);
