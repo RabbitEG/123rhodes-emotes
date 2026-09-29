@@ -7,7 +7,7 @@
   // their Monster Hunter forms are already folded into those existing people.
   const crossoverOnlyOperators = new Set([
     "灰烬", "战车", "闪击", "霜华", "艾拉", "双月", "医生", "导火索",
-    "九色鹿", "罗小黑", "泰拉大陆调查团", "焰狐龙梓兰", "雷狼龙S空爆",
+    "九色鹿", "罗小黑", "泰拉大陆调查团",
     "莱欧斯", "玛露西尔", "齐尔查克", "森西",
     "结城理", "岳羽由加莉", "埃癸斯", "虎狼丸",
     "三角初华", "丰川祥子", "八幡海铃", "祐天寺若麦", "若叶睦", "罗德岛隐秘队"
@@ -29,7 +29,9 @@
     "假日威龙陈": "陈", "赤刃明霄陈": "陈",
     // Canonical names remain the earlier-implemented base operators.
     "维娜·维多利亚": "推进之王",
-    "酒神": "傀影"
+    "酒神": "傀影",
+    "雷狼龙S空爆": "空爆",
+    "焰狐龙梓兰": "梓兰"
   };
   const alternateHomeOwners = new Map(Object.entries(alternateHomeOwnerNames)
     .map(([title, name]) => [normalizeHomeName(title), normalizeHomeName(name)]));
