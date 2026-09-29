@@ -151,8 +151,20 @@
   }
   function collectSuggestions(query, mode) {
     const characters = [...stats.characters.values()].map(character => {
-      const score = Math.min(suggestionScore(character.name, query), ...(character.aliases ?? []).map(alias => suggestionScore(alias, query, true)));
-      return Number.isFinite(score) ? { kind: "character", id: character.id, name: character.name, score, item: character } : null;
+      const alternateNames = new Set((character.alter_names ?? []).map(normalize));
+      const candidates = [character.name, ...(character.aliases ?? [])]
+        .map(name => ({ name, score: suggestionScore(name, query, normalize(name) !== normalize(character.name)) }))
+        .filter(candidate => Number.isFinite(candidate.score))
+        .sort((a, b) => a.score - b.score);
+      const best = candidates[0];
+      if (!best) return null;
+      const isAlternateMatch = alternateNames.has(normalize(best.name)) && normalize(best.name) !== normalize(character.name);
+      return {
+        kind: "character", id: character.id,
+        name: isAlternateMatch ? best.name : character.name,
+        canonicalTarget: isAlternateMatch ? character.name : "",
+        score: best.score, item: character
+      };
     }).filter(Boolean);
     if (mode === "expressions") return characters.sort((a, b) => a.score - b.score || a.name.localeCompare(b.name, "zh-CN")).slice(0, 8);
 
@@ -193,6 +205,16 @@
     fuzzyResultPromises.set(key, pending);
     return pending;
   }
+  function presentFuzzySuggestion(suggestion) {
+    const exactVariantTypes = new Set(["pinyin_prefix", "pinyin_initials"]);
+    const item = suggestion.item;
+    if (!exactVariantTypes.has(suggestion.matchType) || !item || !suggestion.matchedName) return suggestion;
+    const matched = normalize(suggestion.matchedName);
+    const isAlternate = (item.alter_names ?? []).some(name => normalize(name) === matched);
+    return isAlternate
+      ? { ...suggestion, name: suggestion.matchedName, canonicalTarget: item.name }
+      : suggestion;
+  }
   function closeSuggestions() {
     const input = $("#site-search"), box = $("#search-suggestions");
     if (!input || !box) return;
@@ -214,8 +236,11 @@
       const meta = isCharacter
         ? text(state.mode === "episodes" ? "search.suggestionCharacterEpisodes" : "search.suggestionCharacterCount", { count: number(state.mode === "episodes" ? suggestion.item.episodes.size : suggestion.item.count) })
         : text("search.suggestionEpisodeCount", { count: number(suggestion.item.count) });
+      const canonicalTarget = suggestion.canonicalTarget
+        ? `<span class="suggestion-canonical-target">${text("search.suggestionCanonicalTarget", { name: suggestion.canonicalTarget })}</span>`
+        : "";
       const fuzzyLabel = suggestion.matchReason ? `<span class="suggestion-fuzzy-badge">${escape(suggestion.matchReason)}</span>` : "";
-      return `<button type="button" role="option" tabindex="-1" class="search-suggestion" id="search-suggestion-${index}" aria-selected="false" data-suggestion-index="${index}"><span class="suggestion-primary"><span class="suggestion-kind">${type}</span><strong>${escape(suggestion.name)}</strong>${fuzzyLabel}</span><span class="suggestion-meta">${meta}</span></button>`;
+      return `<button type="button" role="option" tabindex="-1" class="search-suggestion" id="search-suggestion-${index}" aria-selected="false" data-suggestion-index="${index}"><span class="suggestion-primary"><span class="suggestion-kind">${type}</span><strong>${escape(suggestion.name)}</strong>${canonicalTarget}${fuzzyLabel}</span><span class="suggestion-meta">${meta}</span></button>`;
     }).join("");
     box.hidden = false;
     input.setAttribute("aria-expanded", "true");
@@ -232,7 +257,7 @@
     if (Array.from(query).length < 2 || !window.RhodesSearch?.findFuzzy) return;
     fuzzyMatches(query, state.mode).then(found => {
       if (revision !== suggestionRevision || normalize(input.value) !== query || document.activeElement !== input) return;
-      renderSuggestionItems(found);
+      renderSuggestionItems(found.map(presentFuzzySuggestion));
     }).catch(() => { if (revision === suggestionRevision) closeSuggestions(); });
   }
   function activateSuggestion(index) {

@@ -60,7 +60,13 @@
   function makeVariants(item, pinyinApi) {
     const cached = variantCache.get(item);
     if (cached) return cached;
-    const variants = [...new Set([item.name, ...(item.aliases ?? [])].map(normalize).filter(Boolean))].map(value => ({
+    const names = new Map();
+    for (const name of [item.name, ...(item.aliases ?? [])]) {
+      const value = normalize(name);
+      if (value && !names.has(value)) names.set(value, String(name));
+    }
+    const variants = [...names].map(([value, name]) => ({
+      name,
       value,
       hasHan: HAN.test(value),
       pinyin: pinyinForms(value, pinyinApi),
@@ -92,7 +98,7 @@
           if (qLength >= 3) {
             const distance = nearSubstringDistance(q, variant.value, 1);
             if (distance <= 1 && (!best || 130 + distance < best.score)) {
-              best = { score: 130 + distance, matchReason: "错字近似" };
+              best = { score: 130 + distance, matchReason: "错字近似", matchType: "han_typo", matchedName: variant.name };
             }
           }
         }
@@ -108,26 +114,26 @@
           const distance = editDistance(qPinyin, variant.pinyin.full, distanceLimit);
           if (distance <= distanceLimit) {
             const score = distance === 0 ? 100 : 150 + distance;
-            if (!best || score < best.score) best = { score, matchReason: distance === 0 ? "同音拼写" : "拼音近似" };
+            if (!best || score < best.score) best = { score, matchReason: distance === 0 ? "同音拼写" : "拼音近似", matchType: distance === 0 ? "han_homophone" : "pinyin_approx", matchedName: variant.name };
           }
         } else if (queryHasLatin) {
           const romanLength = qLatin.length;
           if (romanLength >= 3 && (variant.pinyin.full.startsWith(qLatin) || variant.pinyin.initials.startsWith(qLatin))) {
             const isInitials = variant.pinyin.initials.startsWith(qLatin) && !variant.pinyin.full.startsWith(qLatin);
             const score = variant.pinyin.full === qLatin ? 100 : isInitials ? 115 : 110;
-            if (!best || score < best.score) best = { score, matchReason: isInitials ? "拼音首字母" : "拼音" };
+            if (!best || score < best.score) best = { score, matchReason: isInitials ? "拼音首字母" : "拼音", matchType: isInitials ? "pinyin_initials" : "pinyin_prefix", matchedName: variant.name };
           }
           const distanceLimit = romanLength >= 9 ? 2 : romanLength >= 5 ? 1 : 0;
           if (distanceLimit) {
             const distance = nearSubstringDistance(qLatin, variant.pinyin.full, distanceLimit);
             if (distance <= distanceLimit) {
               const score = 150 + distance;
-              if (!best || score < best.score) best = { score, matchReason: "拼音近似" };
+              if (!best || score < best.score) best = { score, matchReason: "拼音近似", matchType: "pinyin_approx", matchedName: variant.name };
             }
             const rawDistance = nearSubstringDistance(q, variant.value, distanceLimit);
             if (rawDistance <= distanceLimit) {
               const score = 170 + rawDistance;
-              if (!best || score < best.score) best = { score, matchReason: "文字近似" };
+              if (!best || score < best.score) best = { score, matchReason: "文字近似", matchType: "text_approx", matchedName: variant.name };
             }
           }
         }

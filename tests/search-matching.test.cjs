@@ -35,6 +35,15 @@ assert(!find("博士").some(item => item.id === "wrong-two-char-typo"), "two-cha
 assert.equal(find("aiyafala")[0]?.id, "eyfl", "full pinyin input should find a Chinese name");
 assert.equal(find("ayfl")[0]?.id, "eyfl", "pinyin initials should find a Chinese name");
 assert.equal(find("阿").length, 0, "single-character Chinese queries must not trigger fuzzy matches");
+const soraAlternate = { id: "sora", name: "空爆", aliases: ["雷狼龙S空爆"], alter_names: ["雷狼龙S空爆"] };
+const soraPinyin = RhodesSearch.findFuzzy("leilanglong", "expressions", [soraAlternate], [], pinyinPro, 8)[0];
+assert.equal(soraPinyin?.matchType, "pinyin_prefix", "full pinyin prefix should be treated as a direct spelling match");
+assert.equal(soraPinyin?.matchedName, "雷狼龙S空爆", "fuzzy ranking should retain which canonical/alternate name matched");
+const soraTypo = RhodesSearch.findFuzzy("雷狼龍", "expressions", [soraAlternate], [], pinyinPro, 8)[0];
+assert.equal(soraTypo?.matchReason, "错字近似");
+assert.equal(soraTypo?.matchType, "han_typo");
+assert.equal(soraTypo?.name, "空爆", "typo matches should still use the canonical label");
+assert.equal(soraTypo?.matchedName, "雷狼龙S空爆", "even typo matching should preserve matched-variant metadata without changing its label");
 
 const alterAliasRelease = RhodesStats.validate({
   characters: [

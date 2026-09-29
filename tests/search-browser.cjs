@@ -14,6 +14,8 @@ const release = {
     { id: "phantom", name: "傀影", aliases: [], is_operator: true, stars: 6 },
     { id: "booze", name: "酒神", aliases: [], is_operator: true, stars: 6 },
     { id: "lingzhi", name: "灵知", aliases: [], is_operator: true },
+    { id: "sora", name: "空爆", aliases: [], is_operator: true, stars: 3 },
+    { id: "thunder-sora", name: "雷狼龙S空爆", aliases: [], is_operator: true, stars: 5 },
   ],
   episodes: [{ id: "e1", name: "001_测试篇", order: 1, official_url: "https://comic.hypergryph.com/comic/6253/test" }],
   instances: [
@@ -69,6 +71,30 @@ const release = {
     assert((await candidate.textContent()).includes("同音拼写"), "Two-character exact-pinyin match should appear in the live dropdown");
     await candidate.click();
     await page.waitForURL("**/character.html?id=lingzhi");
+
+    await page.goto(base);
+    await page.locator("#site-search").fill("雷狼龙");
+    candidate = page.locator(".search-suggestion").filter({ hasText: "雷狼龙S空爆" });
+    await candidate.waitFor({ timeout: 10000 });
+    assert((await candidate.textContent()).includes("角色页：空爆"), "Exact alter-name matches should show the form name and canonical destination");
+    await candidate.click();
+    await page.waitForURL("**/character.html?id=sora");
+    assert.equal(await page.locator(".character-heading h1").textContent(), "空爆（雷狼龙S空爆）");
+
+    await page.goto(base);
+    await page.locator("#site-search").fill("leilanglong");
+    candidate = page.locator(".search-suggestion").filter({ hasText: "雷狼龙S空爆" });
+    await candidate.waitFor({ timeout: 10000 });
+    assert((await candidate.textContent()).includes("角色页：空爆"), "Pinyin matches for an alternate form should show the form and canonical destination");
+    await candidate.click();
+    await page.waitForURL("**/character.html?id=sora");
+
+    await page.goto(base);
+    await page.locator("#site-search").fill("雷狼龍");
+    candidate = page.locator(".search-suggestion").filter({ hasText: "空爆" });
+    await candidate.waitFor({ timeout: 10000 });
+    assert.equal(await candidate.locator(".suggestion-primary strong").textContent(), "空爆", "Fuzzy alter-name matches should keep the canonical label");
+    assert(!(await candidate.textContent()).includes("雷狼龙S空爆"), "Fuzzy matches should not expand into alternate-form display labels");
 
     await page.goto(base);
     await page.locator("#site-search").fill("ayfl");

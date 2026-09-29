@@ -293,6 +293,13 @@
     "text": "角色",
     "note": "搜索提示中的角色类型"
   },
+  "search.suggestionCanonicalTarget": {
+    "text": "角色页：{name}",
+    "note": "搜索异格名称时标明实际打开的规范角色页",
+    "slots": [
+      "name"
+    ]
+  },
   "search.suggestionEpisode": {
     "text": "篇目",
     "note": "搜索提示中的篇目类型"
