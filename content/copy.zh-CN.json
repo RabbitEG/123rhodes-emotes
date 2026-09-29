@@ -52,7 +52,7 @@
     "note": "检索类型按钮"
   },
   "search.placeholderExpressions": {
-    "text": "输入角色名（支持模糊输入）",
+    "text": "输入角色名（支持模糊输入和拼音）",
     "note": "表情模式输入提示"
   },
   "search.placeholderEpisodes": {
@@ -395,7 +395,7 @@
     "note": "发布日期和干员本篇覆盖统计标题"
   },
   "stats.publicationNote": {
-    "text": "按官方发布时间统计；每格代表一周",
+    "text": "按官方发布时间统计",
     "note": "发布日期统计说明"
   },
   "stats.publicationCalendar": {
