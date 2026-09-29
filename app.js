@@ -96,9 +96,22 @@
   function characterAlterNames(character) {
     return [...new Set((character.alter_names ?? []).filter(name => normalize(name) !== normalize(character.name)))];
   }
+  function orderedCharacterAlterNames(character) {
+    const names = characterAlterNames(character);
+    if (character.name !== "阿米娅") return names;
+    const order = new Map([["阿米娅（近卫）", 0], ["阿米娅（医疗）", 1]]);
+    const formKey = name => String(name).replace(/^阿米娅\((近卫|医疗)\)$/, "阿米娅（$1）");
+    return names.sort((a, b) => {
+      const ai = order.get(formKey(a)), bi = order.get(formKey(b));
+      if (ai === undefined && bi === undefined) return 0;
+      if (ai === undefined) return 1;
+      if (bi === undefined) return -1;
+      return ai - bi;
+    });
+  }
   function characterDisplayName(character) {
     const prefix = character.name + "（";
-    const forms = characterAlterNames(character).map(name =>
+    const forms = orderedCharacterAlterNames(character).map(name =>
       name.startsWith(prefix) && name.endsWith("）") ? name.slice(prefix.length, -1) : name);
     return character.name + (forms.length ? "（" + forms.join("、") + "）" : "");
   }
@@ -122,13 +135,17 @@
     "斐尔迪南": "绿野幻梦",
     "阿尔贝托": "叙拉古人",
   };
+  const prtsOperatorPageTitles = {
+    "阿米娅（近卫）": "阿米娅(近卫)",
+    "阿米娅（医疗）": "阿米娅(医疗)",
+  };
   function prtsURL(name, isOperator = true) {
     if (!isOperator) {
       const indexURL = "https://prts.wiki/w/" + encodeURIComponent("剧情角色一览");
       const section = prtsStoryLocations[name];
       return section ? indexURL + "#" + encodeURIComponent(section.replace(/ /g, "_")) : indexURL;
     }
-    return "https://prts.wiki/w/" + encodeURIComponent(name);
+    return "https://prts.wiki/w/" + encodeURIComponent(prtsOperatorPageTitles[name] ?? name);
   }
   function exactCharacter(query) {
     const normalized = normalize(query);
@@ -361,7 +378,7 @@
       const isHomeEpisode = character.homeEpisodes.has(episode.id);
       return `<button type="button" class="character-episode-chip${isHomeEpisode ? " home-association" : ""}" data-episode="${escape(episode.id)}">${isHomeEpisode ? `<span class="home-association-label">${text("character.homeBadge")}</span>` : ""}${escape(episode.name)}</button>`;
     }).join("");
-    const prtsForms = character.is_operator ? [character.name, ...characterAlterNames(character)] : [character.name];
+    const prtsForms = character.is_operator ? [character.name, ...orderedCharacterAlterNames(character)] : [character.name];
     const prtsLinks = prtsForms.map(form => `<a class="character-prts-link" href="${escape(prtsURL(form, character.is_operator === true))}" target="_blank" rel="noopener noreferrer" aria-label="${text("character.prtsLink", { name: form })}">${escape(form)} <span aria-hidden="true">↗</span></a>`).join("");
     const profileLinks = `<section class="character-episodes${episodes.length ? "" : " character-prts-only"}">${episodes.length ? `<h2>${text("character.episodesTitle")}</h2><div class="instance-character-links">${episodeLinks}</div>` : ""}<div class="character-prts"><h2>${text("character.prtsTitle")}</h2><div class="character-prts-links">${prtsLinks}</div></div></section>`;
     const name = characterDisplayName(character);

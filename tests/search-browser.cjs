@@ -74,7 +74,11 @@ const release = {
 
     await page.goto(base + "/character.html?id=amiya");
     await page.locator(".character-profile").waitFor();
-    assert.equal(await page.locator(".character-heading h1").textContent(), "阿米娅（医疗、近卫）", "Amiya's alter names should be grouped without repeating the canonical name");
+    assert.equal(await page.locator(".character-heading h1").textContent(), "阿米娅（近卫、医疗）", "Amiya's alter names should be grouped in implementation order without repeating the canonical name");
+    const amiyaPrtsLinks = page.locator(".character-prts-link");
+    assert.deepEqual(await amiyaPrtsLinks.allTextContents(), ["阿米娅 ↗", "阿米娅（近卫） ↗", "阿米娅（医疗） ↗"]);
+    assert((await amiyaPrtsLinks.nth(1).getAttribute("href")).endsWith("%28近卫%29"), "Guard Amiya should link to PRTS's ASCII-parenthesis page title");
+    assert((await amiyaPrtsLinks.nth(2).getAttribute("href")).endsWith("%28医疗%29"), "Medic Amiya should link to PRTS's ASCII-parenthesis page title");
 
     await page.goto(base);
     await page.locator("#site-search").fill("阿雅法拉");
