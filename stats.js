@@ -12,6 +12,22 @@
     "结城理", "岳羽由加莉", "埃癸斯", "虎狼丸",
     "三角初华", "丰川祥子", "八幡海铃", "祐天寺若麦", "若叶睦", "罗德岛隐秘队"
   ]);
+  const normalizeHomeName = value => String(value).normalize("NFKC").replace(/\s+/g, "").replace(/篇$/, "");
+  const alternateHomeOwnerNames = {
+    "阿米娅（医疗）": "阿米娅", "寒芒克洛丝": "克洛丝", "归溟幽灵鲨": "幽灵鲨",
+    "濯尘芙蓉": "芙蓉", "承曦格雷伊": "格雷伊", "百炼嘉维尔": "嘉维尔",
+    "缄默德克萨斯": "德克萨斯", "焰影苇草": "苇草", "淬羽赫默": "赫默",
+    "圣约送葬人": "送葬人", "纯烬艾雅法拉": "艾雅法拉", "琳琅诗怀雅": "诗怀雅",
+    "涤火杰西卡": "杰西卡", "历阵锐枪芬": "芬", "维什戴尔": "W",
+    "荒芜拉普兰德": "拉普兰德", "引星棘刺": "棘刺", "烛煌": "煌",
+    "新约能天使": "能天使", "司霆惊蛰": "惊蛰", "斩业星熊": "星熊",
+    "凛御银灰": "银灰", "溯光星源": "星源", "圣聆初雪": "初雪",
+    "浊心斯卡蒂": "斯卡蒂", "撷英调香师": "调香师", "赤刃明霄陈": "陈",
+    "怒潮凛冬": "凛冬", "凯尔希·思衡托": "凯尔希", "予愿安洁莉娜": "安洁莉娜",
+    "假日威龙陈": "陈"
+  };
+  const alternateHomeOwners = new Map(Object.entries(alternateHomeOwnerNames)
+    .map(([title, name]) => [normalizeHomeName(title), normalizeHomeName(name)]));
   function assetPath(value) {
     if (typeof value !== "string" || !value.startsWith("/media/")) return "";
     try {
@@ -61,6 +77,16 @@
       if (c.aliases !== undefined && (!Array.isArray(c.aliases) || c.aliases.some(x => typeof x !== "string"))) throw new Error("Invalid aliases");
       if (c.home_episode_ids !== undefined && (!Array.isArray(c.home_episode_ids) || c.home_episode_ids.some(x => !episodes.has(id(x))))) throw new Error("Invalid home episodes");
       if (c.implementation_date !== undefined && c.implementation_date !== null && isoDate(c.implementation_date) === null) throw new Error("Invalid implementation date");
+    }
+    // Curated alter names are search aliases for their one canonical person.
+    // Do not add a name that is itself an active canonical character name.
+    const canonicalNames = new Set(release.characters.map(c => normalizeHomeName(c.name)));
+    for (const character of release.characters) {
+      const owner = normalizeHomeName(character.name);
+      const alterAliases = Object.entries(alternateHomeOwnerNames)
+        .filter(([alterName, canonicalName]) => normalizeHomeName(canonicalName) === owner && !canonicalNames.has(normalizeHomeName(alterName)))
+        .map(([alterName]) => alterName);
+      character.aliases = [...new Set([...(character.aliases ?? []), ...alterAliases])];
     }
     if (release.operator_forms !== undefined) {
       if (!Array.isArray(release.operator_forms)) throw new Error("Invalid operator forms");
@@ -159,23 +185,9 @@
       for (const e of episodes.values()) for (const cid of e.cast) characters.get(cid).homeEpisodes.add(e.id);
     }
     if (castReady) {
-      const normalizeHomeName = value => String(value).normalize("NFKC").replace(/\s+/g, "").replace(/篇$/, "");
       // Episode titles use operator alter names, while the public gallery keeps
       // one canonical person. Keep these reviewed title-to-person pairs explicit:
       // suffix matching would wrongly turn 罗小黑 into 黑 or 杜林 into 林.
-      const alternateHomeOwners = new Map(Object.entries({
-        "阿米娅（医疗）": "阿米娅", "寒芒克洛丝": "克洛丝", "归溟幽灵鲨": "幽灵鲨",
-        "濯尘芙蓉": "芙蓉", "承曦格雷伊": "格雷伊", "百炼嘉维尔": "嘉维尔",
-        "缄默德克萨斯": "德克萨斯", "焰影苇草": "苇草", "淬羽赫默": "赫默",
-        "圣约送葬人": "送葬人", "纯烬艾雅法拉": "艾雅法拉", "琳琅诗怀雅": "诗怀雅",
-        "涤火杰西卡": "杰西卡", "历阵锐枪芬": "芬", "维什戴尔": "W",
-        "荒芜拉普兰德": "拉普兰德", "引星棘刺": "棘刺", "烛煌": "煌",
-        "新约能天使": "能天使", "司霆惊蛰": "惊蛰", "斩业星熊": "星熊",
-        "凛御银灰": "银灰", "溯光星源": "星源", "圣聆初雪": "初雪",
-        "浊心斯卡蒂": "斯卡蒂", "撷英调香师": "调香师", "赤刃明霄陈": "陈",
-        "怒潮凛冬": "凛冬", "凯尔希·思衡托": "凯尔希", "予愿安洁莉娜": "安洁莉娜",
-        "假日威龙陈": "陈"
-      }).map(([title, name]) => [normalizeHomeName(title), normalizeHomeName(name)]));
       const ownersByName = new Map();
       for (const c of rows) for (const name of [c.name, ...(c.aliases ?? [])]) {
         const normalized = normalizeHomeName(name);

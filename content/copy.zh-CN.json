@@ -52,7 +52,7 @@
     "note": "检索类型按钮"
   },
   "search.placeholderExpressions": {
-    "text": "输入角色名",
+    "text": "输入角色名（支持模糊输入）",
     "note": "表情模式输入提示"
   },
   "search.placeholderEpisodes": {

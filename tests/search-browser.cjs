@@ -6,9 +6,15 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
 const base = process.env.SITE_TEST_URL || "http://127.0.0.1:4173";
 const release = {
   release_id: "search-fuzzy-test",
-  characters: [{ id: "eyfl", name: "艾雅法拉", aliases: [], is_operator: true }],
+  characters: [
+    { id: "eyfl", name: "艾雅法拉", aliases: [], is_operator: true },
+    { id: "star-source", name: "星源", aliases: [], is_operator: true },
+  ],
   episodes: [{ id: "e1", name: "001_测试篇", order: 1, official_url: "https://comic.hypergryph.com/comic/6253/test" }],
-  instances: [{ id: "i1", character_id: "eyfl", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "001" }],
+  instances: [
+    { id: "i1", character_id: "eyfl", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "001" },
+    { id: "i2", character_id: "star-source", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "002" },
+  ],
 };
 
 (async () => {
@@ -30,7 +36,7 @@ const release = {
     await page.route("**/media/**", route => route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><circle cx="40" cy="40" r="35" fill="#bba8df"/></svg>' }));
 
     await page.goto(base);
-    await page.locator(".legend-row").waitFor();
+    await page.locator(".legend-row").first().waitFor();
     await page.locator("#site-search").fill("阿雅法拉");
     let candidate = page.locator(".search-suggestion").filter({ hasText: "艾雅法拉" });
     await candidate.waitFor({ timeout: 10000 });
@@ -48,6 +54,14 @@ const release = {
     await page.locator("#site-search").fill("aiyafala");
     await page.locator("#search-form button[type=submit]").click();
     await page.waitForFunction(() => new URLSearchParams(location.search).get("q") === "aiyafala" && document.querySelector(".expression-card")?.dataset.character === "eyfl");
+    assert.equal(await page.locator("#result-count").textContent(), "1 张表情");
+
+    await page.locator("#site-search").fill("溯光星源");
+    candidate = page.locator(".search-suggestion").filter({ hasText: "星源" });
+    await candidate.waitFor({ timeout: 10000 });
+    assert((await candidate.textContent()).includes("星源"), "alter-form search should suggest its canonical character");
+    await candidate.click();
+    await page.waitForFunction(() => new URLSearchParams(location.search).get("character") === "star-source");
     assert.equal(await page.locator("#result-count").textContent(), "1 张表情");
     assert.deepEqual(errors, []);
     console.log("Browser search: typo suggestion, pinyin initials, and direct pinyin query passed");

@@ -1,6 +1,8 @@
 const assert = require("node:assert/strict");
 const RhodesSearch = require("../search-matching.js");
 const pinyinPro = require("../assets/pinyin-pro-3.29.4.js");
+require("../stats.js");
+const RhodesStats = globalThis.RhodesStats;
 
 const characters = [
   { id: "eyfl", name: "艾雅法拉", aliases: [], count: 5 },
@@ -29,6 +31,13 @@ assert.equal(find("克洛斯")[0]?.id, "kluosi", "same-sound spelling variants s
 assert.equal(find("aiyafala")[0]?.id, "eyfl", "full pinyin input should find a Chinese name");
 assert.equal(find("ayfl")[0]?.id, "eyfl", "pinyin initials should find a Chinese name");
 assert.equal(find("阿雅").length, 0, "short Chinese queries must not trigger fuzzy matches");
+
+const alterAliasRelease = RhodesStats.validate({
+  characters: [{ id: "star-source", name: "星源", aliases: [] }],
+  episodes: [{ id: "057", name: "057_溯光星源篇", official_url: "https://comic.hypergryph.com/comic/6253/test" }],
+  instances: [],
+});
+assert(alterAliasRelease.characters[0].aliases.includes("溯光星源"), "a reviewed alter name should search as its canonical person's alias");
 
 const episodeMatches = find("aiyafala", "episodes");
 assert(episodeMatches.some(item => item.id === "057" && item.kind === "episode"), "pinyin in episode mode should match episode titles");
