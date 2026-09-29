@@ -3,6 +3,7 @@ import importlib.util
 import hashlib
 import json
 import os
+import sqlite3
 import sys
 import tempfile
 import types
@@ -12,6 +13,35 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('uploader', str(ROOT / 'tools/upload_r2.py'))
 uploader = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(uploader)
+export_spec = importlib.util.spec_from_file_location('public_exporter', str(ROOT / 'tools/export_public.py'))
+exporter = importlib.util.module_from_spec(export_spec)
+export_spec.loader.exec_module(exporter)
+
+def test_reviewed_character_traits():
+    connection = sqlite3.connect(':memory:')
+    connection.row_factory = sqlite3.Row
+    connection.executescript('''
+        CREATE TABLE character_genders(character_id TEXT,human_value TEXT,human_reviewed INTEGER);
+        CREATE TABLE character_hair_colors(character_id TEXT,human_color TEXT,review_status TEXT);
+        INSERT INTO character_genders VALUES('c1','女',1),('c2','男',0);
+        INSERT INTO character_hair_colors VALUES('c1','black','confirmed'),('c2','red','candidate');
+    ''')
+    traits = exporter.reviewed_character_traits(connection)
+    assert traits['gender'] == [{'character_id': 'c1', 'value': '女'}]
+    assert traits['hair_color'] == [{'character_id': 'c1', 'value': 'black'}]
+    characters = {'c1': {'identity_kind': 'canonical'}, 'old': {'identity_kind': 'canonical'}}
+    active = {'c1': {}}
+    resolve = lambda cid: 'c1' if cid == 'old' else cid
+    assert exporter.canonical_attribute_values(traits['gender'], characters, active, resolve) == {'c1': '女'}
+    assert exporter.canonical_attribute_values(
+        [{'character_id': 'c1', 'value': '女'}, {'character_id': 'old', 'value': '男'}],
+        characters, active, resolve) == {}
+    legacy = sqlite3.connect(':memory:')
+    assert exporter.reviewed_character_traits(legacy) == {'gender': [], 'hair_color': []}
+    connection.close()
+    legacy.close()
+
+test_reviewed_character_traits()
 
 class Client:
     def __init__(self):
@@ -47,7 +77,7 @@ try:
         path.parent.mkdir(parents=True)
         path.write_bytes(data)
         (bundle / 'data').mkdir()
-        release = {'release_id':'test', 'characters':[{'id':'c1'}], 'episodes':[], 'images':[],
+        release = {'release_id':'test', 'characters':[{'id':'c1','gender':'女','hair_color':'black'}], 'episodes':[], 'images':[],
                    'operator_forms':[{'character_id':'c1','is_alter':False,'implementation_date':'2020-01-01'}],
                    'instances':[{'crop_url':'/' + asset, 'source_preview_url':'/' + asset}]}
         manifest = bundle / 'data/release.json'
@@ -57,6 +87,16 @@ try:
         uploader.upload(bundle, False, False, bundle / '.env')
         assert client.calls == [('asset', asset), ('index', 'data/release.json')]
         client.calls.clear()
+        release['characters'][0]['gender'] = 3
+        manifest.write_text(json.dumps(release), encoding='utf-8')
+        try:
+            uploader.files_for(bundle)
+        except ValueError as error:
+            assert 'Invalid character metadata' in str(error)
+        else:
+            raise AssertionError('Malformed optional character metadata should be rejected')
+        release['characters'][0]['gender'] = '女'
+        manifest.write_text(json.dumps(release), encoding='utf-8')
         client.fail = True
         try:
             uploader.upload(bundle, False, False, bundle / '.env')

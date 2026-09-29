@@ -31,7 +31,7 @@ def files_for(bundle):
     if set(release) - allowed:
         raise ValueError('Unexpected manifest fields')
     allowed_rows = {
-        'characters': {'id', 'name', 'type', 'is_operator', 'stars', 'aliases', 'home_episode_ids', 'implementation_date'},
+        'characters': {'id', 'name', 'type', 'is_operator', 'stars', 'aliases', 'home_episode_ids', 'implementation_date', 'gender', 'hair_color'},
         'episodes': {'id', 'name', 'official_url', 'order', 'published_at', 'source_record_id', 'cast_character_ids'},
         'instances': {'id', 'character_id', 'episode_id', 'image_id', 'crop_url', 'source_preview_url', 'sort_key'},
         'images': {'id'},
@@ -45,6 +45,11 @@ def files_for(bundle):
         for row in release[name]:
             if set(row) - keys:
                 raise ValueError('Unexpected fields in ' + name)
+    for character in release['characters']:
+        for field in ('gender', 'hair_color'):
+            value = character.get(field)
+            if field in character and (not isinstance(value, str) or not value.strip() or len(value) > 80):
+                raise ValueError('Invalid character metadata: ' + field)
     character_ids = {str(row['id']) for row in release['characters']}
     for row in release.get('operator_forms', []):
         if (str(row.get('character_id')) not in character_ids or

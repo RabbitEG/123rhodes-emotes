@@ -77,6 +77,41 @@ def asset(output, group, public_id, data):
     return '/' + relative.as_posix()
 
 
+def reviewed_character_traits(c):
+    """Read only explicitly human-reviewed optional metadata; older DBs remain valid."""
+    tables = {row[0] for row in c.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    result = {'gender': [], 'hair_color': []}
+    if 'character_genders' in tables:
+        columns = {row[1] for row in c.execute('PRAGMA table_info(character_genders)')}
+        if {'character_id', 'human_value', 'human_reviewed'} <= columns:
+            result['gender'] = [dict(row) for row in c.execute("""
+                SELECT character_id,human_value AS value FROM character_genders
+                WHERE human_reviewed=1 AND human_value IS NOT NULL AND trim(human_value)!=''
+            """)]
+    if 'character_hair_colors' in tables:
+        columns = {row[1] for row in c.execute('PRAGMA table_info(character_hair_colors)')}
+        if {'character_id', 'human_color', 'review_status'} <= columns:
+            result['hair_color'] = [dict(row) for row in c.execute("""
+                SELECT character_id,human_color AS value FROM character_hair_colors
+                WHERE review_status='confirmed' AND human_color IS NOT NULL AND trim(human_color)!=''
+            """)]
+    return result
+
+
+def canonical_attribute_values(rows, characters, active, resolve):
+    grouped = collections.defaultdict(set)
+    for row in rows:
+        cid = row.get('character_id')
+        if cid not in characters or characters[cid].get('identity_kind') != 'canonical':
+            continue
+        target = resolve(cid)
+        value = str(row.get('value') or '').strip()
+        if target in active and value and len(value) <= 80:
+            grouped[target].add(value)
+    # Merged source records may disagree. Do not guess which reviewed value wins.
+    return {cid: next(iter(values)) for cid, values in grouped.items() if len(values) == 1}
+
+
 def export(database, raw_root, output):
     if output == database.parent or output == database.parent.parent:
         raise ValueError('Export output must be separate from the private project')
@@ -94,6 +129,7 @@ def export(database, raw_root, output):
     operator_roster_rows = [dict(r) for r in c.execute(
         'SELECT character_id,stars,is_alter,implemented_at FROM operator_roster')]
     operator_character_ids = {r['character_id'] for r in operator_roster_rows}
+    reviewed_traits = reviewed_character_traits(c)
     images = [dict(r) for r in c.execute('SELECT * FROM images WHERE active=1')]
     rows = [dict(r) for r in c.execute("""
         SELECT ci.instance_id,ci.crop_path,ci.tags,p.panel_id,p.bbox panel_bbox,
@@ -124,6 +160,8 @@ def export(database, raw_root, output):
         target = resolve(cid)
         if target in active and cid != target and row['identity_kind'] == 'canonical':
             aliases[target].add(row['canonical_name'])
+    gender_by_character = canonical_attribute_values(reviewed_traits['gender'], characters, active, resolve)
+    hair_color_by_character = canonical_attribute_values(reviewed_traits['hair_color'], characters, active, resolve)
 
     public_episodes = []
     for e in episodes:
@@ -229,6 +267,8 @@ def export(database, raw_root, output):
     public_characters = [{'id': cid, 'name': active[cid]['canonical_name'], 'type': 'canonical',
                           'is_operator': cid in public_operator_ids,
                           **({'stars': operator_stars[cid]} if cid in public_operator_ids and operator_stars[cid] else {}),
+                          **({'gender': gender_by_character[cid]} if cid in gender_by_character else {}),
+                          **({'hair_color': hair_color_by_character[cid]} if cid in hair_color_by_character else {}),
                           'aliases': sorted(aliases[cid]),
                           'home_episode_ids': sorted(home_episodes[cid], key=lambda eid: episode_order[eid]),
                           **({'implementation_date': implementation_dates[cid]['implemented_at']}
