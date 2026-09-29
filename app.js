@@ -93,10 +93,14 @@
     const key = String(value ?? "");
     return stats?.characters.get(key) ?? stats?.characters.get(release?.canonical_id_redirects?.[key]);
   }
+  function characterAlterNames(character) {
+    return [...new Set((character.alter_names ?? []).filter(name => normalize(name) !== normalize(character.name)))];
+  }
   function characterDisplayName(character) {
-    const forms = [...new Set((character.alter_names ?? []).filter(name => normalize(name) !== normalize(character.name)))];
+    const forms = characterAlterNames(character);
     return character.name + (forms.length ? "（" + forms.join("、") + "）" : "");
   }
+  function prtsURL(name) { return "https://prts.wiki/w/" + encodeURIComponent(name); }
   function exactCharacter(query) {
     const normalized = normalize(query);
     if (!normalized || !stats) return null;
@@ -295,11 +299,14 @@
       const isHomeEpisode = character.homeEpisodes.has(episode.id);
       return `<button type="button" class="character-episode-chip${isHomeEpisode ? " home-association" : ""}" data-episode="${escape(episode.id)}">${isHomeEpisode ? `<span class="home-association-label">${text("character.homeBadge")}</span>` : ""}${escape(episode.name)}</button>`;
     }).join("");
+    const prtsForms = character.is_operator ? [character.name, ...characterAlterNames(character)] : [character.name];
+    const prtsLinks = prtsForms.map(form => `<a class="character-prts-link" href="${escape(prtsURL(form))}" target="_blank" rel="noopener noreferrer" aria-label="${text("character.prtsLink", { name: form })}">${escape(form)} <span aria-hidden="true">↗</span></a>`).join("");
+    const profileLinks = `<section class="character-episodes${episodes.length ? "" : " character-prts-only"}">${episodes.length ? `<h2>${text("character.episodesTitle")}</h2><div class="instance-character-links">${episodeLinks}</div>` : ""}<div class="character-prts"><h2>${text("character.prtsTitle")}</h2><div class="character-prts-links">${prtsLinks}</div></div></section>`;
     const name = characterDisplayName(character);
     document.title = t("character.documentTitle", { character: name });
     status.hidden = true;
     container.hidden = false;
-    container.innerHTML = `<header class="paper-card character-profile"><div class="character-heading"><span class="instance-kicker">${text("character.kicker")}</span><h1>${escape(name)}</h1></div><div class="character-summary"><span class="character-stat"><strong>${number(instances.length)}</strong>${text("character.instanceCount")}</span><span class="character-stat"><strong>${number(episodes.length)}</strong>${text("character.episodeCount")}</span></div>${episodes.length ? `<section class="character-episodes"><h2>${text("character.episodesTitle")}</h2><div class="instance-character-links">${episodeLinks}</div></section>` : ""}</header><section class="character-gallery-section"><div class="character-gallery-heading"><h2>${text("character.galleryTitle")}</h2><span>${text("character.galleryCount", { count: number(instances.length) })}</span></div>${instances.length ? `<div class="gallery-grid character-gallery">${instances.map(item => cropCard(item)).join("")}</div>` : `<div class="empty-result character-empty"><span aria-hidden="true">✧</span><p>${text("character.empty")}</p></div>`}</section>`;
+    container.innerHTML = `<header class="paper-card character-profile"><div class="character-heading"><span class="instance-kicker">${text("character.kicker")}</span><h1>${escape(name)}</h1></div><div class="character-summary"><span class="character-stat"><strong>${number(instances.length)}</strong>${text("character.instanceCount")}</span><span class="character-stat"><strong>${number(episodes.length)}</strong>${text("character.episodeCount")}</span></div>${profileLinks}</header><section class="character-gallery-section"><div class="character-gallery-heading"><h2>${text("character.galleryTitle")}</h2><span>${text("character.galleryCount", { count: number(instances.length) })}</span></div>${instances.length ? `<div class="gallery-grid character-gallery">${instances.map(item => cropCard(item)).join("")}</div>` : `<div class="empty-result character-empty"><span aria-hidden="true">✧</span><p>${text("character.empty")}</p></div>`}</section>`;
     window.RhodesAnalytics?.observeInstances($(".character-gallery", container), "character_gallery");
   }
   function renderEpisode() {

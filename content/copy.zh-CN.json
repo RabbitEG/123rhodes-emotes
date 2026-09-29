@@ -185,6 +185,17 @@
     "text": "本篇",
     "note": "角色档案中对应本体或异格的本篇篇目标记"
   },
+  "character.prtsTitle": {
+    "text": "PRTS 角色条目",
+    "note": "角色档案中外部 Wiki 链接区域标题"
+  },
+  "character.prtsLink": {
+    "text": "在 PRTS 查看{name}",
+    "note": "角色档案外部 PRTS 角色链接无障碍名称",
+    "slots": [
+      "name"
+    ]
+  },
   "character.galleryTitle": {
     "text": "表情图库",
     "note": "角色档案图片墙标题"

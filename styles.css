@@ -380,6 +380,13 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
 .character-episodes .instance-character-links button.home-association { gap: 6px; border-color: #d9a7bf; color: #8d506b; background: #fff3f7; }
 .character-episodes .instance-character-links button.home-association:hover { border-color: #c47e9e; background: #fce7ef; }
 .home-association-label { flex: 0 0 auto; padding: 1px 5px; border-radius: 5px; color: #8d506b; background: #f5dce7; font-size: 10px; font-weight: 800; line-height: 1.5; }
+.character-prts { margin-top: 16px; padding-top: 14px; border-top: 1px solid #f0eaf3; }
+.character-episodes.character-prts-only .character-prts { margin-top: 0; padding-top: 0; border-top: 0; }
+.character-prts h2 { margin-bottom: 9px; }
+.character-prts-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; }
+.character-prts-link { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 6px 11px; border: 1px solid #ded1e9; border-radius: 10px; color: #72578f; background: #faf7fc; font-size: 13px; font-weight: 700; line-height: 1.45; overflow-wrap: anywhere; text-decoration: none; }
+.character-prts-link:hover { border-color: #bda6d8; color: #5d4380; background: #f3ebf9; }
+.character-prts-link span { flex: 0 0 auto; }
 .character-gallery-section { margin-top: 26px; }
 .character-gallery-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 16px; }
 .character-gallery-heading h2 { color: #514165; font-size: 23px; }

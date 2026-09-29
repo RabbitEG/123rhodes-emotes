@@ -171,9 +171,25 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     assert.deepEqual(await characterEpisodeChips.evaluateAll(elements => elements.map(element => element.dataset.episode)), ["e1", "e0"], "Canonical character's alter home episode should be listed first");
     assert.equal(await characterEpisodeChips.first().locator(".home-association-label").textContent(), "本篇", "Home episode should be visibly labeled and styled differently");
     assert.equal(await page.locator(".character-gallery .expression-card").first().locator(".episode-button").textContent(), "057_维娜·维多利亚篇", "The first character gallery card should show its episode");
+    servedData = {
+      ...browserData,
+      characters: [...browserData.characters, { id: "chen", name: "陈", is_operator: true, aliases: ["假日威龙陈", "赤刃明霄陈"], home_episode_ids: [] }],
+      operator_forms: [...browserData.operator_forms,
+        { character_id: "chen", is_alter: false, implementation_date: "2019-07-09" },
+        { character_id: "chen", is_alter: true, implementation_date: "2021-08-03" },
+        { character_id: "chen", is_alter: true, implementation_date: "2026-02-10" },
+      ],
+      instances: [...browserData.instances, { id: "chen-instance", character_id: "chen", episode_id: "e0", image_id: "image0", crop_url: "/media/crops/test.webp", source_preview_url: "/media/source-previews/test.webp", sort_key: "999" }],
+    };
+    await page.goto(base + "/character.html?id=chen");
+    await page.waitForSelector(".character-prts-links a");
+    assert.equal(await page.locator(".character-profile h1").textContent(), "陈（假日威龙陈、赤刃明霄陈）", "Alter names should follow implementation order");
+    const chenPrtsLinks = page.locator(".character-prts-links a");
+    assert.deepEqual(await chenPrtsLinks.evaluateAll(elements => elements.map(element => element.getAttribute("href"))), ["陈", "假日威龙陈", "赤刃明霄陈"].map(name => "https://prts.wiki/w/" + encodeURIComponent(name)), "Each canonical/alter form should link to its PRTS entry in order");
     servedData = browserData;
-    await page.goBack();
-    await page.waitForSelector(".episode-card");
+    await page.goto(base + "/character.html?id=c2");
+    await page.waitForSelector(".character-prts-links a");
+    assert.deepEqual(await page.locator(".character-prts-links a").evaluateAll(elements => elements.map(element => element.getAttribute("href"))), ["https://prts.wiki/w/测试丙"], "Non-operator should link to its single character entry");
     await page.goto(base); await page.waitForSelector(".legend-row");
     await page.locator("#ranking-kind").selectOption("rare");
     assert(!(await page.locator("#character-ranking").textContent()).includes("测试零"));
