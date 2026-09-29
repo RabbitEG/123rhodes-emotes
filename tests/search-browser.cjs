@@ -17,6 +17,9 @@ const release = {
     { id: "sora", name: "空爆", aliases: [], is_operator: true, stars: 3 },
     { id: "thunder-sora", name: "雷狼龙S空爆", aliases: [], is_operator: true, stars: 5 },
     { id: "empty-character", name: "暂无表情条目", aliases: [], is_operator: true },
+    { id: "amiya", name: "阿米娅", aliases: [], is_operator: true, stars: 5 },
+    { id: "amiya-medic", name: "阿米娅（医疗）", aliases: [], is_operator: true, stars: 5 },
+    { id: "amiya-guard", name: "阿米娅（近卫）", aliases: [], is_operator: true, stars: 5 },
   ],
   episodes: [
     { id: "e1", name: "001_测试篇", order: 1, official_url: "https://comic.hypergryph.com/comic/6253/test" },
@@ -68,6 +71,10 @@ const release = {
     await page.locator("#site-search").fill("002_空篇");
     await page.locator("#search-suggestions").waitFor({ state: "hidden" });
     assert.equal(await page.locator(".search-suggestion").count(), 0, "Episodes with no expression crops should not be suggested");
+
+    await page.goto(base + "/character.html?id=amiya");
+    await page.locator(".character-profile").waitFor();
+    assert.equal(await page.locator(".character-heading h1").textContent(), "阿米娅（医疗、近卫）", "Amiya's alter names should be grouped without repeating the canonical name");
 
     await page.goto(base);
     await page.locator("#site-search").fill("阿雅法拉");

@@ -14,7 +14,7 @@
   ]);
   const normalizeHomeName = value => String(value).normalize("NFKC").replace(/\s+/g, "").replace(/篇$/, "");
   const alternateHomeOwnerNames = {
-    "阿米娅（医疗）": "阿米娅", "寒芒克洛丝": "克洛丝", "归溟幽灵鲨": "幽灵鲨",
+    "阿米娅（医疗）": "阿米娅", "阿米娅（近卫）": "阿米娅", "寒芒克洛丝": "克洛丝", "归溟幽灵鲨": "幽灵鲨",
     "炎狱炎熔": "炎熔", "耀骑士临光": "临光", "火龙S黑角": "黑角", "麒麟R夜刀": "夜刀",
     "濯尘芙蓉": "芙蓉", "承曦格雷伊": "格雷伊", "百炼嘉维尔": "嘉维尔",
     "缄默德克萨斯": "德克萨斯", "焰影苇草": "苇草", "淬羽赫默": "赫默",
@@ -35,6 +35,11 @@
   };
   const alternateHomeOwners = new Map(Object.entries(alternateHomeOwnerNames)
     .map(([title, name]) => [normalizeHomeName(title), normalizeHomeName(name)]));
+  // These IDs were public before the private database merged their canonical rows.
+  const historicalPublicCharacterIdRedirects = {
+    "60ae5aa63d1a0fbc": "d02df707d241b8fb", // 维娜·维多利亚 → 推进之王
+    "a2c0878923815ac9": "cf34a85641597783"  // 酒神 → 傀影
+  };
   function assetPath(value) {
     if (typeof value !== "string" || !value.startsWith("/media/")) return "";
     try {
@@ -104,9 +109,12 @@
       if (source.implementation_date && (!target.implementation_date || source.implementation_date < target.implementation_date)) target.implementation_date = source.implementation_date;
     }
     const remapCharacterId = value => redirectedIds.get(id(value)) ?? id(value);
-    release.canonical_id_redirects = Object.fromEntries(redirectedIds);
     release.characters = release.characters.filter(character => !redirectedIds.has(character.id));
     const characters = new Set(release.characters.map(character => character.id));
+    for (const [source, target] of Object.entries(historicalPublicCharacterIdRedirects)) {
+      if (characters.has(target)) redirectedIds.set(source, target);
+    }
+    release.canonical_id_redirects = Object.fromEntries(redirectedIds);
     const canonicalNames = new Set(release.characters.map(character => normalizeHomeName(character.name)));
     for (const character of release.characters) {
       const owner = normalizeHomeName(character.name);

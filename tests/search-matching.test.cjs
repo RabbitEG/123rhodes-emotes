@@ -45,6 +45,29 @@ assert.equal(soraTypo?.matchType, "han_typo");
 assert.equal(soraTypo?.name, "空爆", "typo matches should still use the canonical label");
 assert.equal(soraTypo?.matchedName, "雷狼龙S空爆", "even typo matching should preserve matched-variant metadata without changing its label");
 
+const amiyaFormsRelease = RhodesStats.validate({
+  characters: [
+    { id: "amiya", name: "阿米娅", aliases: [], is_operator: true, stars: 5, home_episode_ids: [] },
+    { id: "amiya-medic", name: "阿米娅（医疗）", aliases: [], is_operator: true, stars: 5, home_episode_ids: [] },
+    { id: "amiya-guard", name: "阿米娅（近卫）", aliases: [], is_operator: true, stars: 5, home_episode_ids: [] },
+  ],
+  episodes: [],
+  instances: [],
+});
+assert.deepEqual(amiyaFormsRelease.characters.map(character => character.name), ["阿米娅"]);
+assert.deepEqual(amiyaFormsRelease.characters[0].alter_names, ["阿米娅（医疗）", "阿米娅（近卫）"]);
+
+const oldPublicCharacterIds = RhodesStats.validate({
+  characters: [
+    { id: "d02df707d241b8fb", name: "推进之王", aliases: [] },
+    { id: "cf34a85641597783", name: "傀影", aliases: [] },
+  ],
+  episodes: [],
+  instances: [],
+});
+assert.equal(oldPublicCharacterIds.canonical_id_redirects["60ae5aa63d1a0fbc"], "d02df707d241b8fb");
+assert.equal(oldPublicCharacterIds.canonical_id_redirects["a2c0878923815ac9"], "cf34a85641597783");
+
 const alterAliasRelease = RhodesStats.validate({
   characters: [
     { id: "star-source", name: "星源", aliases: [] },

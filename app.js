@@ -97,7 +97,9 @@
     return [...new Set((character.alter_names ?? []).filter(name => normalize(name) !== normalize(character.name)))];
   }
   function characterDisplayName(character) {
-    const forms = characterAlterNames(character);
+    const prefix = character.name + "（";
+    const forms = characterAlterNames(character).map(name =>
+      name.startsWith(prefix) && name.endsWith("）") ? name.slice(prefix.length, -1) : name);
     return character.name + (forms.length ? "（" + forms.join("、") + "）" : "");
   }
   // First explicit listing section on PRTS; names without a row open the index itself.
