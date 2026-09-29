@@ -377,6 +377,9 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
 .character-episodes { margin-top: 26px; padding-top: 19px; border-top: 1px solid #eee7f3; }
 .character-episodes h2 { margin: 0 0 10px; color: #675477; font-size: 15px; text-align: center; }
 .character-episodes .instance-character-links { justify-content: center; }
+.character-episodes .instance-character-links button.character-home-episode { gap: 6px; border-color: #d9a7bf; color: #8d506b; background: #fff3f7; }
+.character-episodes .instance-character-links button.character-home-episode:hover { border-color: #c47e9e; background: #fce7ef; }
+.character-home-episode-label { flex: 0 0 auto; padding: 1px 5px; border-radius: 5px; color: #8d506b; background: #f5dce7; font-size: 10px; font-weight: 800; line-height: 1.5; }
 .character-gallery-section { margin-top: 26px; }
 .character-gallery-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 16px; }
 .character-gallery-heading h2 { color: #514165; font-size: 23px; }

@@ -146,6 +146,21 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     await page.reload();
     await page.waitForSelector(".episode-gallery .expression-card");
     assert.equal(await page.locator(".episode-gallery .expression-card").count(), 6);
+    servedData = {
+      ...browserData,
+      characters: [...browserData.characters, { id: "push", name: "推进之王", aliases: [], home_episode_ids: [] }],
+      episodes: browserData.episodes.map((episode, index) => index === 1 ? { ...episode, name: "057_维娜·维多利亚篇" } : episode),
+      instances: [...browserData.instances,
+        { id: "push-home", character_id: "push", episode_id: "e1", image_id: "image1", crop_url: "/media/crops/test.webp", source_preview_url: "/media/source-previews/test.webp", sort_key: "900" },
+        { id: "push-away", character_id: "push", episode_id: "e0", image_id: "image0", crop_url: "/media/crops/test.webp", source_preview_url: "/media/source-previews/test.webp", sort_key: "901" },
+      ],
+    };
+    await page.goto(base + "/character.html?id=push");
+    await page.waitForSelector(".character-profile");
+    const characterEpisodeChips = page.locator(".character-episodes [data-episode]");
+    assert.deepEqual(await characterEpisodeChips.evaluateAll(elements => elements.map(element => element.dataset.episode)), ["e1", "e0"], "Canonical character's alter home episode should be listed first");
+    assert.equal(await characterEpisodeChips.first().locator(".character-home-episode-label").textContent(), "本篇", "Home episode should be visibly labeled and styled differently");
+    servedData = browserData;
     await page.goBack();
     await page.waitForSelector(".episode-card");
     await page.goto(base); await page.waitForSelector(".legend-row");

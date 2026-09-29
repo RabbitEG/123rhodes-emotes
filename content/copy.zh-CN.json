@@ -181,6 +181,10 @@
     "text": "出场篇目",
     "note": "角色档案篇目列表标题"
   },
+  "character.homeBadge": {
+    "text": "本篇",
+    "note": "角色档案中对应本体或异格的本篇篇目标记"
+  },
   "character.galleryTitle": {
     "text": "表情图库",
     "note": "角色档案图片墙标题"

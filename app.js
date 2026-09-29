@@ -289,12 +289,17 @@
     const instances = release.instances.filter(item => item.character_id === character.id)
       .sort((a, b) => String(a.sort_key ?? a.id).localeCompare(String(b.sort_key ?? b.id), "zh-CN", { numeric: true }));
     const episodes = [...character.episodes].map(id => stats.episodes.get(id)).filter(Boolean)
-      .sort((a, b) => a.name.localeCompare(b.name, "zh-CN", { numeric: true }));
+      .sort((a, b) => Number(character.homeEpisodes.has(b.id)) - Number(character.homeEpisodes.has(a.id)) ||
+        a.name.localeCompare(b.name, "zh-CN", { numeric: true }));
+    const episodeLinks = episodes.map(episode => {
+      const isHomeEpisode = character.homeEpisodes.has(episode.id);
+      return `<button type="button" class="character-episode-chip${isHomeEpisode ? " character-home-episode" : ""}" data-episode="${escape(episode.id)}">${isHomeEpisode ? `<span class="character-home-episode-label">${text("character.homeBadge")}</span>` : ""}${escape(episode.name)}</button>`;
+    }).join("");
     const name = characterDisplayName(character);
     document.title = t("character.documentTitle", { character: name });
     status.hidden = true;
     container.hidden = false;
-    container.innerHTML = `<header class="paper-card character-profile"><div class="character-heading"><span class="instance-kicker">${text("character.kicker")}</span><h1>${escape(name)}</h1></div><div class="character-summary"><span class="character-stat"><strong>${number(instances.length)}</strong>${text("character.instanceCount")}</span><span class="character-stat"><strong>${number(episodes.length)}</strong>${text("character.episodeCount")}</span></div>${episodes.length ? `<section class="character-episodes"><h2>${text("character.episodesTitle")}</h2><div class="instance-character-links">${episodes.map(episode => `<button type="button" data-episode="${escape(episode.id)}">${escape(episode.name)}</button>`).join("")}</div></section>` : ""}</header><section class="character-gallery-section"><div class="character-gallery-heading"><h2>${text("character.galleryTitle")}</h2><span>${text("character.galleryCount", { count: number(instances.length) })}</span></div>${instances.length ? `<div class="gallery-grid character-gallery">${instances.map(cropCard).join("")}</div>` : `<div class="empty-result character-empty"><span aria-hidden="true">✧</span><p>${text("character.empty")}</p></div>`}</section>`;
+    container.innerHTML = `<header class="paper-card character-profile"><div class="character-heading"><span class="instance-kicker">${text("character.kicker")}</span><h1>${escape(name)}</h1></div><div class="character-summary"><span class="character-stat"><strong>${number(instances.length)}</strong>${text("character.instanceCount")}</span><span class="character-stat"><strong>${number(episodes.length)}</strong>${text("character.episodeCount")}</span></div>${episodes.length ? `<section class="character-episodes"><h2>${text("character.episodesTitle")}</h2><div class="instance-character-links">${episodeLinks}</div></section>` : ""}</header><section class="character-gallery-section"><div class="character-gallery-heading"><h2>${text("character.galleryTitle")}</h2><span>${text("character.galleryCount", { count: number(instances.length) })}</span></div>${instances.length ? `<div class="gallery-grid character-gallery">${instances.map(cropCard).join("")}</div>` : `<div class="empty-result character-empty"><span aria-hidden="true">✧</span><p>${text("character.empty")}</p></div>`}</section>`;
     window.RhodesAnalytics?.observeInstances($(".character-gallery", container), "character_gallery");
   }
   function renderEpisode() {
