@@ -132,6 +132,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     await page.locator(".expression-card").first().hover();
     await page.locator(".source-peek img").first().waitFor({ state: "visible", timeout: 5000 });
     assert(await page.locator(".source-peek img").first().isVisible(), "Desktop hover must show original-source preview");
+    assert.equal(await page.locator(".source-peek").first().evaluate(element => getComputedStyle(element).pointerEvents), "none", "The source preview must not intercept the pointer over adjacent cards");
     await page.locator("#site-search").fill("测试篇"); await page.locator('[data-mode="episodes"]').click();
     assert.equal(await page.locator("#site-search").inputValue(), "测试篇");
     assert.equal(await page.locator(".episode-card").count(), 4);

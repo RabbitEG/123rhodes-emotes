@@ -122,6 +122,7 @@ body[data-page="home"] #search-status { display: none; }
 .preview-left .source-peek { left: auto; right: calc(100% + 7px); }
 .preview-left .source-peek::before { left: auto; right: -10px; }
 @media (hover: hover) and (min-width: 701px) {
+  .source-peek { pointer-events: none; }
   .expression-card:not(.preview-suppressed):hover .source-peek, .expression-card:not(.preview-suppressed):has(.crop-wrap:focus-visible) .source-peek { display: block; }
 }
 .image-missing { display: block; text-align: center; color: #8e7e9b; font-size: 13px; padding: 12px; }
