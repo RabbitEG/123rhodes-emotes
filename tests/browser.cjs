@@ -189,7 +189,12 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     servedData = browserData;
     await page.goto(base + "/character.html?id=c2");
     await page.waitForSelector(".character-prts-links a");
-    assert.deepEqual(await page.locator(".character-prts-links a").evaluateAll(elements => elements.map(element => element.getAttribute("href"))), ["https://prts.wiki/w/测试丙"], "Non-operator should link to its single character entry");
+    assert.deepEqual(await page.locator(".character-prts-links a").evaluateAll(elements => elements.map(element => element.getAttribute("href"))), ["https://prts.wiki/w/" + encodeURIComponent("剧情角色一览")], "Unmapped non-operator should still link to the PRTS story character index");
+    servedData = { ...browserData, characters: [...browserData.characters, { id: "tarula", name: "塔露拉", is_operator: false }] };
+    await page.goto(base + "/character.html?id=tarula");
+    await page.waitForSelector(".character-prts-links a");
+    assert.equal(await page.locator(".character-prts-links a").getAttribute("href"), "https://prts.wiki/w/" + encodeURIComponent("剧情角色一览") + "#" + encodeURIComponent("第一章_黑暗时代·下"), "Listed non-operator should link to its PRTS story section");
+    servedData = browserData;
     await page.goto(base); await page.waitForSelector(".legend-row");
     await page.locator("#ranking-kind").selectOption("rare");
     assert(!(await page.locator("#character-ranking").textContent()).includes("测试零"));

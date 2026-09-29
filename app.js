@@ -100,7 +100,34 @@
     const forms = characterAlterNames(character);
     return character.name + (forms.length ? "（" + forms.join("、") + "）" : "");
   }
-  function prtsURL(name) { return "https://prts.wiki/w/" + encodeURIComponent(name); }
+  // First explicit listing section on PRTS; names without a row open the index itself.
+  const prtsStoryLocations = {
+    "阿雅吉": "太阳甩在身后",
+    "胡安娜": "出苍白海",
+    "大帝": "火蓝之心",
+    "杰斯顿": "孤岛风云",
+    "Touch": "长夜临光",
+    "塞斯克": "出苍白海",
+    "鼠王": "喧闹法则",
+    "阿雅妮": "太阳甩在身后",
+    "塔露拉": "第一章 黑暗时代·下",
+    "吕刻伊昂": "雅赛努斯复仇记",
+    "奥罗拉": "众生行记",
+    "扎罗": "叙拉古人",
+    "伊斯": "第八章 怒号光明",
+    "Misery": "第九章 风暴瞭望",
+    "博士": "序章 黑暗时代·上",
+    "斐尔迪南": "绿野幻梦",
+    "阿尔贝托": "叙拉古人",
+  };
+  function prtsURL(name, isOperator = true) {
+    if (!isOperator) {
+      const indexURL = "https://prts.wiki/w/" + encodeURIComponent("剧情角色一览");
+      const section = prtsStoryLocations[name];
+      return section ? indexURL + "#" + encodeURIComponent(section.replace(/ /g, "_")) : indexURL;
+    }
+    return "https://prts.wiki/w/" + encodeURIComponent(name);
+  }
   function exactCharacter(query) {
     const normalized = normalize(query);
     if (!normalized || !stats) return null;
@@ -300,7 +327,7 @@
       return `<button type="button" class="character-episode-chip${isHomeEpisode ? " home-association" : ""}" data-episode="${escape(episode.id)}">${isHomeEpisode ? `<span class="home-association-label">${text("character.homeBadge")}</span>` : ""}${escape(episode.name)}</button>`;
     }).join("");
     const prtsForms = character.is_operator ? [character.name, ...characterAlterNames(character)] : [character.name];
-    const prtsLinks = prtsForms.map(form => `<a class="character-prts-link" href="${escape(prtsURL(form))}" target="_blank" rel="noopener noreferrer" aria-label="${text("character.prtsLink", { name: form })}">${escape(form)} <span aria-hidden="true">↗</span></a>`).join("");
+    const prtsLinks = prtsForms.map(form => `<a class="character-prts-link" href="${escape(prtsURL(form, character.is_operator === true))}" target="_blank" rel="noopener noreferrer" aria-label="${text("character.prtsLink", { name: form })}">${escape(form)} <span aria-hidden="true">↗</span></a>`).join("");
     const profileLinks = `<section class="character-episodes${episodes.length ? "" : " character-prts-only"}">${episodes.length ? `<h2>${text("character.episodesTitle")}</h2><div class="instance-character-links">${episodeLinks}</div>` : ""}<div class="character-prts"><h2>${text("character.prtsTitle")}</h2><div class="character-prts-links">${prtsLinks}</div></div></section>`;
     const name = characterDisplayName(character);
     document.title = t("character.documentTitle", { character: name });
