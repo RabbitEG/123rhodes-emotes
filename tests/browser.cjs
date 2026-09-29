@@ -123,7 +123,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     assert.equal(await page.locator("#missing-ranking-kind option").count(), 2, "The missing-character ranking keeps two selectable views");
     assert.equal(await page.locator("#results-section").count(), 0);
     await page.screenshot({ path: output + "/desktop-data.png", fullPage: true });
-    await page.locator("#site-search").fill("别名甲"); await page.locator("#site-search").press("Enter");
+    await page.locator("#site-search").fill("别名"); await page.locator("#site-search").press("Enter");
     await page.waitForURL("**/search.html?*"); await page.waitForSelector(".expression-card");
     assert.equal(await page.locator("#result-count").textContent(), "40 张表情");
     assert.equal(await page.locator(".expression-card").count(), 36);
@@ -186,7 +186,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     await page.waitForSelector(".legend-row");
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     await page.screenshot({ path: output + "/mobile-data.png", fullPage: true });
-    await page.locator("#site-search").fill("别名甲"); await page.locator("#site-search").press("Enter");
+    await page.locator("#site-search").fill("别名"); await page.locator("#site-search").press("Enter");
     await page.waitForURL("**/search.html?*"); await page.waitForSelector(".expression-card");
     await page.locator(".source-toggle").first().click();
     await page.locator(".source-peek img").first().waitFor({ state: "visible", timeout: 5000 });
@@ -217,7 +217,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     await page.route("https://media.example.test/data/release.json", route => route.fulfill({ json: browserData, headers: { "Access-Control-Allow-Origin": base } }));
     await page.goto(base); await page.waitForSelector(".legend-row");
     assert((await page.locator(".ribbon-group img").first().getAttribute("src")).startsWith("https://media.example.test/media/"));
-    await page.locator("#site-search").fill("别名甲"); await page.locator("#site-search").press("Enter");
+    await page.locator("#site-search").fill("别名"); await page.locator("#site-search").press("Enter");
     await page.waitForURL("**/search.html?*"); await page.waitForSelector(".expression-card");
     assert.equal(await page.locator("#result-count").textContent(), "40 张表情");
 
@@ -233,8 +233,9 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     const fuzzySuggestion = page.locator(".search-suggestion").filter({ hasText: "艾雅法拉" });
     await fuzzySuggestion.waitFor({ timeout: 10000 });
     assert((await fuzzySuggestion.textContent()).includes("近似"), "Fuzzy suggestions should be visibly marked");
-    await fuzzySuggestion.click(); await page.waitForURL("**/search.html?*"); await page.waitForSelector(".expression-card");
-    assert.equal(await page.locator("#result-count").textContent(), "1 张表情");
+    await fuzzySuggestion.click(); await page.waitForURL("**/character.html?id=eyfl"); await page.waitForSelector(".character-gallery .expression-card");
+    assert.equal(await page.locator(".character-gallery .expression-card").count(), 1);
+    await page.goto(base); await page.waitForSelector(".legend-row");
     await page.locator("#site-search").fill("阿雅法拉"); await page.locator("#search-form button[type=submit]").click();
     await page.waitForFunction(() => new URLSearchParams(location.search).get("q") === "阿雅法拉" && document.querySelector(".expression-card")?.dataset.character === "eyfl");
     assert.deepEqual(errors, []);

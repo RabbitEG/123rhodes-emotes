@@ -12,6 +12,7 @@
   const { validate, analyze, assetPath, officialURL } = RhodesStats;
   const isSearchPage = document.body.dataset.page === "search";
   const isInstancePage = document.body.dataset.page === "instance";
+  const isCharacterPage = document.body.dataset.page === "character";
   let release, stats, config = {}, state, visible = 36, matches = [], dataBase = "";
   let suggestionItems = [], activeSuggestion = -1;
   let pinyinLoadPromise = null, suggestionRevision = 0, searchPendingKey = "";
@@ -76,6 +77,26 @@
     return normalize(e.name).includes(query) || normalize(e.id) === query;
   }
   function instanceURL(item) { return "/instance.html?id=" + encodeURIComponent(item.id); }
+  function characterURL(character) { return "/character.html?id=" + encodeURIComponent(character.id); }
+  function characterById(value) {
+    const key = String(value ?? "");
+    return stats?.characters.get(key) ?? stats?.characters.get(release?.canonical_id_redirects?.[key]);
+  }
+  function characterDisplayName(character) {
+    const forms = [...new Set((character.alter_names ?? []).filter(name => normalize(name) !== normalize(character.name)))];
+    return character.name + (forms.length ? "（" + forms.join("、") + "）" : "");
+  }
+  function exactCharacter(query) {
+    const normalized = normalize(query);
+    if (!normalized || !stats) return null;
+    const found = [...stats.characters.values()].filter(character => [character.name, ...(character.aliases ?? [])]
+      .some(name => normalize(name) === normalized));
+    return found.length === 1 ? found[0] : null;
+  }
+  function openCharacter(id) {
+    const character = characterById(id);
+    if (character) location.assign(characterURL(character));
+  }
   function suggestionScore(name, query, alias = false) {
     const value = normalize(name);
     if (!value || !value.includes(query)) return Infinity;
@@ -184,7 +205,7 @@
     if (!suggestion) return;
     const patch = suggestion.kind === "episode"
       ? { mode: "episodes", q: suggestion.name, episode: suggestion.id }
-      : { mode: state.mode, q: suggestion.name, character: suggestion.id };
+      : null;
     window.RhodesAnalytics?.track("suggestion_select", {
       object_type: suggestion.kind, object_id: suggestion.id,
       character_id: suggestion.kind === "character" ? suggestion.id : "",
@@ -193,7 +214,8 @@
       search_mode: state.mode, release_id: release?.release_id,
     });
     closeSuggestions();
-    go(patch, true);
+    if (suggestion.kind === "character") openCharacter(suggestion.id);
+    else go(patch, true);
     closeSuggestions();
   }
   function image(path, alt, eager = false) {
@@ -236,6 +258,33 @@
       context: window.RhodesAnalytics.contextForInstanceOpen(), release_id: release.release_id,
     });
   }
+  function renderCharacter() {
+    const status = $("#character-status"), container = $("#character-detail");
+    if (!status || !container || !release || !stats) return;
+    const requestedId = new URLSearchParams(location.search).get("id");
+    const character = characterById(requestedId);
+    if (!character) {
+      status.hidden = false;
+      status.textContent = t("character.missing");
+      container.hidden = true;
+      document.title = t("character.pageTitle") + " · " + t("site.name");
+      return;
+    }
+    if (character.id !== requestedId) {
+      location.replace(characterURL(character));
+      return;
+    }
+    const instances = release.instances.filter(item => item.character_id === character.id)
+      .sort((a, b) => String(a.sort_key ?? a.id).localeCompare(String(b.sort_key ?? b.id), "zh-CN", { numeric: true }));
+    const episodes = [...character.episodes].map(id => stats.episodes.get(id)).filter(Boolean)
+      .sort((a, b) => a.name.localeCompare(b.name, "zh-CN", { numeric: true }));
+    const name = characterDisplayName(character);
+    document.title = t("character.documentTitle", { character: name });
+    status.hidden = true;
+    container.hidden = false;
+    container.innerHTML = `<header class="paper-card character-profile"><div class="character-heading"><span class="instance-kicker">${text("character.kicker")}</span><h1>${escape(name)}</h1></div><div class="character-summary"><span class="character-stat"><strong>${number(instances.length)}</strong>${text("character.instanceCount")}</span><span class="character-stat"><strong>${number(episodes.length)}</strong>${text("character.episodeCount")}</span></div>${episodes.length ? `<section class="character-episodes"><h2>${text("character.episodesTitle")}</h2><div class="instance-character-links">${episodes.map(episode => `<button type="button" data-episode="${escape(episode.id)}">${escape(episode.name)}</button>`).join("")}</div></section>` : ""}</header><section class="character-gallery-section"><div class="character-gallery-heading"><h2>${text("character.galleryTitle")}</h2><span>${text("character.galleryCount", { count: number(instances.length) })}</span></div>${instances.length ? `<div class="gallery-grid character-gallery">${instances.map(cropCard).join("")}</div>` : `<div class="empty-result character-empty"><span aria-hidden="true">✧</span><p>${text("character.empty")}</p></div>`}</section>`;
+    window.RhodesAnalytics?.observeInstances($(".character-gallery", container), "character_gallery");
+  }
   function episodeCard(e) {
     const first = release.instances.find(item => item.episode_id === e.id);
     return `<article class="episode-card" data-episode="${escape(e.id)}">${first ? `<button class="episode-cover" data-episode="${escape(e.id)}" aria-label="${text("card.open")} · ${escape(e.name)}">${image(first.crop_url, e.name)}</button>` : '<span class="episode-cover empty-cover" aria-hidden="true">✦</span>'}<div><h3><button class="name-button" data-episode="${escape(e.id)}">${escape(e.name)}</button></h3><p>${text("card.episodeMeta", { crops: e.count, characters: e.characters.size })}</p><div class="episode-characters">${[...e.characters].slice(0, 5).map(cid => `<button data-character="${escape(cid)}">${escape(stats.characters.get(cid).name)}</button>`).join("")}</div><a href="${escape(officialURL(e.official_url))}" target="_blank" rel="noopener noreferrer">${text("card.official")}</a></div></article>`;
@@ -247,6 +296,17 @@
     $$("[data-mode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode)));
     renderSuggestions();
     if (!release) return;
+    if (state.mode === "expressions" && state.character && !state.episode && !state.pair && characterById(state.character)) {
+      location.replace(characterURL(characterById(state.character)));
+      return;
+    }
+    if (state.mode === "expressions" && !state.episode && !state.pair) {
+      const character = exactCharacter(state.q);
+      if (character) {
+        location.replace(characterURL(character));
+        return;
+      }
+    }
     if (isSearchPage) $("#search-status").textContent = t("search.crops", { count: number(release.instances.length) });
     if (!isSearchPage) return;
     $("#results-section").hidden = false;
@@ -374,13 +434,14 @@
       const response = await fetch("/api/analytics/search-ranking", { cache: "no-store" });
       if (!response.ok) return;
       const payload = await response.json();
-      stats.rankings.searches = (Array.isArray(payload.items) ? payload.items : [])
-        .map(item => {
-          const character = stats.characters.get(String(item.id));
-          const searches = Number(item.hot ?? item.searches);
-          return character && Number.isSafeInteger(searches) && searches > 0 ? { ...character, searches } : null;
-        })
-        .filter(Boolean)
+      const searchesByCharacter = new Map();
+      for (const item of Array.isArray(payload.items) ? payload.items : []) {
+        const character = characterById(item.id);
+        const searches = Number(item.hot ?? item.searches);
+        if (!character || !Number.isSafeInteger(searches) || searches <= 0) continue;
+        searchesByCharacter.set(character.id, (searchesByCharacter.get(character.id) || 0) + searches);
+      }
+      stats.rankings.searches = [...searchesByCharacter].map(([id, searches]) => ({ ...stats.characters.get(id), searches }))
         .sort((a, b) => b.searches - a.searches || a.name.localeCompare(b.name, "zh-CN"))
         .slice(0, 30);
       if ($("#ranking-kind")?.value === "searches") renderRanking();
@@ -533,23 +594,24 @@
     requestAnimationFrame(animateRibbon);
   }
   async function load() {
-    const status = $("#instance-status") || $("#search-status"), retry = $("#retry");
+    const status = $("#instance-status") || $("#character-status") || $("#search-status"), retry = $("#retry");
     if (retry) retry.hidden = true;
-    if (status) status.textContent = t(isInstancePage ? "detail.loading" : "search.loading");
+    if (status) status.textContent = t(isInstancePage ? "detail.loading" : isCharacterPage ? "character.loading" : "search.loading");
     try {
       const expectedOrigin = dataBase || location.origin;
       const url = new URL(config.releaseManifest || "/data/release.json", expectedOrigin);
       if (url.origin !== new URL(expectedOrigin).origin) throw new Error("Release origin mismatch");
       const response = await fetch(url, { cache: "no-cache" });
-      if (response.status === 404) { if (status) status.textContent = t(isInstancePage ? "detail.unpublished" : "search.unpublished"); return; }
+      if (response.status === 404) { if (status) status.textContent = t(isInstancePage ? "detail.unpublished" : isCharacterPage ? "character.unpublished" : "search.unpublished"); return; }
       if (!response.ok) throw new Error("Release unavailable");
       release = validate(await response.json()); stats = analyze(release);
       window.RhodesAnalytics?.setReleaseId(release.release_id);
       if (isInstancePage) renderInstance();
+      else if (isCharacterPage) renderCharacter();
       else { renderSearch(); if (isSearchPage) trackSearchResults(); else { renderStats(); void loadSearchRanking(); drawRibbon(); } }
     } catch (error) {
       release = undefined; stats = undefined;
-      if (status) status.textContent = t(isInstancePage ? "detail.failed" : "search.failed");
+      if (status) status.textContent = t(isInstancePage ? "detail.failed" : isCharacterPage ? "character.failed" : "search.failed");
       if (retry) retry.hidden = false;
       window.RhodesAnalytics?.track("release_error", { context: "fetch_failed" });
       console.warn("Public release unavailable:", error.message);
@@ -584,6 +646,10 @@
         const info = query ? analyticsQueryInfo(query, state.mode) : { query_kind: "browse" };
         window.RhodesAnalytics?.track("search_submit", { ...info, search_mode: state.mode, context: "search_form", release_id: release?.release_id });
         closeSuggestions();
+        if (state.mode === "expressions") {
+          const character = exactCharacter(query);
+          if (character) { location.assign(characterURL(character)); return; }
+        }
         go({ q: query, browse: !query }, true);
       });
     }
@@ -622,7 +688,7 @@
       const b = event.target.closest("[data-character], [data-episode], [data-pair], [data-record-character]");
       if (!b) return;
       if (b.dataset.recordCharacter) go({ mode: "expressions", character: b.dataset.recordCharacter, episode: b.dataset.recordEpisode }, true);
-      else if (b.dataset.character) go({ mode: "expressions", character: b.dataset.character }, true);
+      else if (b.dataset.character) openCharacter(b.dataset.character);
       else if (b.dataset.episode) go({ mode: "expressions", episode: b.dataset.episode }, true);
       else if (b.dataset.pair) go({ mode: "expressions", pair: b.dataset.pair }, true);
     });

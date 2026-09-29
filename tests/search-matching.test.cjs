@@ -33,11 +33,47 @@ assert.equal(find("ayfl")[0]?.id, "eyfl", "pinyin initials should find a Chinese
 assert.equal(find("阿雅").length, 0, "short Chinese queries must not trigger fuzzy matches");
 
 const alterAliasRelease = RhodesStats.validate({
-  characters: [{ id: "star-source", name: "星源", aliases: [] }],
+  characters: [
+    { id: "star-source", name: "星源", aliases: [] },
+    { id: "flame", name: "炎熔", aliases: [] },
+    { id: "near-light", name: "临光", aliases: [] },
+    { id: "black-horn", name: "黑角", aliases: [] },
+    { id: "night-blade", name: "夜刀", aliases: [] },
+  ],
   episodes: [{ id: "057", name: "057_溯光星源篇", official_url: "https://comic.hypergryph.com/comic/6253/test" }],
   instances: [],
 });
 assert(alterAliasRelease.characters[0].aliases.includes("溯光星源"), "a reviewed alter name should search as its canonical person's alias");
+for (const [id, alterName] of [["flame", "炎狱炎熔"], ["near-light", "耀骑士临光"], ["black-horn", "火龙S黑角"], ["night-blade", "麒麟R夜刀"]]) {
+  assert(alterAliasRelease.characters.find(character => character.id === id).alter_names.includes(alterName), `${alterName} should display under its base canonical character`);
+}
+const canonicalMerge = RhodesStats.validate({
+  characters: [
+    { id: "push", name: "推进之王", aliases: [], is_operator: true, stars: 6, home_episode_ids: ["ep1"] },
+    { id: "vina", name: "维娜·维多利亚", aliases: [], is_operator: true, stars: 6, home_episode_ids: ["ep2"] },
+    { id: "phantom", name: "傀影", aliases: [], is_operator: true, stars: 6 },
+    { id: "booze", name: "酒神", aliases: [], is_operator: true, stars: 6 },
+  ],
+  episodes: [
+    { id: "ep1", name: "001_推进之王篇", order: 1, cast_character_ids: ["push", "vina"], official_url: "https://comic.hypergryph.com/comic/6253/ep1" },
+    { id: "ep2", name: "002_维娜·维多利亚篇", order: 2, cast_character_ids: ["vina"], official_url: "https://comic.hypergryph.com/comic/6253/ep2" },
+  ],
+  instances: [
+    { id: "base-crop", character_id: "push", episode_id: "ep1", crop_url: "/media/crops/test.webp" },
+    { id: "alter-crop", character_id: "vina", episode_id: "ep2", crop_url: "/media/crops/test.webp" },
+  ],
+  operator_forms: [
+    { character_id: "push", is_alter: false, implementation_date: "2019-04-30" },
+    { character_id: "vina", is_alter: true, implementation_date: "2024-10-09" },
+  ],
+});
+assert.deepEqual(canonicalMerge.characters.map(character => character.name), ["推进之王", "傀影"]);
+assert.deepEqual(canonicalMerge.instances.map(item => item.character_id), ["push", "push"]);
+assert.deepEqual(canonicalMerge.episodes.map(episode => episode.cast_character_ids), [["push"], ["push"]]);
+assert(canonicalMerge.characters[0].aliases.includes("维娜·维多利亚"));
+assert.deepEqual(canonicalMerge.characters[0].alter_names, ["维娜·维多利亚"]);
+assert.equal(RhodesStats.analyze(canonicalMerge).characters.get("push").count, 2);
+assert(canonicalMerge.canonical_id_redirects.vina === "push", "old public IDs should redirect to canonical IDs");
 
 const episodeMatches = find("aiyafala", "episodes");
 assert(episodeMatches.some(item => item.id === "057" && item.kind === "episode"), "pinyin in episode mode should match episode titles");

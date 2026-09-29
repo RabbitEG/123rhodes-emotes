@@ -130,6 +130,72 @@
     "text": "篇目",
     "note": "详情页篇目字段名"
   },
+  "character.pageTitle": {
+    "text": "角色档案",
+    "note": "角色实体页标题"
+  },
+  "character.documentTitle": {
+    "text": "{character} · 角色档案",
+    "note": "角色实体页浏览器标题",
+    "slots": [
+      "character"
+    ]
+  },
+  "character.description": {
+    "text": "查看角色收录的表情、出场篇目和相关信息。",
+    "note": "角色实体页搜索摘要"
+  },
+  "character.kicker": {
+    "text": "角色档案",
+    "note": "角色实体页顶部标签"
+  },
+  "character.back": {
+    "text": "返回搜索",
+    "note": "角色实体页返回链接"
+  },
+  "character.loading": {
+    "text": "正在整理角色档案…",
+    "note": "角色实体页加载状态"
+  },
+  "character.unpublished": {
+    "text": "角色资料暂时不可用。",
+    "note": "公开数据清单尚未发布"
+  },
+  "character.failed": {
+    "text": "角色档案暂时没能打开，请稍后重试。",
+    "note": "角色实体页数据加载错误"
+  },
+  "character.missing": {
+    "text": "没有找到这个角色，可能已从当前公开图库中移除。",
+    "note": "角色 ID 不存在或已不在公开索引中"
+  },
+  "character.instanceCount": {
+    "text": "次收录",
+    "note": "角色档案收录实例数单位"
+  },
+  "character.episodeCount": {
+    "text": "个篇目",
+    "note": "角色档案出场篇目数单位"
+  },
+  "character.episodesTitle": {
+    "text": "出场篇目",
+    "note": "角色档案篇目列表标题"
+  },
+  "character.galleryTitle": {
+    "text": "表情图库",
+    "note": "角色档案图片墙标题"
+  },
+  "character.galleryCount": {
+    "text": "共 {count} 次收录",
+    "note": "角色档案图片墙数量摘要",
+    "slots": [
+      "count"
+    ]
+  },
+  "character.empty": {
+    "text": "这个角色目前还没有收录表情。",
+    "note": "角色没有公开图片时的空状态"
+  },
   "search.suggestionLabel": {
     "text": "搜索建议",
     "note": "搜索框自动补全列表标签"

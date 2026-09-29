@@ -9,11 +9,25 @@ const release = {
   characters: [
     { id: "eyfl", name: "艾雅法拉", aliases: [], is_operator: true },
     { id: "star-source", name: "星源", aliases: [], is_operator: true },
+    { id: "push", name: "推进之王", aliases: [], is_operator: true, stars: 6 },
+    { id: "vina", name: "维娜·维多利亚", aliases: [], is_operator: true, stars: 6 },
+    { id: "phantom", name: "傀影", aliases: [], is_operator: true, stars: 6 },
+    { id: "booze", name: "酒神", aliases: [], is_operator: true, stars: 6 },
   ],
   episodes: [{ id: "e1", name: "001_测试篇", order: 1, official_url: "https://comic.hypergryph.com/comic/6253/test" }],
   instances: [
     { id: "i1", character_id: "eyfl", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "001" },
     { id: "i2", character_id: "star-source", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "002" },
+    { id: "i3", character_id: "push", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "003" },
+    { id: "i4", character_id: "vina", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "004" },
+    { id: "i5", character_id: "phantom", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "005" },
+    { id: "i6", character_id: "booze", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "006" },
+  ],
+  operator_forms: [
+    { character_id: "push", is_alter: false, implementation_date: "2019-04-30" },
+    { character_id: "vina", is_alter: true, implementation_date: "2024-10-09" },
+    { character_id: "phantom", is_alter: false, implementation_date: "2020-04-21" },
+    { character_id: "booze", is_alter: true, implementation_date: "2025-06-05" },
   ],
 };
 
@@ -42,10 +56,11 @@ const release = {
     await candidate.waitFor({ timeout: 10000 });
     assert((await candidate.textContent()).includes("近似"), "Hanzi typo should be visibly marked as an approximate suggestion");
     await candidate.click();
-    await page.waitForURL("**/search.html?*");
-    await page.locator(".expression-card").waitFor();
-    assert.equal(await page.locator("#result-count").textContent(), "1 张表情");
+    await page.waitForURL("**/character.html?id=eyfl");
+    await page.locator(".character-gallery .expression-card").waitFor();
+    assert.equal(await page.locator(".character-gallery .expression-card").count(), 1);
 
+    await page.goto(base);
     await page.locator("#site-search").fill("ayfl");
     candidate = page.locator(".search-suggestion").filter({ hasText: "艾雅法拉" });
     await candidate.waitFor({ timeout: 10000 });
@@ -61,10 +76,28 @@ const release = {
     await candidate.waitFor({ timeout: 10000 });
     assert((await candidate.textContent()).includes("星源"), "alter-form search should suggest its canonical character");
     await candidate.click();
-    await page.waitForFunction(() => new URLSearchParams(location.search).get("character") === "star-source");
-    assert.equal(await page.locator("#result-count").textContent(), "1 张表情");
+    await page.waitForURL("**/character.html?id=star-source");
+    assert.equal(await page.locator(".character-heading h1").textContent(), "星源（溯光星源）");
+    assert.equal(await page.locator(".character-gallery .expression-card").count(), 1);
+
+    await page.goto(base);
+    await page.locator("#site-search").fill("维娜·维多利亚");
+    await page.locator("#search-form button[type=submit]").click();
+    await page.waitForURL("**/character.html?id=push");
+    assert.equal(await page.locator(".character-heading h1").textContent(), "推进之王（维娜·维多利亚）");
+    assert.equal(await page.locator(".character-gallery .expression-card").count(), 2, "canonical page should include base and alter crops");
+
+    await page.goto(base);
+    await page.locator("#site-search").fill("酒神");
+    await page.locator("#search-form button[type=submit]").click();
+    await page.waitForURL("**/character.html?id=phantom");
+    assert.equal(await page.locator(".character-heading h1").textContent(), "傀影（酒神）");
+    assert.equal(await page.locator(".character-gallery .expression-card").count(), 2);
+
+    await page.goto(base + "/character.html?id=vina");
+    await page.waitForURL("**/character.html?id=push");
     assert.deepEqual(errors, []);
-    console.log("Browser search: typo suggestion, pinyin initials, and direct pinyin query passed");
+    console.log("Browser search: fuzzy and alter-name suggestions open canonical role pages; forms and legacy IDs resolve to earlier canonical names");
   } finally {
     await browser.close();
   }

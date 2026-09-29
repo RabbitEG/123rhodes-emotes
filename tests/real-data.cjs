@@ -4,6 +4,9 @@ const path = require("node:path");
 const {chromium} = require(process.env.PLAYWRIGHT_MODULE || "playwright");
 const root = path.resolve(__dirname, "..");
 const data = JSON.parse(fs.readFileSync(path.join(root, "publish/site/data/release.json"), "utf8"));
+const canonicalDuplicateNames = [["维娜·维多利亚", "推进之王"], ["酒神", "傀影"]];
+const expectedCharacterCount = data.characters.filter(character => !canonicalDuplicateNames.some(([alias, owner]) =>
+  character.name === alias && data.characters.some(candidate => candidate.name === owner))).length;
 (async () => {
   const browser = await chromium.launch({headless:true, executablePath: process.env.CHROMIUM_EXECUTABLE, args:["--no-sandbox"]});
   try {
@@ -27,15 +30,16 @@ const data = JSON.parse(fs.readFileSync(path.join(root, "publish/site/data/relea
     assert((await page.locator(".publication-year-label").last().textContent()).includes("2022"));
     assert.equal(await page.locator("#ranking-kind option").count(), 4);
     assert.equal(await page.locator("#missing-ranking-kind option").count(), 2);
-    assert.deepEqual(await page.locator("#totals strong").allTextContents(), [data.episodes.length,data.instances.length,data.characters.length,data.images.length].map(n=>n.toLocaleString("zh-CN")));
+    assert.deepEqual(await page.locator("#totals strong").allTextContents(), [data.episodes.length,data.instances.length,expectedCharacterCount,data.images.length].map(n=>n.toLocaleString("zh-CN")));
     await page.waitForFunction(()=>[...document.querySelectorAll(".ribbon-group:first-child img")].every(i=>i.complete && i.naturalWidth>0));
     await page.screenshot({path:path.join(root,"test-results/real-home.png"),fullPage:true});
     await page.locator("#site-search").fill("幽灵鲨");
     await page.locator("#site-search").press("Enter");
-    await page.waitForURL("**/search.html?*"); await page.waitForSelector(".expression-card");
+    await page.waitForURL("**/character.html?id=*"); await page.waitForSelector(".character-gallery .expression-card");
     const cid = data.characters.find(c=>c.name==="幽灵鲨").id;
     const count = data.instances.filter(i=>i.character_id===cid).length;
-    assert.equal(await page.locator("#result-count").textContent(), count+" 张表情");
+    assert.equal(await page.locator(".character-gallery .expression-card").count(), Math.min(count, 36));
+    assert.equal(await page.locator(".character-gallery-heading").textContent(), `表情图库共 ${count.toLocaleString("zh-CN")} 次收录`);
     await page.waitForFunction(()=>[...document.querySelectorAll(".crop-wrap img")].every(i=>i.complete && i.naturalWidth>0));
     assert(await page.locator(".crop-wrap img").evaluateAll(images=>images.every(image=>{
       const a=image.getBoundingClientRect(), b=image.parentElement.getBoundingClientRect();
@@ -57,6 +61,6 @@ const data = JSON.parse(fs.readFileSync(path.join(root, "publish/site/data/relea
     for(const url of ["/.env","/tools/export_public.py","/publish/export-report.json","/../character_index/database/index.sqlite"]){
       const response=await page.request.get("http://127.0.0.1:4174"+url);assert.equal(response.status(),404);
     }
-    console.log("Real release: public gallery, three ranking columns, separate search, exact episode number, actual images, previews, mobile and preview isolation passed");
+    console.log("Real release: canonical character totals/pages, rankings, exact episode number, images, previews, mobile and preview isolation passed");
   } finally { await browser.close(); }
 })().catch(e=>{console.error(e);process.exitCode=1;});

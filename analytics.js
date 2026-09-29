@@ -4,7 +4,7 @@
   const OPT_OUT_KEY = "rhodes-emote-analytics-opt-out";
   const SESSION_IDLE_MS = 30 * 60 * 1000;
   const ENTRY_CONTEXT_KEY = "rhodes-emote-analytics-entry";
-  const pageTypes = new Set(["home", "search", "instance", "about", "privacy", "notfound"]);
+  const pageTypes = new Set(["home", "search", "character", "instance", "about", "privacy", "notfound"]);
   const page = pageTypes.has(document.body.dataset.page)
     ? document.body.dataset.page
     : ({ "/": "home", "/index.html": "home", "/search.html": "search", "/instance.html": "instance", "/about.html": "about", "/privacy.html": "privacy", "/404.html": "notfound" }[location.pathname] || "other");
@@ -50,6 +50,7 @@
       if (referrer.origin !== location.origin) return "external";
       if (referrer.pathname === "/" || referrer.pathname === "/index.html") return "internal_home";
       if (referrer.pathname === "/search.html") return "internal_search";
+      if (referrer.pathname === "/character.html") return "internal_character";
       if (referrer.pathname === "/instance.html") return "internal_instance";
       return "unknown";
     } catch { return "unknown"; }
@@ -97,7 +98,7 @@
       if (saved && Date.now() - saved.at < 15 * 60 * 1000) return saved.context;
     } catch { /* Use the referrer category below. */ }
     const context = referrerContext();
-    return context === "internal_home" ? "home_ribbon" : context === "internal_search" ? "search_grid" : context === "internal_instance" ? "detail_related" : context;
+    return context === "internal_home" ? "home_ribbon" : context === "internal_search" ? "search_grid" : context === "internal_character" ? "character_gallery" : context === "internal_instance" ? "detail_related" : context;
   }
 
   function observeInstances(root, context) {
@@ -196,7 +197,7 @@
     if (instanceLink) {
       const card = instanceLink.closest("[data-instance]");
       if (card?.dataset.instance) {
-        const context = card.classList.contains("sticker") ? "home_ribbon" : "search_grid";
+        const context = card.classList.contains("sticker") ? "home_ribbon" : card.closest(".character-gallery") ? "character_gallery" : "search_grid";
         const detail = {
           object_type: "instance", object_id: card.dataset.instance,
           character_id: card.dataset.character, episode_id: card.dataset.episode, context,
