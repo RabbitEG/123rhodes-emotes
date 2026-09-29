@@ -56,7 +56,7 @@
     "note": "表情模式输入提示"
   },
   "search.placeholderEpisodes": {
-    "text": "输入角色名、篇目名或编号",
+    "text": "输入篇目名或编号",
     "note": "篇目模式输入提示"
   },
   "detail.pageTitle": {
@@ -195,6 +195,80 @@
   "character.empty": {
     "text": "这个角色目前还没有收录表情。",
     "note": "角色没有公开图片时的空状态"
+  },
+  "episode.pageTitle": {
+    "text": "篇目档案",
+    "note": "篇目实体页标题"
+  },
+  "episode.documentTitle": {
+    "text": "{episode} · 篇目档案",
+    "note": "篇目实体页浏览器标题",
+    "slots": [
+      "episode"
+    ]
+  },
+  "episode.description": {
+    "text": "查看篇目中的角色表情、发布时间和原漫画出处。",
+    "note": "篇目实体页搜索摘要"
+  },
+  "episode.kicker": {
+    "text": "篇目档案",
+    "note": "篇目实体页顶部标签"
+  },
+  "episode.back": {
+    "text": "返回搜索",
+    "note": "篇目实体页返回链接"
+  },
+  "episode.loading": {
+    "text": "正在整理篇目档案…",
+    "note": "篇目实体页加载状态"
+  },
+  "episode.unpublished": {
+    "text": "篇目资料暂时不可用。",
+    "note": "公开数据清单尚未发布"
+  },
+  "episode.failed": {
+    "text": "篇目档案暂时没能打开，请稍后重试。",
+    "note": "篇目实体页数据加载错误"
+  },
+  "episode.missing": {
+    "text": "没有找到这个篇目，可能已从当前公开图库中移除。",
+    "note": "篇目 ID 不存在或已不在公开索引中"
+  },
+  "episode.instanceCount": {
+    "text": "次收录",
+    "note": "篇目档案收录实例数单位"
+  },
+  "episode.characterCount": {
+    "text": "位角色",
+    "note": "篇目档案出场角色数单位"
+  },
+  "episode.publishedAt": {
+    "text": "发布日期",
+    "note": "篇目发布日期字段名"
+  },
+  "episode.charactersTitle": {
+    "text": "出场角色",
+    "note": "篇目档案角色列表标题"
+  },
+  "episode.readOriginal": {
+    "text": "前往泰拉记事社阅读原篇",
+    "note": "篇目档案官方来源链接"
+  },
+  "episode.galleryTitle": {
+    "text": "本篇表情",
+    "note": "篇目档案图库标题"
+  },
+  "episode.galleryCount": {
+    "text": "共 {count} 次收录",
+    "note": "篇目档案图库数量摘要",
+    "slots": [
+      "count"
+    ]
+  },
+  "episode.empty": {
+    "text": "这个篇目目前还没有收录表情。",
+    "note": "篇目没有公开图片时的空状态"
   },
   "search.suggestionLabel": {
     "text": "搜索建议",

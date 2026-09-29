@@ -96,6 +96,16 @@ const release = {
 
     await page.goto(base + "/character.html?id=vina");
     await page.waitForURL("**/character.html?id=push");
+    await page.goto(base);
+    await page.locator('[data-mode="episodes"]').click();
+    await page.locator("#site-search").fill("001_测试篇");
+    candidate = page.locator(".search-suggestion").filter({ hasText: "001_测试篇" });
+    await candidate.waitFor({ timeout: 10000 });
+    await candidate.click();
+    await page.waitForURL("**/episode.html?id=e1");
+    await page.locator(".episode-gallery .expression-card").waitFor();
+    assert.equal(await page.locator(".episode-profile h1").textContent(), "001_测试篇");
+    assert.equal(await page.locator(".episode-gallery .expression-card").count(), 6);
     assert.deepEqual(errors, []);
     console.log("Browser search: fuzzy and alter-name suggestions open canonical role pages; forms and legacy IDs resolve to earlier canonical names");
   } finally {

@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f5f2ff"><meta name="description" content="{{episode.description}}"><title>{{episode.pageTitle}} · {{site.name}}</title><link rel="icon" href="/assets/star.svg" type="image/svg+xml"><link rel="stylesheet" href="/styles.css?v={{asset_version}}"><script src="/background.js?v={{asset_version}}" defer></script><script src="/analytics.js?v={{asset_version}}" defer></script><script src="/stats.js?v={{asset_version}}" defer></script><script src="/app.js?v={{asset_version}}" defer></script></head>
+<body data-page="episode" data-error="{{episode.failed}}">
+{{>header}}
+<main id="main" class="character-page episode-page wrap">
+  <div class="instance-page-nav"><a class="back-link" href="/search.html?mode=episodes" id="episode-back">← {{episode.back}}</a><span class="status-pill">{{episode.kicker}}</span></div>
+  <p id="episode-status" class="detail-status" role="status">{{episode.loading}}</p>
+  <button id="retry" class="pill" type="button" hidden>{{search.retry}}</button>
+  <div id="episode-detail" hidden></div>
+</main>
+{{>footer}}
+<script id="site-copy" type="application/json">{{copy_json}}</script>
+</body></html>

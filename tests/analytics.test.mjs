@@ -26,6 +26,7 @@ assert.equal("ip" in normalized, false);
 assert.equal("user_agent" in normalized, false);
 assert.equal(normalizeAnalyticsEvent(validEvent({ event_type: "arbitrary_text" })), null);
 assert.equal(normalizeAnalyticsEvent(validEvent({ page_type: "character", context: "character_gallery" }))?.page_type, "character");
+assert.equal(normalizeAnalyticsEvent(validEvent({ page_type: "episode", context: "internal_episode", object_type: "episode", object_id: "057", episode_id: "057" }))?.page_type, "episode");
 assert.equal(normalizeAnalyticsEvent(validEvent({ object_type: "instance", object_id: "../secret" })), null);
 assert.deepEqual([0, 1, 5, 6, 20, 21, 100, 101].map(resultBucket), ["zero", "1_5", "1_5", "6_20", "6_20", "21_100", "21_100", "101_plus"]);
 

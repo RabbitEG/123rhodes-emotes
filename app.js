@@ -13,6 +13,7 @@
   const isSearchPage = document.body.dataset.page === "search";
   const isInstancePage = document.body.dataset.page === "instance";
   const isCharacterPage = document.body.dataset.page === "character";
+  const isEpisodePage = document.body.dataset.page === "episode";
   let release, stats, config = {}, state, visible = 36, matches = [], dataBase = "";
   let suggestionItems = [], activeSuggestion = -1;
   let pinyinLoadPromise = null, suggestionRevision = 0, searchPendingKey = "";
@@ -36,8 +37,8 @@
     }
     const exactCharacters = [...stats.characters.values()].filter(character => [character.name, ...(character.aliases ?? [])].some(name => normalize(name) === normalized));
     if (exactCharacters.length === 1) return { query_kind: "known_character", object_type: "character", object_id: exactCharacters[0].id };
-    const exactEpisode = [...stats.episodes.values()].find(episode => normalize(episode.name) === normalized || normalize(episode.id) === normalized);
-    if (exactEpisode) return { query_kind: "known_episode", object_type: "episode", object_id: exactEpisode.id };
+    const episode = exactEpisode(query);
+    if (episode) return { query_kind: "known_episode", object_type: "episode", object_id: episode.id };
     return { query_kind: "free_text" };
   }
   function trackSearchResults() {
@@ -76,8 +77,18 @@
     }
     return normalize(e.name).includes(query) || normalize(e.id) === query;
   }
+  function exactEpisode(query) {
+    const normalized = normalize(query), value = String(query ?? "").trim();
+    if (!normalized || !stats) return null;
+    const exact = [...stats.episodes.values()].filter(episode => normalize(episode.name) === normalized || normalize(episode.id) === normalized);
+    if (exact.length === 1) return exact[0];
+    if (!/^\d+$/.test(value)) return null;
+    const numbered = [...stats.episodes.values()].filter(episode => matchesEpisode(episode, value));
+    return numbered.length === 1 ? numbered[0] : null;
+  }
   function instanceURL(item) { return "/instance.html?id=" + encodeURIComponent(item.id); }
   function characterURL(character) { return "/character.html?id=" + encodeURIComponent(character.id); }
+  function episodeURL(episode) { return "/episode.html?id=" + encodeURIComponent(episode.id); }
   function characterById(value) {
     const key = String(value ?? "");
     return stats?.characters.get(key) ?? stats?.characters.get(release?.canonical_id_redirects?.[key]);
@@ -96,6 +107,10 @@
   function openCharacter(id) {
     const character = characterById(id);
     if (character) location.assign(characterURL(character));
+  }
+  function openEpisode(id) {
+    const episode = stats?.episodes.get(String(id));
+    if (episode) location.assign(episodeURL(episode));
   }
   function suggestionScore(name, query, alias = false) {
     const value = normalize(name);
@@ -203,9 +218,6 @@
   function selectSuggestion(index) {
     const suggestion = suggestionItems[index];
     if (!suggestion) return;
-    const patch = suggestion.kind === "episode"
-      ? { mode: "episodes", q: suggestion.name, episode: suggestion.id }
-      : null;
     window.RhodesAnalytics?.track("suggestion_select", {
       object_type: suggestion.kind, object_id: suggestion.id,
       character_id: suggestion.kind === "character" ? suggestion.id : "",
@@ -215,16 +227,16 @@
     });
     closeSuggestions();
     if (suggestion.kind === "character") openCharacter(suggestion.id);
-    else go(patch, true);
+    else openEpisode(suggestion.id);
     closeSuggestions();
   }
   function image(path, alt, eager = false) {
     const url = assetPath(path);
     return url ? `<img src="${escape(publicAsset(url))}" alt="${escape(alt)}" loading="${eager ? "eager" : "lazy"}" decoding="async">` : `<span class="image-missing">${text("card.unavailable")}</span>`;
   }
-  function cropCard(item) {
+  function cropCard(item, showEpisode = true) {
     const c = stats.characters.get(item.character_id), e = stats.episodes.get(item.episode_id);
-    return `<article class="expression-card" data-instance="${escape(item.id)}" data-character="${escape(c.id)}" data-episode="${escape(e.id)}"><a class="crop-wrap" href="${escape(instanceURL(item))}" aria-label="${text("detail.open", { character: c.name })}">${image(item.crop_url, t("card.cropAlt", { character: c.name }))}</a><div class="expression-caption"><button class="name-button" data-character="${escape(c.id)}">${escape(c.name)}</button><button class="episode-button" data-episode="${escape(e.id)}">${escape(e.name)}</button></div><div class="source-detail"><button type="button" class="source-toggle" aria-expanded="false" aria-controls="preview-${escape(item.id)}">${text("card.source")} ↗</button><div class="source-peek" id="preview-${escape(item.id)}">${item.source_preview_url ? image(item.source_preview_url, t("card.previewAlt", { episode: e.name })) : `<p>${text("card.previewMissing")}</p>`}<strong>${escape(e.name)}</strong></div></div></article>`;
+    return `<article class="expression-card" data-instance="${escape(item.id)}" data-character="${escape(c.id)}" data-episode="${escape(e.id)}"><a class="crop-wrap" href="${escape(instanceURL(item))}" aria-label="${text("detail.open", { character: c.name })}">${image(item.crop_url, t("card.cropAlt", { character: c.name }))}</a><div class="expression-caption"><button class="name-button" data-character="${escape(c.id)}">${escape(c.name)}</button>${showEpisode ? `<button class="episode-button" data-episode="${escape(e.id)}">${escape(e.name)}</button>` : ""}</div><div class="source-detail"><button type="button" class="source-toggle" aria-expanded="false" aria-controls="preview-${escape(item.id)}">${text("card.source")} ↗</button><div class="source-peek" id="preview-${escape(item.id)}">${item.source_preview_url ? image(item.source_preview_url, t("card.previewAlt", { episode: e.name })) : `<p>${text("card.previewMissing")}</p>`}<strong>${escape(e.name)}</strong></div></div></article>`;
   }
   function renderInstance() {
     const status = $("#instance-status"), container = $("#instance-detail");
@@ -285,12 +297,36 @@
     container.innerHTML = `<header class="paper-card character-profile"><div class="character-heading"><span class="instance-kicker">${text("character.kicker")}</span><h1>${escape(name)}</h1></div><div class="character-summary"><span class="character-stat"><strong>${number(instances.length)}</strong>${text("character.instanceCount")}</span><span class="character-stat"><strong>${number(episodes.length)}</strong>${text("character.episodeCount")}</span></div>${episodes.length ? `<section class="character-episodes"><h2>${text("character.episodesTitle")}</h2><div class="instance-character-links">${episodes.map(episode => `<button type="button" data-episode="${escape(episode.id)}">${escape(episode.name)}</button>`).join("")}</div></section>` : ""}</header><section class="character-gallery-section"><div class="character-gallery-heading"><h2>${text("character.galleryTitle")}</h2><span>${text("character.galleryCount", { count: number(instances.length) })}</span></div>${instances.length ? `<div class="gallery-grid character-gallery">${instances.map(cropCard).join("")}</div>` : `<div class="empty-result character-empty"><span aria-hidden="true">✧</span><p>${text("character.empty")}</p></div>`}</section>`;
     window.RhodesAnalytics?.observeInstances($(".character-gallery", container), "character_gallery");
   }
+  function renderEpisode() {
+    const status = $("#episode-status"), container = $("#episode-detail");
+    if (!status || !container || !release || !stats) return;
+    const requestedId = new URLSearchParams(location.search).get("id");
+    const episode = stats.episodes.get(String(requestedId ?? ""));
+    if (!episode) {
+      status.hidden = false;
+      status.textContent = t("episode.missing");
+      container.hidden = true;
+      document.title = t("episode.pageTitle") + " · " + t("site.name");
+      return;
+    }
+    const instances = release.instances.filter(item => item.episode_id === episode.id)
+      .sort((a, b) => String(a.sort_key ?? a.id).localeCompare(String(b.sort_key ?? b.id), "zh-CN", { numeric: true }));
+    const characters = [...episode.characters].map(id => stats.characters.get(id)).filter(Boolean)
+      .sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+    const sourceURL = officialURL(episode.official_url);
+    const name = episode.name;
+    document.title = t("episode.documentTitle", { episode: name });
+    status.hidden = true;
+    container.hidden = false;
+    container.innerHTML = `<header class="paper-card character-profile episode-profile"><div class="character-heading"><span class="instance-kicker">${text("episode.kicker")}</span><h1>${escape(name)}</h1></div><div class="character-summary"><span class="character-stat"><strong>${number(instances.length)}</strong>${text("episode.instanceCount")}</span><span class="character-stat"><strong>${number(characters.length)}</strong>${text("episode.characterCount")}</span>${episode.published_at ? `<span class="character-stat"><strong>${escape(episode.published_at)}</strong>${text("episode.publishedAt")}</span>` : ""}</div>${characters.length ? `<section class="character-episodes"><h2>${text("episode.charactersTitle")}</h2><div class="instance-character-links">${characters.map(character => `<button type="button" data-character="${escape(character.id)}">${escape(character.name)}</button>`).join("")}</div></section>` : ""}${sourceURL ? `<div class="episode-source-link"><a class="primary instance-official-link" data-source-episode="${escape(episode.id)}" href="${escape(sourceURL)}" target="_blank" rel="noopener noreferrer">${text("episode.readOriginal")} <span aria-hidden="true">↗</span></a></div>` : ""}</header><section class="character-gallery-section"><div class="character-gallery-heading"><h2>${text("episode.galleryTitle")}</h2><span>${text("episode.galleryCount", { count: number(instances.length) })}</span></div>${instances.length ? `<div class="gallery-grid character-gallery episode-gallery">${instances.map(item => cropCard(item, false)).join("")}</div>` : `<div class="empty-result character-empty"><span aria-hidden="true">✧</span><p>${text("episode.empty")}</p></div>`}</section>`;
+    window.RhodesAnalytics?.observeInstances($(".episode-gallery", container), "episode_gallery");
+  }
   function episodeCard(e) {
     const first = release.instances.find(item => item.episode_id === e.id);
     return `<article class="episode-card" data-episode="${escape(e.id)}">${first ? `<button class="episode-cover" data-episode="${escape(e.id)}" aria-label="${text("card.open")} · ${escape(e.name)}">${image(first.crop_url, e.name)}</button>` : '<span class="episode-cover empty-cover" aria-hidden="true">✦</span>'}<div><h3><button class="name-button" data-episode="${escape(e.id)}">${escape(e.name)}</button></h3><p>${text("card.episodeMeta", { crops: e.count, characters: e.characters.size })}</p><div class="episode-characters">${[...e.characters].slice(0, 5).map(cid => `<button data-character="${escape(cid)}">${escape(stats.characters.get(cid).name)}</button>`).join("")}</div><a href="${escape(officialURL(e.official_url))}" target="_blank" rel="noopener noreferrer">${text("card.official")}</a></div></article>`;
   }
   function renderSearch() {
-    if (isInstancePage || !$("#site-search")) return;
+    if (isInstancePage || isEpisodePage || !$("#site-search")) return;
     $("#site-search").value = state.q;
     $("#site-search").placeholder = t(state.mode === "expressions" ? "search.placeholderExpressions" : "search.placeholderEpisodes");
     $$("[data-mode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode)));
@@ -306,6 +342,17 @@
         location.replace(characterURL(character));
         return;
       }
+    }
+    if (!state.character && !state.episode && !state.pair && state.q) {
+      const episode = exactEpisode(state.q);
+      if (episode) {
+        location.replace(episodeURL(episode));
+        return;
+      }
+    }
+    if (state.episode && !state.character && !state.pair && stats.episodes.has(state.episode)) {
+      location.replace(episodeURL(stats.episodes.get(state.episode)));
+      return;
     }
     if (isSearchPage) $("#search-status").textContent = t("search.crops", { count: number(release.instances.length) });
     if (!isSearchPage) return;
@@ -429,7 +476,7 @@
     renderRankingList("noHome", "#guest-ranking", null);
   }
   async function loadSearchRanking() {
-    if (!stats || isSearchPage || isInstancePage) return;
+    if (!stats || isSearchPage || isInstancePage || isEpisodePage) return;
     try {
       const response = await fetch("/api/analytics/search-ranking", { cache: "no-store" });
       if (!response.ok) return;
@@ -543,7 +590,7 @@
     return items;
   }
   function drawRibbon() {
-    if (isSearchPage || isInstancePage || !release?.instances.length || config.carousel?.enabled === false) return;
+    if (isSearchPage || isInstancePage || isEpisodePage || !release?.instances.length || config.carousel?.enabled === false) return;
     const max = Math.max(4, Math.min(32, Number(config.carousel?.maxItems) || 16));
     const byId = new Map(release.instances.map(item => [item.id, item]));
     let items = (release.featured_instance_ids || []).map(id => byId.get(String(id))).filter(Boolean);
@@ -594,24 +641,25 @@
     requestAnimationFrame(animateRibbon);
   }
   async function load() {
-    const status = $("#instance-status") || $("#character-status") || $("#search-status"), retry = $("#retry");
+    const status = $("#instance-status") || $("#character-status") || $("#episode-status") || $("#search-status"), retry = $("#retry");
     if (retry) retry.hidden = true;
-    if (status) status.textContent = t(isInstancePage ? "detail.loading" : isCharacterPage ? "character.loading" : "search.loading");
+    if (status) status.textContent = t(isInstancePage ? "detail.loading" : isCharacterPage ? "character.loading" : isEpisodePage ? "episode.loading" : "search.loading");
     try {
       const expectedOrigin = dataBase || location.origin;
       const url = new URL(config.releaseManifest || "/data/release.json", expectedOrigin);
       if (url.origin !== new URL(expectedOrigin).origin) throw new Error("Release origin mismatch");
       const response = await fetch(url, { cache: "no-cache" });
-      if (response.status === 404) { if (status) status.textContent = t(isInstancePage ? "detail.unpublished" : isCharacterPage ? "character.unpublished" : "search.unpublished"); return; }
+      if (response.status === 404) { if (status) status.textContent = t(isInstancePage ? "detail.unpublished" : isCharacterPage ? "character.unpublished" : isEpisodePage ? "episode.unpublished" : "search.unpublished"); return; }
       if (!response.ok) throw new Error("Release unavailable");
       release = validate(await response.json()); stats = analyze(release);
       window.RhodesAnalytics?.setReleaseId(release.release_id);
       if (isInstancePage) renderInstance();
       else if (isCharacterPage) renderCharacter();
+      else if (isEpisodePage) renderEpisode();
       else { renderSearch(); if (isSearchPage) trackSearchResults(); else { renderStats(); void loadSearchRanking(); drawRibbon(); } }
     } catch (error) {
       release = undefined; stats = undefined;
-      if (status) status.textContent = t(isInstancePage ? "detail.failed" : isCharacterPage ? "character.failed" : "search.failed");
+      if (status) status.textContent = t(isInstancePage ? "detail.failed" : isCharacterPage ? "character.failed" : isEpisodePage ? "episode.failed" : "search.failed");
       if (retry) retry.hidden = false;
       window.RhodesAnalytics?.track("release_error", { context: "fetch_failed" });
       console.warn("Public release unavailable:", error.message);
@@ -650,6 +698,8 @@
           const character = exactCharacter(query);
           if (character) { location.assign(characterURL(character)); return; }
         }
+        const episode = exactEpisode(query);
+        if (episode) { openEpisode(episode.id); return; }
         go({ q: query, browse: !query }, true);
       });
     }
@@ -661,7 +711,7 @@
     $("#clear-search")?.addEventListener("click", () => go({}));
     $("#load-more")?.addEventListener("click", () => { visible += Number(config.pageSize) || 36; renderMatches(); });
     $("#ranking-kind")?.addEventListener("change", renderRanking); $("#missing-ranking-kind")?.addEventListener("change", renderRanking); $("#retry")?.addEventListener("click", load);
-    $("#detail-back")?.addEventListener("click", event => {
+    $("#detail-back, #character-back, #episode-back")?.addEventListener("click", event => {
       try {
         const previous = new URL(document.referrer);
         if (previous.origin === location.origin && previous.pathname === "/search.html") { event.preventDefault(); history.back(); }
@@ -689,7 +739,7 @@
       if (!b) return;
       if (b.dataset.recordCharacter) go({ mode: "expressions", character: b.dataset.recordCharacter, episode: b.dataset.recordEpisode }, true);
       else if (b.dataset.character) openCharacter(b.dataset.character);
-      else if (b.dataset.episode) go({ mode: "expressions", episode: b.dataset.episode }, true);
+      else if (b.dataset.episode) openEpisode(b.dataset.episode);
       else if (b.dataset.pair) go({ mode: "expressions", pair: b.dataset.pair }, true);
     });
     document.addEventListener("error", event => {
@@ -737,7 +787,7 @@
     } catch { config = {}; }
     carouselMode = config.carousel?.mode === "sequential" ? "sequential" : "random";
     visible = Number(config.pageSize) || 36; await load();
-    if (!isSearchPage && !isInstancePage && config.carousel?.enabled !== false) requestAnimationFrame(animateRibbon);
+    if (!isSearchPage && !isInstancePage && !isEpisodePage && config.carousel?.enabled !== false) requestAnimationFrame(animateRibbon);
   }
   init().catch(() => { $("#search-status").textContent = document.body.dataset.error; });
 })();

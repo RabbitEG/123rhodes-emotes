@@ -49,9 +49,10 @@ const expectedCharacterCount = data.characters.filter(character => !canonicalDup
     await page.locator(".source-peek img").first().waitFor({state:"visible"});
     await page.screenshot({path:path.join(root,"test-results/real-search.png"),fullPage:true});
     await page.goto("http://127.0.0.1:4174/search.html?mode=episodes&q=57");
-    await page.waitForSelector(".episode-card");
-    assert.equal(await page.locator(".episode-card").count(),1);
-    assert((await page.locator(".episode-card").textContent()).includes("057_巡林者篇"));
+    await page.waitForURL("**/episode.html?id=*");
+    await page.waitForSelector(".episode-profile");
+    assert((await page.locator(".episode-profile h1").textContent()).includes("057_巡林者篇"));
+    assert(await page.locator(".episode-gallery .expression-card").count() > 0);
     await page.setViewportSize({width:390,height:844});
     await page.goto("http://127.0.0.1:4174/");
     await page.waitForSelector(".legend-row");
