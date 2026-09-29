@@ -129,6 +129,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     assert.equal(await page.locator(".expression-card").count(), 36);
     await page.locator("#load-more").click();
     assert.equal(await page.locator(".expression-card").count(), 40);
+    assert.equal(await page.locator(".expression-card").first().locator(".episode-button").count(), 1, "The first search result should retain its episode label");
     await page.locator(".expression-card").first().hover();
     await page.locator(".source-peek img").first().waitFor({ state: "visible", timeout: 5000 });
     assert(await page.locator(".source-peek img").first().isVisible(), "Desktop hover must show original-source preview");
@@ -160,6 +161,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     const characterEpisodeChips = page.locator(".character-episodes [data-episode]");
     assert.deepEqual(await characterEpisodeChips.evaluateAll(elements => elements.map(element => element.dataset.episode)), ["e1", "e0"], "Canonical character's alter home episode should be listed first");
     assert.equal(await characterEpisodeChips.first().locator(".character-home-episode-label").textContent(), "本篇", "Home episode should be visibly labeled and styled differently");
+    assert.equal(await page.locator(".character-gallery .expression-card").first().locator(".episode-button").textContent(), "057_维娜·维多利亚篇", "The first character gallery card should show its episode");
     servedData = browserData;
     await page.goBack();
     await page.waitForSelector(".episode-card");
