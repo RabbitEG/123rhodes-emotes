@@ -10,6 +10,8 @@ const characters = [
   { id: "wrong-order", name: "卡涅利安", aliases: [], count: 1 },
   { id: "kluosi", name: "克洛丝", aliases: [], count: 3 },
   { id: "doctor", name: "博士", aliases: [], count: 2 },
+  { id: "wrong-two-char-typo", name: "博土", aliases: [], count: 1 },
+  { id: "lingzhi", name: "灵知", aliases: [], count: 1 },
 ];
 const episodes = [
   { id: "057", name: "057_艾雅法拉篇", count: 5 },
@@ -28,9 +30,11 @@ assert.equal(find("阿雅法拉")[0]?.id, "eyfl", "a one-character Chinese typo 
 assert.equal(find("安洁丽娜")[0]?.id, "anjl", "same-sound Chinese spelling should be found through pinyin");
 assert(!find("安洁丽娜").some(item => item.id === "wrong-order"), "pinyin edit distance must not match similarly composed syllables in a different order");
 assert.equal(find("克洛斯")[0]?.id, "kluosi", "same-sound spelling variants should be found");
+assert.equal(find("灵芝")[0]?.id, "lingzhi", "two-character exact-pinyin typo should find the canonical operator");
+assert(!find("博士").some(item => item.id === "wrong-two-char-typo"), "two-character queries must not use general edit-distance matching");
 assert.equal(find("aiyafala")[0]?.id, "eyfl", "full pinyin input should find a Chinese name");
 assert.equal(find("ayfl")[0]?.id, "eyfl", "pinyin initials should find a Chinese name");
-assert.equal(find("阿雅").length, 0, "short Chinese queries must not trigger fuzzy matches");
+assert.equal(find("阿").length, 0, "single-character Chinese queries must not trigger fuzzy matches");
 
 const alterAliasRelease = RhodesStats.validate({
   characters: [
@@ -78,4 +82,4 @@ assert(canonicalMerge.canonical_id_redirects.vina === "push", "old public IDs sh
 const episodeMatches = find("aiyafala", "episodes");
 assert(episodeMatches.some(item => item.id === "057" && item.kind === "episode"), "pinyin in episode mode should match episode titles");
 assert(episodeMatches.some(item => item.id === "eyfl" && item.kind === "character"), "episode mode should retain character suggestions");
-console.log("Search matching: typo, pinyin, initials, dash/case normalization, and short-query guard passed");
+console.log("Search matching: typo, pinyin, two-character exact-pinyin, initials, normalization, and short-query guard passed");

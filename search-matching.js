@@ -71,7 +71,8 @@
 
   function findFuzzy(query, mode, characters, episodes, pinyinApi, limit = 8) {
     const q = normalize(query);
-    if (!q || !pinyinApi?.pinyin || Array.from(q).length < 3) return [];
+    const queryLength = Array.from(q).length;
+    if (!q || !pinyinApi?.pinyin || queryLength < 2) return [];
 
     const queryHasHan = HAN.test(q);
     const queryHasLatin = LATIN_OR_NUMBER.test(q);
@@ -98,7 +99,9 @@
 
         if (!qPinyin || !variant.pinyin.full) continue;
         if (queryHasHan) {
-          const distanceLimit = qPinyin.length >= 9 ? 2 : qPinyin.length >= 5 ? 1 : 0;
+          // Two-character queries only get exact full-pinyin matches; broader
+          // edit-distance matching is too noisy for short character names.
+          const distanceLimit = queryLength === 2 ? 0 : qPinyin.length >= 9 ? 2 : qPinyin.length >= 5 ? 1 : 0;
           // A full Chinese name should compare against a full pinyin name.
           // Substring matching here creates misleading near-homophones whose
           // syllables happen to appear in a different order in another name.
