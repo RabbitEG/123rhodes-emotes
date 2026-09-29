@@ -149,6 +149,15 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     assert.equal(await page.locator(".episode-gallery .expression-card").count(), 6);
     servedData = {
       ...browserData,
+      characters: browserData.characters.map(character => character.id === "c1" ? { ...character, home_episode_ids: ["e0"] } : character),
+    };
+    await page.goto(base + "/episode.html?id=e0");
+    await page.waitForSelector(".episode-profile .character-episodes [data-character]");
+    const episodeCharacterChips = page.locator(".episode-profile .character-episodes [data-character]");
+    assert.deepEqual(await episodeCharacterChips.evaluateAll(elements => elements.slice(0, 2).map(element => element.dataset.character)), ["c1", "c0"], "Home character should precede other characters on episode profile");
+    assert.equal(await episodeCharacterChips.first().locator(".home-association-label").textContent(), "本篇", "Home character should use the shared home styling");
+    servedData = {
+      ...browserData,
       characters: [...browserData.characters, { id: "push", name: "推进之王", aliases: [], home_episode_ids: [] }],
       episodes: browserData.episodes.map((episode, index) => index === 1 ? { ...episode, name: "057_维娜·维多利亚篇" } : episode),
       instances: [...browserData.instances,
@@ -160,7 +169,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     await page.waitForSelector(".character-profile");
     const characterEpisodeChips = page.locator(".character-episodes [data-episode]");
     assert.deepEqual(await characterEpisodeChips.evaluateAll(elements => elements.map(element => element.dataset.episode)), ["e1", "e0"], "Canonical character's alter home episode should be listed first");
-    assert.equal(await characterEpisodeChips.first().locator(".character-home-episode-label").textContent(), "本篇", "Home episode should be visibly labeled and styled differently");
+    assert.equal(await characterEpisodeChips.first().locator(".home-association-label").textContent(), "本篇", "Home episode should be visibly labeled and styled differently");
     assert.equal(await page.locator(".character-gallery .expression-card").first().locator(".episode-button").textContent(), "057_维娜·维多利亚篇", "The first character gallery card should show its episode");
     servedData = browserData;
     await page.goBack();

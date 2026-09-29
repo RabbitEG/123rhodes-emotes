@@ -293,7 +293,7 @@
         a.name.localeCompare(b.name, "zh-CN", { numeric: true }));
     const episodeLinks = episodes.map(episode => {
       const isHomeEpisode = character.homeEpisodes.has(episode.id);
-      return `<button type="button" class="character-episode-chip${isHomeEpisode ? " character-home-episode" : ""}" data-episode="${escape(episode.id)}">${isHomeEpisode ? `<span class="character-home-episode-label">${text("character.homeBadge")}</span>` : ""}${escape(episode.name)}</button>`;
+      return `<button type="button" class="character-episode-chip${isHomeEpisode ? " home-association" : ""}" data-episode="${escape(episode.id)}">${isHomeEpisode ? `<span class="home-association-label">${text("character.homeBadge")}</span>` : ""}${escape(episode.name)}</button>`;
     }).join("");
     const name = characterDisplayName(character);
     document.title = t("character.documentTitle", { character: name });
@@ -317,13 +317,18 @@
     const instances = release.instances.filter(item => item.episode_id === episode.id)
       .sort((a, b) => String(a.sort_key ?? a.id).localeCompare(String(b.sort_key ?? b.id), "zh-CN", { numeric: true }));
     const characters = [...episode.characters].map(id => stats.characters.get(id)).filter(Boolean)
-      .sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+      .sort((a, b) => Number(b.homeEpisodes.has(episode.id)) - Number(a.homeEpisodes.has(episode.id)) ||
+        a.name.localeCompare(b.name, "zh-CN", { numeric: true }));
+    const characterLinks = characters.map(character => {
+      const isHomeCharacter = character.homeEpisodes.has(episode.id);
+      return `<button type="button" class="${isHomeCharacter ? "home-association" : ""}" data-character="${escape(character.id)}">${isHomeCharacter ? `<span class="home-association-label">${text("character.homeBadge")}</span>` : ""}${escape(character.name)}</button>`;
+    }).join("");
     const sourceURL = officialURL(episode.official_url);
     const name = episode.name;
     document.title = t("episode.documentTitle", { episode: name });
     status.hidden = true;
     container.hidden = false;
-    container.innerHTML = `<header class="paper-card character-profile episode-profile"><div class="character-heading"><span class="instance-kicker">${text("episode.kicker")}</span><h1>${escape(name)}</h1></div><div class="character-summary"><span class="character-stat"><strong>${number(instances.length)}</strong>${text("episode.instanceCount")}</span><span class="character-stat"><strong>${number(characters.length)}</strong>${text("episode.characterCount")}</span>${episode.published_at ? `<span class="character-stat"><strong>${escape(episode.published_at)}</strong>${text("episode.publishedAt")}</span>` : ""}</div>${characters.length ? `<section class="character-episodes"><h2>${text("episode.charactersTitle")}</h2><div class="instance-character-links">${characters.map(character => `<button type="button" data-character="${escape(character.id)}">${escape(character.name)}</button>`).join("")}</div></section>` : ""}${sourceURL ? `<div class="episode-source-link"><a class="primary instance-official-link" data-source-episode="${escape(episode.id)}" href="${escape(sourceURL)}" target="_blank" rel="noopener noreferrer">${text("episode.readOriginal")} <span aria-hidden="true">↗</span></a></div>` : ""}</header><section class="character-gallery-section"><div class="character-gallery-heading"><h2>${text("episode.galleryTitle")}</h2><span>${text("episode.galleryCount", { count: number(instances.length) })}</span></div>${instances.length ? `<div class="gallery-grid character-gallery episode-gallery">${instances.map(item => cropCard(item, false)).join("")}</div>` : `<div class="empty-result character-empty"><span aria-hidden="true">✧</span><p>${text("episode.empty")}</p></div>`}</section>`;
+    container.innerHTML = `<header class="paper-card character-profile episode-profile"><div class="character-heading"><span class="instance-kicker">${text("episode.kicker")}</span><h1>${escape(name)}</h1></div><div class="character-summary"><span class="character-stat"><strong>${number(instances.length)}</strong>${text("episode.instanceCount")}</span><span class="character-stat"><strong>${number(characters.length)}</strong>${text("episode.characterCount")}</span>${episode.published_at ? `<span class="character-stat"><strong>${escape(episode.published_at)}</strong>${text("episode.publishedAt")}</span>` : ""}</div>${characters.length ? `<section class="character-episodes"><h2>${text("episode.charactersTitle")}</h2><div class="instance-character-links">${characterLinks}</div></section>` : ""}${sourceURL ? `<div class="episode-source-link"><a class="primary instance-official-link" data-source-episode="${escape(episode.id)}" href="${escape(sourceURL)}" target="_blank" rel="noopener noreferrer">${text("episode.readOriginal")} <span aria-hidden="true">↗</span></a></div>` : ""}</header><section class="character-gallery-section"><div class="character-gallery-heading"><h2>${text("episode.galleryTitle")}</h2><span>${text("episode.galleryCount", { count: number(instances.length) })}</span></div>${instances.length ? `<div class="gallery-grid character-gallery episode-gallery">${instances.map(item => cropCard(item, false)).join("")}</div>` : `<div class="empty-result character-empty"><span aria-hidden="true">✧</span><p>${text("episode.empty")}</p></div>`}</section>`;
     window.RhodesAnalytics?.observeInstances($(".episode-gallery", container), "episode_gallery");
   }
   function episodeCard(e) {
