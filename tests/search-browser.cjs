@@ -16,8 +16,12 @@ const release = {
     { id: "lingzhi", name: "灵知", aliases: [], is_operator: true },
     { id: "sora", name: "空爆", aliases: [], is_operator: true, stars: 3 },
     { id: "thunder-sora", name: "雷狼龙S空爆", aliases: [], is_operator: true, stars: 5 },
+    { id: "empty-character", name: "暂无表情条目", aliases: [], is_operator: true },
   ],
-  episodes: [{ id: "e1", name: "001_测试篇", order: 1, official_url: "https://comic.hypergryph.com/comic/6253/test" }],
+  episodes: [
+    { id: "e1", name: "001_测试篇", order: 1, official_url: "https://comic.hypergryph.com/comic/6253/test" },
+    { id: "e2", name: "002_空篇", order: 2, official_url: "https://comic.hypergryph.com/comic/6253/empty" },
+  ],
   instances: [
     { id: "i1", character_id: "eyfl", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "001" },
     { id: "i2", character_id: "star-source", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "002" },
@@ -26,6 +30,7 @@ const release = {
     { id: "i5", character_id: "phantom", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "005" },
     { id: "i6", character_id: "booze", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "006" },
     { id: "i7", character_id: "lingzhi", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "007" },
+    { id: "i8", character_id: "sora", episode_id: "e2", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "008" },
   ],
   operator_forms: [
     { character_id: "push", is_alter: false, implementation_date: "2019-04-30" },
@@ -55,6 +60,16 @@ const release = {
 
     await page.goto(base);
     await page.locator(".legend-row").first().waitFor();
+    await page.locator("#site-search").fill("暂无表情条目");
+    await page.locator("#search-suggestions").waitFor({ state: "hidden" });
+    assert.equal(await page.locator(".search-suggestion").count(), 0, "Characters with no expression crops should not be suggested");
+
+    await page.locator('[data-mode="episodes"]').click();
+    await page.locator("#site-search").fill("002_空篇");
+    await page.locator("#search-suggestions").waitFor({ state: "hidden" });
+    assert.equal(await page.locator(".search-suggestion").count(), 0, "Episodes with no expression crops should not be suggested");
+
+    await page.goto(base);
     await page.locator("#site-search").fill("阿雅法拉");
     let candidate = page.locator(".search-suggestion").filter({ hasText: "艾雅法拉" });
     await candidate.waitFor({ timeout: 10000 });

@@ -149,6 +149,14 @@
     const category = value === query ? 0 : value.startsWith(query) ? 1 : 2;
     return category + (alias ? 3 : 0) + Math.min(value.indexOf(query), 999) / 1000;
   }
+  function hasSuggestionContent(suggestion) {
+    const item = suggestion?.item;
+    if (!item) return false;
+    const count = suggestion.kind === "episode"
+      ? item.count
+      : state.mode === "episodes" ? item.episodes?.size : item.count;
+    return Number.isFinite(Number(count)) && Number(count) > 0;
+  }
   function collectSuggestions(query, mode) {
     const characters = [...stats.characters.values()].map(character => {
       const alternateNames = new Set((character.alter_names ?? []).map(normalize));
@@ -226,7 +234,7 @@
   function renderSuggestionItems(items) {
     const input = $("#site-search"), box = $("#search-suggestions");
     if (!input || !box) return;
-    suggestionItems = items;
+    suggestionItems = items.filter(hasSuggestionContent);
     if (!suggestionItems.length) { closeSuggestions(); return; }
     activeSuggestion = -1;
     input.removeAttribute("aria-activedescendant");
@@ -251,7 +259,7 @@
     const query = normalize(input.value);
     const revision = ++suggestionRevision;
     if (!release || !stats || !query || document.activeElement !== input) { closeSuggestions(); return; }
-    const direct = collectSuggestions(query, state.mode);
+    const direct = collectSuggestions(query, state.mode).filter(hasSuggestionContent);
     if (direct.length) { renderSuggestionItems(direct); return; }
     closeSuggestions();
     if (Array.from(query).length < 2 || !window.RhodesSearch?.findFuzzy) return;
