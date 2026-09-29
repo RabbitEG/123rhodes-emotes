@@ -71,6 +71,7 @@ const browserData = {
     { character_id: "c0", is_alter: true, implementation_date: "2021-02-05" },
   ]
 };
+let servedData = browserData;
 const selfCameo = analyze(validate({
   characters: [
     { id: "amiya", name: "阿米娅", aliases: [], home_episode_ids: [] },
@@ -112,7 +113,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     await page.screenshot({ path: output + "/desktop-empty.png", fullPage: true });
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><rect x="10" y="10" width="160" height="160" rx="45" fill="#d7c7ee"/><circle cx="65" cy="75" r="7" fill="#665078"/><circle cx="115" cy="75" r="7" fill="#665078"/><path d="M70 115 Q90 135 110 115" stroke="#665078" stroke-width="5" fill="none"/></svg>';
     await page.route("**/media/**", route => route.fulfill({ contentType: "image/svg+xml", body: svg }));
-    await page.route("**/data/release.json", route => route.fulfill({ json: browserData }));
+    await page.route("**/data/release.json", route => route.fulfill({ json: servedData }));
     await page.reload();
     await page.locator("#totals article:first-child strong:has-text('4')").waitFor();
     assert.deepEqual(await page.locator("#totals strong").allTextContents(), ["4", "50", "8", "4"]);
@@ -136,7 +137,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     assert.equal(await page.locator(".episode-card").count(), 1);
     await page.locator(".episode-cover").click();
     assert.equal(await page.locator("#result-count").textContent(), "6 张表情");
-    assert((await page.locator(".crop-wrap").first().getAttribute("href")).includes("test-1"));
+    assert.equal(await page.locator(".crop-wrap").first().getAttribute("href"), "/instance.html?id=i39");
     await page.reload();
     await page.waitForSelector(".expression-card");
     assert.equal(await page.locator("#result-count").textContent(), "6 张表情");
@@ -150,7 +151,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     assert((await page.locator("#character-ranking .rank-row").first().textContent()).includes("测试乙"), "Search ranking should sort by aggregate counts");
     assert.equal(await page.locator("#character-ranking .rank-row").count(), 2, "Unknown/retired IDs should not appear in the public ranking");
     await page.locator("#missing-ranking-kind").selectOption("noRhodes");
-    assert((await page.locator("#missing-rank-note").textContent()).includes("本篇"));
+    assert((await page.locator("#missing-rank-note").textContent()).includes("实装天数"));
     await page.locator("#pair-ranking .rank-row").first().click();
     await page.waitForURL("**/search.html?*"); await page.waitForSelector(".expression-card");
     assert.equal(await page.locator("#result-count").textContent(), "44 张表情");
@@ -193,7 +194,7 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     await page.keyboard.press("Escape");
     assert.equal(await page.locator(".expression-card.preview-open").count(), 0);
-    await page.route("**/data/release.json", route => route.fulfill({ json: { ...browserData, cast_complete: false, episodes: browserData.episodes.map(e => ({ ...e, order: undefined })) } }));
+    await page.route("**/data/release.json", route => route.fulfill({ json: { ...browserData, cast_complete: false, characters: browserData.characters.map(c => ({ ...c, home_episode_ids: undefined })), episodes: browserData.episodes.map(e => ({ ...e, order: undefined })) } }));
     await page.goto(base);
     await page.waitForSelector(".legend-row");
     assert((await page.locator("#guest-ranking").textContent()).includes("本篇关系"));
@@ -219,7 +220,24 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     await page.locator("#site-search").fill("别名甲"); await page.locator("#site-search").press("Enter");
     await page.waitForURL("**/search.html?*"); await page.waitForSelector(".expression-card");
     assert.equal(await page.locator("#result-count").textContent(), "40 张表情");
+
+    servedData = {
+      ...browserData,
+      characters: [...browserData.characters, { id: "eyfl", name: "艾雅法拉", aliases: [], is_operator: true, home_episode_ids: ["e0"] }],
+      instances: [...instances, { id: "typo-hit", character_id: "eyfl", episode_id: "e0", image_id: "image0", crop_url: "/media/crops/test.webp", source_preview_url: "/media/source-previews/test.webp", sort_key: "999" }],
+    };
+    await page.route("**/config/site.json", route => route.fulfill({ json: { pageSize: 36 } }));
+    await page.route(base + "/data/release.json", route => route.fulfill({ json: servedData }));
+    await page.goto(base); await page.waitForSelector(".legend-row");
+    await page.locator("#site-search").fill("阿雅法拉");
+    const fuzzySuggestion = page.locator(".search-suggestion").filter({ hasText: "艾雅法拉" });
+    await fuzzySuggestion.waitFor({ timeout: 10000 });
+    assert((await fuzzySuggestion.textContent()).includes("近似"), "Fuzzy suggestions should be visibly marked");
+    await fuzzySuggestion.click(); await page.waitForURL("**/search.html?*"); await page.waitForSelector(".expression-card");
+    assert.equal(await page.locator("#result-count").textContent(), "1 张表情");
+    await page.locator("#site-search").fill("阿雅法拉"); await page.locator("#search-form button[type=submit]").click();
+    await page.waitForFunction(() => new URLSearchParams(location.search).get("q") === "阿雅法拉" && document.querySelector(".expression-card")?.dataset.character === "eyfl");
     assert.deepEqual(errors, []);
-    console.log("Browser: desktop/mobile, CSP, separate result page, unified search, continuous marquee, aliases, episode numbers, paging, preview, reload/back, rankings, missing metadata, carousel, error/retry passed");
+    console.log("Browser: desktop/mobile, CSP, separate result page, unified search, fuzzy Chinese suggestions/results, continuous marquee, aliases, episode numbers, paging, preview, reload/back, rankings, missing metadata, carousel, error/retry passed");
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });

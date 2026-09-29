@@ -10,7 +10,7 @@
 
 浅紫/粉色贴纸册风格，居中首页：顶部真实 instance 持续横向慢速滚动 → 一个搜索框切换表情/篇目 → 首页统计和榜单 → 留言区与来源说明。搜索后进入独立结果页，输入时可从下拉建议直接选角色或篇目；点击单张表情会打开站内详情页。
 
-- 名称、别名、篇目编号搜索；角色/篇目/组合过滤；URL 分享、刷新和前后退恢复。
+- 名称、别名、篇目编号搜索；普通匹配无结果时再补中文错字、拼音全拼/首字母候选，候选标明匹配方式并需用户选择。短输入不做近似扩展；大小写和常见破折号形式会归一。搜索和拼音转换都在浏览器本地完成，不上传查询文本。
 - 人物图片网格、继续加载、角色/篇目自动提示。单张表情详情展示 crop、角色与篇目信息、原漫画缩略图，并提供文字链接前往泰拉记事社；详情页可直接留言纠错。
 - 四项总量、全宽“谁的镜头最多”环形图、三列角色榜（角色榜内可切换出场/覆盖/热门/稀客、客串榜、查无此人榜）和双向/单向篇目共现比例、单篇记录前 30。
 - 表情带按像素速度连续移动；随机/顺序控制实例排列，支持暂停/继续、手动往后看、悬停/聚焦暂停和系统减少动态效果。
@@ -133,12 +133,13 @@ admin.html              生成：共享管理员登录与页面导航
 404.html                生成：缺失页；也避免 Pages 把缺失 JSON 回退成首页
 styles.css              共享视觉样式
 app.js                  页面交互与发布数据读取
+search-matching.js      本地名称归一与中文/拼音近似匹配
 guestbook.js            留言提交和公开列表
 guestbook-admin.js      私用审核页
 admin.js                统一管理员登录页
 admin-auth.js           管理员会话与共享导航
 stats.js                纯公开数据统计与清单校验
-assets/                 自制装饰素材（当前只有 SVG 图标）
+assets/                 自制装饰素材、离线缓存与按需加载的拼音库；第三方库随附 MIT 许可
 docs/                   完整方案与数据协议
 tests/browser.cjs       统计与浏览器验收（仅内存测试数据）
 db/guestbook.sql        独立 D1 留言表
@@ -151,7 +152,7 @@ publish/site/           真实公开索引和展示副本，不进 Git
 
 ## 验证
 
-`python3 tools/build.py --check` 检查生成内容是否最新；`python3 tests/copy_test.py` 在临时目录验证人工修改文案后的生成、转义与占位符检查。浏览器验收需要 Node.js、Playwright 和 Chromium，在本地静态服务器运行时执行 `node tests/browser.cjs`；可用 PLAYWRIGHT_MODULE / CHROMIUM_EXECUTABLE 指定现有安装，SITE_TEST_URL 指定本地测试地址。
+`python3 tools/build.py --check` 检查生成内容是否最新；`python3 tests/copy_test.py` 在临时目录验证人工修改文案后的生成、转义与占位符检查。搜索匹配规则可用 `node tests/search-matching.test.cjs` 单独验证。浏览器验收需要 Node.js、Playwright 和 Chromium，在本地静态服务器运行时执行 `node tests/browser.cjs` 与 `node tests/search-browser.cjs`；可用 PLAYWRIGHT_MODULE / CHROMIUM_EXECUTABLE 指定现有安装，SITE_TEST_URL 指定本地测试地址。
 
 测试验证统计去重/缺字段处理、独立结果页、分页、URL 恢复、桌面/手机预览、CSP、连续滚动/暂停、错误重试。虚构数据通过浏览器请求拦截注入，不创建 data/release.json，也不进入生产页面。真实数据验证通过本地4174预览运行 `node tests/real-data.cjs`。截图存入忽略的 test-results/。
 

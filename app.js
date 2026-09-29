@@ -6,7 +6,7 @@
   const t = (key, values = {}) => (copy[key] ?? key).replace(/\{(\w+)\}/g, (_, name) => String(values[name] ?? ""));
   const escape = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const text = (key, values) => escape(t(key, values));
-  const normalize = value => String(value ?? "").trim().normalize("NFKC").toLocaleLowerCase("zh-CN");
+  const normalize = value => window.RhodesSearch?.normalize(value) ?? String(value ?? "").trim().normalize("NFKC").toLocaleLowerCase("zh-CN");
   const number = value => Number(value).toLocaleString("zh-CN");
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
   const { validate, analyze, assetPath, officialURL } = RhodesStats;
@@ -14,6 +14,8 @@
   const isInstancePage = document.body.dataset.page === "instance";
   let release, stats, config = {}, state, visible = 36, matches = [], dataBase = "";
   let suggestionItems = [], activeSuggestion = -1;
+  let pinyinLoadPromise = null, suggestionRevision = 0, searchPendingKey = "";
+  const fuzzyResultCache = new Map(), fuzzyResultPromises = new Map();
   let marqueePosition = 0, marqueeWidth = 0, lastFrame = 0, manualUntil = 0;
   let ribbonObserver;
   const publicAsset = path => dataBase ? new URL(path, dataBase).href : path;
@@ -39,6 +41,7 @@
   }
   function trackSearchResults() {
     if (!isSearchPage || !release || !stats) return;
+    if (searchPendingKey === resultStateKey()) return;
     const info = analyticsQueryInfo(state.q, state.mode);
     window.RhodesAnalytics?.track("search_results", {
       ...info, search_mode: state.mode, result_count: matches.length,
@@ -94,6 +97,35 @@
     }).filter(Boolean);
     return [...episodes, ...characters].sort((a, b) => a.score - b.score || (a.kind === b.kind ? 0 : a.kind === "episode" ? -1 : 1) || a.name.localeCompare(b.name, "zh-CN", { numeric: true })).slice(0, 8);
   }
+  function fuzzyCacheKey(query, mode) { return mode + "\u0000" + normalize(query); }
+  function resultStateKey() { return JSON.stringify([state?.mode, state?.q, state?.character, state?.episode, state?.pair, state?.browse]); }
+  function loadPinyinPro() {
+    if (window.pinyinPro?.pinyin) return Promise.resolve(window.pinyinPro);
+    if (pinyinLoadPromise) return pinyinLoadPromise;
+    pinyinLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "/assets/pinyin-pro-3.29.4.js";
+      script.async = true;
+      script.onload = () => window.pinyinPro?.pinyin ? resolve(window.pinyinPro) : reject(new Error("拼音搜索组件不可用"));
+      script.onerror = () => reject(new Error("拼音搜索组件加载失败"));
+      document.head.append(script);
+    }).catch(error => { pinyinLoadPromise = null; throw error; });
+    return pinyinLoadPromise;
+  }
+  function fuzzyMatches(query, mode) {
+    const key = fuzzyCacheKey(query, mode);
+    if (fuzzyResultCache.has(key)) return Promise.resolve(fuzzyResultCache.get(key));
+    if (fuzzyResultPromises.has(key)) return fuzzyResultPromises.get(key);
+    const pending = loadPinyinPro().then(pinyin => {
+      if (!stats || !window.RhodesSearch?.findFuzzy) return [];
+      const found = window.RhodesSearch.findFuzzy(query, mode, stats.characters.values(), stats.episodes.values(), pinyin, 8);
+      fuzzyResultCache.set(key, found);
+      if (fuzzyResultCache.size > 80) fuzzyResultCache.delete(fuzzyResultCache.keys().next().value);
+      return found;
+    }).finally(() => fuzzyResultPromises.delete(key));
+    fuzzyResultPromises.set(key, pending);
+    return pending;
+  }
   function closeSuggestions() {
     const input = $("#site-search"), box = $("#search-suggestions");
     if (!input || !box) return;
@@ -102,12 +134,10 @@
     input.removeAttribute("aria-activedescendant");
     activeSuggestion = -1;
   }
-  function renderSuggestions() {
+  function renderSuggestionItems(items) {
     const input = $("#site-search"), box = $("#search-suggestions");
     if (!input || !box) return;
-    const query = normalize(input.value);
-    if (!release || !stats || !query || document.activeElement !== input) { closeSuggestions(); return; }
-    suggestionItems = collectSuggestions(query, state.mode);
+    suggestionItems = items;
     if (!suggestionItems.length) { closeSuggestions(); return; }
     activeSuggestion = -1;
     input.removeAttribute("aria-activedescendant");
@@ -117,10 +147,26 @@
       const meta = isCharacter
         ? text(state.mode === "episodes" ? "search.suggestionCharacterEpisodes" : "search.suggestionCharacterCount", { count: number(state.mode === "episodes" ? suggestion.item.episodes.size : suggestion.item.count) })
         : text("search.suggestionEpisodeCount", { count: number(suggestion.item.count) });
-      return `<button type="button" role="option" tabindex="-1" class="search-suggestion" id="search-suggestion-${index}" aria-selected="false" data-suggestion-index="${index}"><span class="suggestion-primary"><span class="suggestion-kind">${type}</span><strong>${escape(suggestion.name)}</strong></span><span class="suggestion-meta">${meta}</span></button>`;
+      const fuzzyLabel = suggestion.matchReason ? `<span class="suggestion-fuzzy-badge">${escape(suggestion.matchReason)}</span>` : "";
+      return `<button type="button" role="option" tabindex="-1" class="search-suggestion" id="search-suggestion-${index}" aria-selected="false" data-suggestion-index="${index}"><span class="suggestion-primary"><span class="suggestion-kind">${type}</span><strong>${escape(suggestion.name)}</strong>${fuzzyLabel}</span><span class="suggestion-meta">${meta}</span></button>`;
     }).join("");
     box.hidden = false;
     input.setAttribute("aria-expanded", "true");
+  }
+  function renderSuggestions() {
+    const input = $("#site-search"), box = $("#search-suggestions");
+    if (!input || !box) return;
+    const query = normalize(input.value);
+    const revision = ++suggestionRevision;
+    if (!release || !stats || !query || document.activeElement !== input) { closeSuggestions(); return; }
+    const direct = collectSuggestions(query, state.mode);
+    if (direct.length) { renderSuggestionItems(direct); return; }
+    closeSuggestions();
+    if (Array.from(query).length < 3 || !window.RhodesSearch?.findFuzzy) return;
+    fuzzyMatches(query, state.mode).then(found => {
+      if (revision !== suggestionRevision || normalize(input.value) !== query || document.activeElement !== input) return;
+      renderSuggestionItems(found);
+    }).catch(() => { if (revision === suggestionRevision) closeSuggestions(); });
   }
   function activateSuggestion(index) {
     if (!suggestionItems.length) return;
@@ -207,6 +253,32 @@
     const query = normalize(state.q);
     const cids = new Set([...stats.characters.values()].filter(c => matchesCharacter(c, query)).map(c => c.id));
     const eids = new Set([...stats.episodes.values()].filter(e => matchesEpisode(e, query)).map(e => e.id));
+    const directMatches = cids.size > 0 || eids.size > 0;
+    const needsFuzzy = Boolean(query && !directMatches && !state.character && !state.episode && !state.pair);
+    const resultKey = resultStateKey();
+    if (searchPendingKey && searchPendingKey !== resultKey) searchPendingKey = "";
+    const cachedFuzzy = fuzzyResultCache.get(fuzzyCacheKey(query, state.mode));
+    if (needsFuzzy && cachedFuzzy) {
+      for (const candidate of cachedFuzzy) {
+        if (candidate.kind === "character") cids.add(candidate.id);
+        else if (candidate.kind === "episode") eids.add(candidate.id);
+      }
+    } else if (needsFuzzy && window.RhodesSearch?.findFuzzy) {
+      if (searchPendingKey !== resultKey) {
+        searchPendingKey = resultKey;
+        fuzzyMatches(query, state.mode).then(() => {
+          if (resultStateKey() !== resultKey) return;
+          searchPendingKey = "";
+          renderSearch();
+          trackSearchResults();
+        }).catch(() => {
+          if (resultStateKey() !== resultKey) return;
+          searchPendingKey = "";
+          renderSearch();
+          trackSearchResults();
+        });
+      }
+    } else if (searchPendingKey === resultKey) searchPendingKey = "";
     const pairIds = state.pair.split(",").filter(id => stats.characters.has(id));
     const shared = pairIds.length === 2 ? new Set([...stats.episodes.values()].filter(e => pairIds.every(id => e.characters.has(id))).map(e => e.id)) : null;
     if (state.mode === "episodes") {
@@ -226,7 +298,8 @@
   function renderMatches() {
     const grid = $("#results-grid");
     grid.classList.toggle("episodes-grid", state.mode === "episodes");
-    grid.innerHTML = matches.length ? matches.slice(0, visible).map(state.mode === "episodes" ? episodeCard : cropCard).join("") : `<div class="empty-result"><span aria-hidden="true">(・_・?)</span><p>${text("search.noResults")}</p></div>`;
+    const fuzzyPending = searchPendingKey === resultStateKey();
+    grid.innerHTML = matches.length ? matches.slice(0, visible).map(state.mode === "episodes" ? episodeCard : cropCard).join("") : `<div class="empty-result"><span aria-hidden="true">${fuzzyPending ? "✦" : "(・_・?)"}</span><p>${text(fuzzyPending ? "search.loading" : "search.noResults")}</p></div>`;
     if (state.mode === "episodes") window.RhodesAnalytics?.observeEpisodes(grid);
     else window.RhodesAnalytics?.observeInstances(grid, "search_grid");
     $("#pagination-status").textContent = matches.length ? t("search.shown", { shown: Math.min(visible, matches.length), total: matches.length }) : "";
@@ -506,6 +579,7 @@
       });
       searchForm.addEventListener("submit", event => {
         event.preventDefault();
+        suggestionRevision++;
         const query = searchInput.value.trim();
         const info = query ? analyticsQueryInfo(query, state.mode) : { query_kind: "browse" };
         window.RhodesAnalytics?.track("search_submit", { ...info, search_mode: state.mode, context: "search_form", release_id: release?.release_id });

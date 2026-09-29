@@ -66,7 +66,10 @@
   "detail.documentTitle": {
     "text": "{character}的表情 · {episode}",
     "note": "详情页浏览器标题",
-    "slots": ["character", "episode"]
+    "slots": [
+      "character",
+      "episode"
+    ]
   },
   "detail.description": {
     "text": "查看收录表情、角色信息、篇目和原漫画出处。",
@@ -75,7 +78,9 @@
   "detail.open": {
     "text": "打开{character}的表情详情",
     "note": "表情卡片和首页轮播的链接名称",
-    "slots": ["character"]
+    "slots": [
+      "character"
+    ]
   },
   "detail.kicker": {
     "text": "表情详情",
@@ -140,17 +145,23 @@
   "search.suggestionCharacterCount": {
     "text": "{count} 张表情",
     "note": "角色提示的表情数量",
-    "slots": ["count"]
+    "slots": [
+      "count"
+    ]
   },
   "search.suggestionCharacterEpisodes": {
     "text": "出现于 {count} 个篇目",
     "note": "篇目检索中角色提示的篇目数量",
-    "slots": ["count"]
+    "slots": [
+      "count"
+    ]
   },
   "search.suggestionEpisodeCount": {
     "text": "{count} 个表情",
     "note": "篇目提示的表情数量",
-    "slots": ["count"]
+    "slots": [
+      "count"
+    ]
   },
   "search.submit": {
     "text": "搜索",
@@ -336,7 +347,9 @@
   "stats.publicationTotal": {
     "text": "{count} 篇",
     "note": "热力图关联的篇目总数",
-    "slots": ["count"]
+    "slots": [
+      "count"
+    ]
   },
   "stats.publicationYear": {
     "text": "发布年份",
@@ -365,7 +378,9 @@
   "stats.monthLabel": {
     "text": "{month}月",
     "note": "日历月份标签",
-    "slots": ["month"]
+    "slots": [
+      "month"
+    ]
   },
   "stats.weekdays": {
     "text": "周一、周二、周三、周四、周五、周六、周日",
@@ -455,10 +470,10 @@
     "text": "客串王",
     "note": "榜单名称"
   },
- "rank.noHome": {
-   "text": "无本篇客串榜",
-   "note": "榜单名称"
- },
+  "rank.noHome": {
+    "text": "无本篇客串榜",
+    "note": "榜单名称"
+  },
   "rank.guest": {
     "text": "客串榜",
     "note": "榜单名称"
@@ -479,12 +494,12 @@
     "text": "无出场村",
     "note": "榜单名称"
   },
- "rank.absence": {
+  "rank.absence": {
     "text": "久未出现榜",
     "note": "榜单名称"
   },
   "rank.appearancesNote": {
-    "text": "实例数 = 角色有效 crop 数",
+    "text": "实例数 = 角色出场次数",
     "note": "统计公式"
   },
   "rank.coverageNote": {
@@ -492,17 +507,17 @@
     "note": "统计公式"
   },
   "rank.rareNote": {
-    "text": "按角色有效 crop 数升序",
+    "text": "按角色出场次数升序",
     "note": "统计公式"
   },
   "rank.cameoNote": {
-    "text": "排序 = 非本篇篇目数降序；同篇目数按有效 crop 数降序",
+    "text": "排序 = 非本篇篇目数降序；同篇目数按出场次数数降序",
     "note": "统计公式"
   },
- "rank.noHomeNote": {
-   "text": "没有本篇的角色，按有效 crop 数降序",
-   "note": "统计公式"
- },
+  "rank.noHomeNote": {
+    "text": "尚无本篇的角色，按出场次数排序",
+    "note": "统计公式"
+  },
   "rank.noRhodesNote": {
     "text": "按实装天数排序，不含联动干员",
     "note": "统计公式"
@@ -511,10 +526,10 @@
     "text": "按实装天数排序，不含联动干员",
     "note": "统计公式"
   },
- "rank.absenceNote": {
+  "rank.absenceNote": {
     "text": "间隔天数 = 今天 − 最后出现篇目的发布时间",
-   "note": "统计公式"
- },
+    "note": "统计公式"
+  },
   "rank.cropValue": {
     "text": "{count} 次",
     "note": "出场数单位",
@@ -544,13 +559,13 @@
       "count"
     ]
   },
- "rank.absenceValue": {
+  "rank.absenceValue": {
     "text": "相隔 {count} 天",
-   "note": "久未出现单位",
-   "slots": [
-     "count"
-   ]
- },
+    "note": "久未出现单位",
+    "slots": [
+      "count"
+    ]
+  },
   "rank.noRhodesValue": {
     "text": "{count} 天",
     "note": "距离干员实装日期的天数",
@@ -572,7 +587,7 @@
       "count"
     ]
   },
- "fun.title": {
+  "fun.title": {
     "text": "趣味榜",
     "note": "趣味榜标题"
   },
@@ -629,11 +644,11 @@
     ]
   },
   "fun.recordNote": {
-    "text": "实例数 = 角色 × 篇目的有效 crop 数",
+    "text": "实例数 = 角色 × 篇目的出场次数",
     "note": "统计公式"
   },
   "fun.guestRecordNote": {
-    "text": "实例数 = 角色 × 非本篇篇目的有效 crop 数",
+    "text": "实例数 = 角色 × 非本篇篇目的出场次数",
     "note": "统计公式"
   },
   "fun.pairName": {
@@ -665,11 +680,11 @@
     "note": "留言区标题"
   },
   "guest.note": {
-    "text": "发现信息有误？欢迎留言。每条留言按发送时的昵称显示，审核通过后公开。",
+    "text": "发现信息有误？欢迎留言！留言将在审核通过后公开。",
     "note": "留言区说明"
   },
   "guest.instanceNote": {
-    "text": "这张表情的信息有误？欢迎留言。每条留言按发送时的昵称显示，审核通过后公开。",
+    "text": "这张表情的信息有误？欢迎留言！留言将在审核通过后公开。",
     "note": "表情详情页的纠错留言说明"
   },
   "guest.status": {
@@ -697,7 +712,7 @@
     "note": "留言框辅助标签"
   },
   "guest.placeholder": {
-    "text": "写下想说的话，最多 500 字；请不要留下个人信息或链接。",
+    "text": "请写下想说的话。请不要留下个人信息或链接。",
     "note": "留言输入框提示"
   },
   "guest.nicknameLabel": {
@@ -743,7 +758,7 @@
     "note": "留言列表分页按钮"
   },
   "guest.invalid": {
-    "text": "请填写不超过 500 字的留言。",
+    "text": "不能超过 500 字。",
     "note": "无效留言提示"
   },
   "guest.verifyFirst": {
@@ -759,7 +774,7 @@
     "note": "留言提交中"
   },
   "guest.sent": {
-    "text": "已收到，审核通过后才会公开。你的匿名名称是 {author}。",
+    "text": "已收到，{author}。审核通过后将会公开。",
     "note": "留言进入待审核并告知本次匿名昵称",
     "slots": [
       "author"
@@ -1375,7 +1390,9 @@
   "analytics.generated": {
     "text": "报告更新时间：{time} · 滚动清理：事件明细 90 天，会话标识 30 天（有新事件时执行）。",
     "note": "报告更新时间和活动触发的清理周期",
-    "slots": ["time"]
+    "slots": [
+      "time"
+    ]
   },
   "notfound.title": {
     "text": "这一页不在表情簿里",

@@ -51,7 +51,7 @@ def build(check=False):
             for path in backgrounds) or len(set(backgrounds)) != len(backgrounds):
         raise ValueError('Backgrounds must be unique re-encoded R2 WebP paths')
     version = hashlib.sha256((source + settings + ''.join((ROOT / name).read_text(encoding='utf-8')
-                            for name in ('styles.css', 'background.js', 'analytics.js', 'analytics-admin.js', 'app.js', 'stats.js', 'guestbook.js', 'guestbook-admin.js', 'admin.js', 'admin-auth.js'))).encode()).hexdigest()[:12]
+                            for name in ('styles.css', 'background.js', 'analytics.js', 'analytics-admin.js', 'app.js', 'stats.js', 'search-matching.js', 'guestbook.js', 'guestbook-admin.js', 'admin.js', 'admin-auth.js'))).encode()).hexdigest()[:12]
     values = dict(copy, asset_version=version)
     payload = json.dumps(copy, ensure_ascii=False).replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026')
     outputs = {}

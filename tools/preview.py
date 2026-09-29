@@ -19,7 +19,7 @@ class Handler(SimpleHTTPRequestHandler):
         relative = Path(*parts) if parts else Path('index.html')
         if parts and parts[0] in ('data', 'media'):
             base = self.bundle
-        elif str(relative) in ('index.html', 'search.html', 'instance.html', 'about.html', 'privacy.html', '404.html', 'admin.html', 'guestbook-admin.html', 'analytics-admin.html', 'styles.css', 'background.js', 'app.js', 'stats.js', 'guestbook.js', 'guestbook-admin.js', 'analytics-admin.js', 'admin.js', 'admin-auth.js', 'config/site.json') or (parts and parts[0] == 'assets'):
+        elif str(relative) in ('index.html', 'search.html', 'instance.html', 'about.html', 'privacy.html', '404.html', 'admin.html', 'guestbook-admin.html', 'analytics-admin.html', 'styles.css', 'background.js', 'app.js', 'stats.js', 'search-matching.js', 'guestbook.js', 'guestbook-admin.js', 'analytics-admin.js', 'admin.js', 'admin-auth.js', 'config/site.json') or (parts and parts[0] == 'assets'):
             base = ROOT
         else:
             return str(ROOT / '__not_public__')
