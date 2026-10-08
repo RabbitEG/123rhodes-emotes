@@ -177,6 +177,10 @@
     "text": "个篇目",
     "note": "角色档案出场篇目数单位"
   },
+  "character.aliasesTitle": {
+    "text": "别名",
+    "note": "角色档案中玩家常用别名列表标题"
+  },
   "character.episodesTitle": {
     "text": "出场篇目",
     "note": "角色档案篇目列表标题"

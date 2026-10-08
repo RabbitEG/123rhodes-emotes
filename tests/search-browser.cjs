@@ -8,7 +8,7 @@ const release = {
   release_id: "search-fuzzy-test",
   characters: [
     { id: "eyfl", name: "艾雅法拉", aliases: [], is_operator: true },
-    { id: "star-source", name: "星源", aliases: [], is_operator: true },
+    { id: "star-source", name: "星源", aliases: ["星星"], is_operator: true },
     { id: "push", name: "推进之王", aliases: [], is_operator: true, stars: 6 },
     { id: "phantom", name: "傀影", aliases: [], is_operator: true, stars: 6 },
     { id: "lingzhi", name: "灵知", aliases: [], is_operator: true },
@@ -65,6 +65,22 @@ const release = {
 
     await page.goto(base);
     await page.locator(".legend-row").first().waitFor();
+    await page.locator("#site-search").fill("星星");
+    const aliasCandidate = page.locator(".search-suggestion").filter({ hasText: "星星" });
+    await aliasCandidate.waitFor();
+    assert.equal(await aliasCandidate.locator(".suggestion-primary strong").textContent(), "星星", "A direct alias match should display the matched alias rather than the canonical name");
+    assert((await aliasCandidate.textContent()).includes("角色页：星源"), "An alias suggestion should identify its canonical destination");
+    await aliasCandidate.click();
+    await page.waitForURL("**/character.html?id=star-source");
+    assert.deepEqual(await page.locator(".character-alias-chip").allTextContents(), ["星星"], "The character page should list its player aliases");
+
+    await page.goto(base);
+    await page.locator("#site-search").fill("xingxing");
+    const pinyinAliasCandidate = page.locator(".search-suggestion").filter({ hasText: "星星" });
+    await pinyinAliasCandidate.waitFor({ timeout: 10000 });
+    assert((await pinyinAliasCandidate.textContent()).includes("角色页：星源"), "A pinyin alias match should display the alias and canonical destination");
+
+    await page.goto(base);
     await page.locator("#site-search").fill("暂无表情条目");
     await page.locator("#search-suggestions").waitFor({ state: "hidden" });
     assert.equal(await page.locator(".search-suggestion").count(), 0, "Characters with no expression crops should not be suggested");

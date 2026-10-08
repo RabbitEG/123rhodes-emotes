@@ -164,11 +164,11 @@
     const episode = stats?.episodes.get(String(id));
     if (episode) location.assign(episodeURL(episode));
   }
-  function suggestionScore(name, query, alias = false) {
+  function suggestionScore(name, query) {
     const value = normalize(name);
     if (!value || !value.includes(query)) return Infinity;
     const category = value === query ? 0 : value.startsWith(query) ? 1 : 2;
-    return category + (alias ? 3 : 0) + Math.min(value.indexOf(query), 999) / 1000;
+    return category + Math.min(value.indexOf(query), 999) / 1000;
   }
   function hasSuggestionContent(suggestion) {
     const item = suggestion?.item;
@@ -180,18 +180,23 @@
   }
   function collectSuggestions(query, mode) {
     const characters = [...stats.characters.values()].map(character => {
-      const alternateNames = new Set((character.alter_names ?? []).map(normalize));
-      const candidates = characterSearchNames(character)
-        .map(name => ({ name, score: suggestionScore(name, query, normalize(name) !== normalize(character.name)) }))
+      const names = [
+        { name: character.name, type: "canonical" },
+        ...(character.alter_names ?? []).map(name => ({ name, type: "alter" })),
+        ...(character.aliases ?? []).map(name => ({ name, type: "alias" })),
+        ...(character.legacy_names ?? []).map(name => ({ name, type: "legacy" })),
+      ];
+      const candidates = names
+        .map((entry, index) => ({ ...entry, index, score: suggestionScore(entry.name, query) }))
         .filter(candidate => Number.isFinite(candidate.score))
-        .sort((a, b) => a.score - b.score);
+        .sort((a, b) => a.score - b.score || a.index - b.index);
       const best = candidates[0];
       if (!best) return null;
-      const isAlternateMatch = alternateNames.has(normalize(best.name)) && normalize(best.name) !== normalize(character.name);
+      const showMatchedName = best.type !== "canonical";
       return {
         kind: "character", id: character.id,
-        name: isAlternateMatch ? best.name : character.name,
-        canonicalTarget: isAlternateMatch ? character.name : "",
+        name: showMatchedName ? best.name : character.name,
+        canonicalTarget: showMatchedName ? character.name : "",
         score: best.score, item: character
       };
     }).filter(Boolean);
@@ -239,8 +244,9 @@
     const item = suggestion.item;
     if (!exactVariantTypes.has(suggestion.matchType) || !item || !suggestion.matchedName) return suggestion;
     const matched = normalize(suggestion.matchedName);
-    const isAlternate = (item.alter_names ?? []).some(name => normalize(name) === matched);
-    return isAlternate
+    const isDisplayVariant = [...(item.alter_names ?? []), ...(item.aliases ?? [])]
+      .some(name => normalize(name) === matched);
+    return isDisplayVariant
       ? { ...suggestion, name: suggestion.matchedName, canonicalTarget: item.name }
       : suggestion;
   }
@@ -380,6 +386,11 @@
       const isHomeEpisode = character.homeEpisodes.has(episode.id);
       return `<button type="button" class="character-episode-chip${isHomeEpisode ? " home-association" : ""}" data-episode="${escape(episode.id)}">${isHomeEpisode ? `<span class="home-association-label">${text("character.homeBadge")}</span>` : ""}${escape(episode.name)}</button>`;
     }).join("");
+    const aliases = [...new Map((character.aliases ?? []).filter(alias => String(alias).trim())
+      .map(alias => [normalize(alias), String(alias).trim()])).values()];
+    const aliasSection = aliases.length
+      ? `<section class="character-aliases"><h2>${text("character.aliasesTitle")}</h2><div class="character-alias-list">${aliases.map(alias => `<span class="character-alias-chip">${escape(alias)}</span>`).join("")}</div></section>`
+      : "";
     const prtsForms = character.is_operator ? [character.name, ...orderedCharacterAlterNames(character)] : [character.name];
     const prtsLinks = prtsForms.map(form => `<a class="character-prts-link" href="${escape(prtsURL(form, character.is_operator === true))}" target="_blank" rel="noopener noreferrer" aria-label="${text("character.prtsLink", { name: form })}">${escape(form)} <span aria-hidden="true">↗</span></a>`).join("");
     const profileLinks = `<section class="character-episodes${episodes.length ? "" : " character-prts-only"}">${episodes.length ? `<h2>${text("character.episodesTitle")}</h2><div class="instance-character-links">${episodeLinks}</div>` : ""}<div class="character-prts"><h2>${text("character.prtsTitle")}</h2><div class="character-prts-links">${prtsLinks}</div></div></section>`;
@@ -387,7 +398,7 @@
     document.title = t("character.documentTitle", { character: name });
     status.hidden = true;
     container.hidden = false;
-    container.innerHTML = `<header class="paper-card character-profile"><div class="character-heading"><span class="instance-kicker">${text("character.kicker")}</span><h1>${escape(name)}</h1></div><div class="character-summary"><span class="character-stat"><strong>${number(instances.length)}</strong>${text("character.instanceCount")}</span><span class="character-stat"><strong>${number(episodes.length)}</strong>${text("character.episodeCount")}</span></div>${profileLinks}</header><section class="character-gallery-section"><div class="character-gallery-heading"><h2>${text("character.galleryTitle")}</h2><span>${text("character.galleryCount", { count: number(instances.length) })}</span></div>${instances.length ? `<div class="gallery-grid character-gallery">${instances.map(item => cropCard(item)).join("")}</div>` : `<div class="empty-result character-empty"><span aria-hidden="true">✧</span><p>${text("character.empty")}</p></div>`}</section>`;
+    container.innerHTML = `<header class="paper-card character-profile"><div class="character-heading"><span class="instance-kicker">${text("character.kicker")}</span><h1>${escape(name)}</h1></div><div class="character-summary"><span class="character-stat"><strong>${number(instances.length)}</strong>${text("character.instanceCount")}</span><span class="character-stat"><strong>${number(episodes.length)}</strong>${text("character.episodeCount")}</span></div>${aliasSection}${profileLinks}</header><section class="character-gallery-section"><div class="character-gallery-heading"><h2>${text("character.galleryTitle")}</h2><span>${text("character.galleryCount", { count: number(instances.length) })}</span></div>${instances.length ? `<div class="gallery-grid character-gallery">${instances.map(item => cropCard(item)).join("")}</div>` : `<div class="empty-result character-empty"><span aria-hidden="true">✧</span><p>${text("character.empty")}</p></div>`}</section>`;
     window.RhodesAnalytics?.observeInstances($(".character-gallery", container), "character_gallery");
   }
   function renderEpisode() {

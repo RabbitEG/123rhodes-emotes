@@ -375,6 +375,10 @@ button.legend-row:hover { background: #f6f0fb; border-radius: 6px; }
 .character-summary { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
 .character-stat { display: inline-flex; align-items: baseline; gap: 6px; padding: 8px 14px; border: 1px solid #e8dff0; border-radius: 22px; color: #76648a; background: #faf7fc; font-size: 13px; }
 .character-stat strong { color: #594677; font-size: 18px; }
+.character-aliases { margin-top: 17px; }
+.character-aliases h2 { margin: 0 0 8px; color: #675477; font-size: 14px; text-align: center; }
+.character-alias-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; }
+.character-alias-chip { max-width: 100%; padding: 5px 11px; border: 1px solid #e8dff0; border-radius: 20px; color: #72578f; background: #faf7fc; font-size: 13px; font-weight: 650; line-height: 1.45; overflow-wrap: anywhere; }
 .character-episodes { margin-top: 26px; padding-top: 19px; border-top: 1px solid #eee7f3; }
 .character-episodes h2 { margin: 0 0 10px; color: #675477; font-size: 15px; text-align: center; }
 .character-episodes .instance-character-links { justify-content: center; }
