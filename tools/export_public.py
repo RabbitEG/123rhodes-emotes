@@ -9,12 +9,23 @@ import io
 import json
 import re
 import sqlite3
+import unicodedata
 import urllib.request
 from pathlib import Path
 from PIL import Image, ImageOps
 
 OFFICIAL = 'https://comic.hypergryph.com/terra-historicus/comic/6253'
 SPECIAL = {'npc', 'non-character', 'non_character', 'unknown'}
+
+
+def normalized_name(value):
+    return ''.join(unicodedata.normalize('NFKC', str(value or '')).casefold().split())
+
+
+def display_form_name(value):
+    name = str(value or '').strip()
+    match = re.fullmatch(r'阿米娅\((近卫|医疗)\)', name)
+    return '阿米娅（%s）' % match.group(1) if match else name
 
 
 def official_catalog():
@@ -127,7 +138,11 @@ def export(database, raw_root, output):
     implementation_dates = {r['character_id']: dict(r) for r in c.execute(
         'SELECT character_id,implemented_at,source,source_url,confidence FROM character_implementation_dates')}
     operator_roster_rows = [dict(r) for r in c.execute(
-        'SELECT character_id,stars,is_alter,implemented_at FROM operator_roster')]
+        'SELECT character_id,operator_name_zh,canonical_name,stars,is_alter,implemented_at FROM operator_roster')]
+    tables = {row[0] for row in c.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    player_alias_rows = ([dict(r) for r in c.execute(
+        "SELECT character_id,alias,source,status FROM character_aliases WHERE status='active'")]
+        if 'character_aliases' in tables else [])
     operator_character_ids = {r['character_id'] for r in operator_roster_rows}
     reviewed_traits = reviewed_character_traits(c)
     images = [dict(r) for r in c.execute('SELECT * FROM images WHERE active=1')]
@@ -155,11 +170,31 @@ def export(database, raw_root, output):
               if not row['merged_into'] and row['identity_kind'] == 'canonical'
               and row['status'] != 'retired_temporary'
               and row['canonical_name'].casefold() not in SPECIAL}
+    form_names = collections.defaultdict(set)
+    for row in operator_roster_rows:
+        target = resolve(row['character_id'])
+        name = str(row.get('operator_name_zh') or '').strip()
+        if target in active and row.get('is_alter') and name:
+            form_names[target].add(normalized_name(name))
+
     aliases = collections.defaultdict(set)
+    legacy_names = collections.defaultdict(set)
     for cid, row in characters.items():
         target = resolve(cid)
         if target in active and cid != target and row['identity_kind'] == 'canonical':
-            aliases[target].add(row['canonical_name'])
+            old_name = str(row['canonical_name'] or '').strip()
+            if old_name and normalized_name(old_name) not in form_names[target]:
+                legacy_names[target].add(old_name)
+    for row in player_alias_rows:
+        target = resolve(row['character_id'])
+        alias = str(row.get('alias') or '').strip()
+        # Merge-generated names are retained separately as historical labels;
+        # the player alias list is reserved for explicitly curated aliases.
+        if row.get('source') == 'character_merge':
+            continue
+        if (target in active and alias and normalized_name(alias) != normalized_name(active[target]['canonical_name'])
+                and normalized_name(alias) not in form_names[target]):
+            aliases[target].add(alias)
     gender_by_character = canonical_attribute_values(reviewed_traits['gender'], characters, active, resolve)
     hair_color_by_character = canonical_attribute_values(reviewed_traits['hair_color'], characters, active, resolve)
 
@@ -270,6 +305,7 @@ def export(database, raw_root, output):
                           **({'gender': gender_by_character[cid]} if cid in gender_by_character else {}),
                           **({'hair_color': hair_color_by_character[cid]} if cid in hair_color_by_character else {}),
                           'aliases': sorted(aliases[cid]),
+                          'legacy_names': sorted(legacy_names[cid]),
                           'home_episode_ids': sorted(home_episodes[cid], key=lambda eid: episode_order[eid]),
                           **({'implementation_date': implementation_dates[cid]['implemented_at']}
                              if cid in implementation_dates else {})}
@@ -277,11 +313,12 @@ def export(database, raw_root, output):
     operator_forms = [
         {
             'character_id': resolve(row['character_id']),
+            'name': display_form_name(row['operator_name_zh']),
             'is_alter': bool(row.get('is_alter')),
             'implementation_date': row.get('implemented_at'),
         }
         for row in operator_roster_rows
-        if row.get('implemented_at') and resolve(row['character_id']) in public_operator_ids
+        if resolve(row['character_id']) in public_operator_ids
     ]
     release = {
         'release_id': 'human-' + hashlib.sha256(json.dumps(instances, sort_keys=True).encode()).hexdigest()[:16],

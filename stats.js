@@ -13,28 +13,6 @@
     "三角初华", "丰川祥子", "八幡海铃", "祐天寺若麦", "若叶睦", "罗德岛隐秘队"
   ]);
   const normalizeHomeName = value => String(value).normalize("NFKC").replace(/\s+/g, "").replace(/篇$/, "");
-  const alternateHomeOwnerNames = {
-    "阿米娅（医疗）": "阿米娅", "阿米娅（近卫）": "阿米娅", "寒芒克洛丝": "克洛丝", "归溟幽灵鲨": "幽灵鲨",
-    "炎狱炎熔": "炎熔", "耀骑士临光": "临光", "火龙S黑角": "黑角", "麒麟R夜刀": "夜刀",
-    "濯尘芙蓉": "芙蓉", "承曦格雷伊": "格雷伊", "百炼嘉维尔": "嘉维尔",
-    "缄默德克萨斯": "德克萨斯", "焰影苇草": "苇草", "淬羽赫默": "赫默",
-    "圣约送葬人": "送葬人", "纯烬艾雅法拉": "艾雅法拉", "琳琅诗怀雅": "诗怀雅",
-    "涤火杰西卡": "杰西卡", "历阵锐枪芬": "芬", "维什戴尔": "W",
-    "荒芜拉普兰德": "拉普兰德", "引星棘刺": "棘刺", "烛煌": "煌",
-    "新约能天使": "能天使", "司霆惊蛰": "惊蛰", "斩业星熊": "星熊",
-    "凛御银灰": "银灰", "溯光星源": "星源", "圣聆初雪": "初雪",
-    "浊心斯卡蒂": "斯卡蒂", "撷英调香师": "调香师",
-    "怒潮凛冬": "凛冬", "凯尔希·思衡托": "凯尔希", "予愿安洁莉娜": "安洁莉娜",
-    // Keep Chen's two alter names in verified implementation order: 2021, then 2026.
-    "假日威龙陈": "陈", "赤刃明霄陈": "陈",
-    // Canonical names remain the earlier-implemented base operators.
-    "维娜·维多利亚": "推进之王",
-    "酒神": "傀影",
-    "雷狼龙S空爆": "空爆",
-    "焰狐龙梓兰": "梓兰"
-  };
-  const alternateHomeOwners = new Map(Object.entries(alternateHomeOwnerNames)
-    .map(([title, name]) => [normalizeHomeName(title), normalizeHomeName(name)]));
   // These IDs were public before the private database merged their canonical rows.
   const historicalPublicCharacterIdRedirects = {
     "60ae5aa63d1a0fbc": "d02df707d241b8fb", // 维娜·维多利亚 → 推进之王
@@ -85,58 +63,45 @@
       if (c.type && c.type !== "canonical") throw new Error("Noncanonical public character");
       if (c.is_operator !== undefined && typeof c.is_operator !== "boolean") throw new Error("Invalid operator flag");
       if (c.stars !== undefined && c.stars !== null && (!Number.isInteger(c.stars) || c.stars < 1 || c.stars > 6)) throw new Error("Invalid operator stars");
-      if (c.aliases !== undefined && (!Array.isArray(c.aliases) || c.aliases.some(x => typeof x !== "string"))) throw new Error("Invalid aliases");
+      for (const field of ["aliases", "legacy_names", "alter_names"]) {
+        if (c[field] !== undefined && (!Array.isArray(c[field]) || c[field].some(x => typeof x !== "string"))) throw new Error("Invalid character names: " + field);
+      }
       if (c.home_episode_ids !== undefined && (!Array.isArray(c.home_episode_ids) || c.home_episode_ids.some(x => !episodes.has(id(x))))) throw new Error("Invalid home episodes");
       if (c.implementation_date !== undefined && c.implementation_date !== null && isoDate(c.implementation_date) === null) throw new Error("Invalid implementation date");
     }
-    // Curated alter-to-base mappings also normalize older manifests that still
-    // contain one canonical row per form. Preserve the earlier canonical ID,
-    // merge metadata, and remap all public references without touching source DB.
-    const byName = new Map(release.characters.map(character => [normalizeHomeName(character.name), character]));
-    const redirectedIds = new Map(), alterNamesByOwner = new Map();
-    for (const [alterName, ownerName] of Object.entries(alternateHomeOwnerNames)) {
-      const alterKey = normalizeHomeName(alterName), ownerKey = normalizeHomeName(ownerName);
-      if (!alterNamesByOwner.has(ownerKey)) alterNamesByOwner.set(ownerKey, []);
-      alterNamesByOwner.get(ownerKey).push(alterName);
-      const source = byName.get(alterKey), target = byName.get(ownerKey);
-      if (!source || !target || source.id === target.id) continue;
-      if (redirectedIds.has(source.id) && redirectedIds.get(source.id) !== target.id) throw new Error("Conflicting canonical identity mapping");
-      redirectedIds.set(source.id, target.id);
-      target.aliases = [...new Set([...(target.aliases ?? []), ...(source.aliases ?? []), source.name])];
-      target.home_episode_ids = [...new Set([...(target.home_episode_ids ?? []), ...(source.home_episode_ids ?? [])])];
-      if (source.is_operator === true) target.is_operator = true;
-      if (Number.isInteger(source.stars)) target.stars = Math.max(target.stars || 0, source.stars);
-      if (source.implementation_date && (!target.implementation_date || source.implementation_date < target.implementation_date)) target.implementation_date = source.implementation_date;
-    }
-    const remapCharacterId = value => redirectedIds.get(id(value)) ?? id(value);
-    release.characters = release.characters.filter(character => !redirectedIds.has(character.id));
+    const redirectedIds = new Map();
     const characters = new Set(release.characters.map(character => character.id));
     for (const [source, target] of Object.entries(historicalPublicCharacterIdRedirects)) {
       if (characters.has(target)) redirectedIds.set(source, target);
     }
     release.canonical_id_redirects = Object.fromEntries(redirectedIds);
-    const canonicalNames = new Set(release.characters.map(character => normalizeHomeName(character.name)));
-    for (const character of release.characters) {
-      const owner = normalizeHomeName(character.name);
-      const alterNames = (alterNamesByOwner.get(owner) ?? [])
-        .filter(name => !canonicalNames.has(normalizeHomeName(name)) || normalizeHomeName(name) === owner);
-      character.alter_names = [...new Set([...(character.alter_names ?? []), ...alterNames])];
-      character.aliases = [...new Set([...(character.aliases ?? []), ...alterNames])];
-    }
     if (release.operator_forms !== undefined) {
       if (!Array.isArray(release.operator_forms)) throw new Error("Invalid operator forms");
       const seenForms = new Set();
-      release.operator_forms = release.operator_forms.map(form => ({ ...form, character_id: remapCharacterId(form.character_id) })).filter(form => {
-        const key = JSON.stringify([form.character_id, form.is_alter, form.implementation_date ?? null]);
+      release.operator_forms = release.operator_forms.map(form => {
+        if (!form || typeof form !== "object") throw new Error("Invalid operator form");
+        return { ...form, character_id: id(form.character_id) };
+      }).filter(form => {
+        const key = JSON.stringify([form.character_id, form.name, form.is_alter, form.implementation_date ?? null]);
         if (seenForms.has(key)) return false;
         seenForms.add(key);
         return true;
       });
       for (const form of release.operator_forms) {
-        if (!form || !characters.has(id(form.character_id)) || typeof form.is_alter !== "boolean" ||
+        if (!form || !characters.has(id(form.character_id)) || typeof form.name !== "string" || !form.name.trim() || typeof form.is_alter !== "boolean" ||
             (form.implementation_date != null && isoDate(form.implementation_date) === null)) throw new Error("Invalid operator form");
+        if (form.is_alter) {
+          const owner = release.characters.find(character => character.id === id(form.character_id));
+          if (normalizeHomeName(form.name) !== normalizeHomeName(owner.name)) {
+            owner.alter_names = [...new Set([...(owner.alter_names ?? []), form.name.trim()])];
+            const formName = normalizeHomeName(form.name);
+            owner.aliases = (owner.aliases ?? []).filter(alias => normalizeHomeName(alias) !== formName);
+            owner.legacy_names = (owner.legacy_names ?? []).filter(name => normalizeHomeName(name) !== formName);
+          }
+        }
       }
     }
+    const remapCharacterId = value => redirectedIds.get(id(value)) ?? id(value);
     for (const e of release.episodes) {
       if (!officialURL(e.official_url)) throw new Error("Missing verified official episode URL");
       if (e.published_at !== undefined && e.published_at !== null && isoDate(e.published_at) === null) throw new Error("Invalid publication date");
@@ -232,7 +197,7 @@
       // one canonical person. Keep these reviewed title-to-person pairs explicit:
       // suffix matching would wrongly turn 罗小黑 into 黑 or 杜林 into 林.
       const ownersByName = new Map();
-      for (const c of rows) for (const name of [c.name, ...(c.aliases ?? [])]) {
+      for (const c of rows) for (const name of [c.name, ...(c.alter_names ?? []), ...(c.aliases ?? []), ...(c.legacy_names ?? [])]) {
         const normalized = normalizeHomeName(name);
         if (!normalized) continue;
         if (!ownersByName.has(normalized)) ownersByName.set(normalized, new Set());
@@ -241,7 +206,7 @@
       for (const e of episodes.values()) {
         const title = e.name.replace(/^\d+_/, "");
         const normalizedTitle = normalizeHomeName(title);
-        const owners = ownersByName.get(normalizedTitle) ?? ownersByName.get(alternateHomeOwners.get(normalizedTitle));
+        const owners = ownersByName.get(normalizedTitle);
         if (owners?.size === 1) characters.get(owners.values().next().value).homeEpisodes.add(e.id);
       }
       for (const c of rows) c.homes = c.homeEpisodes.size;
@@ -272,47 +237,9 @@
     }
     const desc = field => (a, b) => b[field] - a[field] || byName(a, b);
     const operatorRows = rows.filter(c => c.is_operator === true && !crossoverOnlyOperators.has(c.name));
-    // The local roster folds named alters into their base canonical character.
-    // Only the distinct-name pairs below need an explicit family for rankings.
-    // These names come from the official alternate-operator set; is_alter alone
-    // is not enough because the source game flag also covers unrelated operators.
-    const operatorFamilyAliases = new Map([
-      ["维娜·维多利亚", "推进之王"],
-      ["酒神", "傀影"]
-    ]);
-    const operatorRankingRows = [...operatorRows.reduce((families, row) => {
-      const familyName = operatorFamilyAliases.get(row.name) ?? row.name;
-      if (!families.has(familyName)) families.set(familyName, []);
-      families.get(familyName).push(row);
-      return families;
-    }, new Map())].map(([familyName, members]) => {
-      const preferred = members.find(row => row.name === familyName) ?? members[0];
-      const aggregate = {
-        ...preferred,
-        name: familyName,
-        count: 0,
-        episodes: new Set(),
-        perEpisode: new Map(),
-        homeEpisodes: new Set(),
-        homes: 0,
-        cameo: 0,
-        cameoEpisodes: new Set(),
-        stars: null,
-        implementationAgeDays: null
-      };
-      for (const member of members) {
-        if (Number.isInteger(member.stars)) aggregate.stars = Math.max(aggregate.stars || 0, member.stars);
-        if (Number.isFinite(member.implementationAgeDays)) aggregate.implementationAgeDays = Math.max(aggregate.implementationAgeDays ?? -1, member.implementationAgeDays);
-        aggregate.count += member.count;
-        member.episodes.forEach(episodeId => aggregate.episodes.add(episodeId));
-        member.homeEpisodes.forEach(episodeId => aggregate.homeEpisodes.add(episodeId));
-        member.cameoEpisodes.forEach(episodeId => aggregate.cameoEpisodes.add(episodeId));
-        aggregate.cameo += member.cameo;
-        for (const [episodeId, count] of member.perEpisode) aggregate.perEpisode.set(episodeId, (aggregate.perEpisode.get(episodeId) || 0) + count);
-      }
-      aggregate.homes = aggregate.homeEpisodes.size;
-      return aggregate;
-    });
+    // Official forms already point to one canonical person in the release;
+    // do not maintain a second hand-written family list for isolated alters.
+    const operatorRankingRows = operatorRows;
     const operatorAbsenceSort = (a, b) =>
       ((Number.isFinite(b.implementationAgeDays) ? b.implementationAgeDays : -1) -
        (Number.isFinite(a.implementationAgeDays) ? a.implementationAgeDays : -1)) ||

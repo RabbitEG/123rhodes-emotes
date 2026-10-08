@@ -4,9 +4,9 @@
 
 ## 必需内容
 
-- characters：`id`、`name`；可选 `is_operator: boolean`、`stars: integer`（1–6 星）、`aliases: string[]`、`type: "canonical"`、`implementation_date: "YYYY-MM-DD"`、`home_episode_ids: string[]`，以及仅供未来兼容的 `gender: string`、`hair_color: string`。后两项只导出人工复核通过的值，当前前端不展示、不搜索、不参与统计。`is_operator` 角色即使没有任何漫画实例也可以存在，实例数为 0；本篇关系是角色与篇目的多对多映射；空数组表示当前没有登记本篇。不发布 NPC、临时身份、历史错误身份。id 稳定且不含逗号（组合分享链接使用逗号分隔）。
+- characters：`id`、`name`；可选 `is_operator: boolean`、`stars: integer`（1–6 星）、`aliases: string[]`、`legacy_names: string[]`、`type: "canonical"`、`implementation_date: "YYYY-MM-DD"`、`home_episode_ids: string[]`，以及仅供未来兼容的 `gender: string`、`hair_color: string`。`aliases` 只放人工整理的玩家别名；`legacy_names` 单独保留旧 canonical 条目的检索兼容名，二者不用于缓存拼音或近似匹配结果。后两项只导出人工复核通过的值，当前前端不展示、不搜索、不参与统计。`is_operator` 角色即使没有任何漫画实例也可以存在，实例数为 0；本篇关系是角色与篇目的多对多映射；空数组表示当前没有登记本篇。不发布 NPC、临时身份、历史错误身份。id 稳定且不含逗号（组合分享链接使用逗号分隔）。
 - episodes：`id`、`name`、`official_url`、`order`、`published_at: "YYYY-MM-DD"`；可选 `source_record_id`、`cast_character_ids: string[]`。链接和发布时间必须核实为对应篇目；清单只导出本地已收录且与官方目录精确匹配的篇目，篇目总数按清单动态统计。前端仅允许 HTTPS comic.hypergryph.com / terra-historicus.hypergryph.com。
-- operator_forms：可选的形态级 roster，字段为 `character_id`、`is_alter: boolean`、`implementation_date: "YYYY-MM-DD"`。仅导出有可核实 CN 实装日期的形态；本篇覆盖统计按实装年份合并本体与异格形态，并以形态所属 canonical identity 是否登记过本篇作为覆盖条件。
+- operator_forms：可选的形态级 roster，字段为 `character_id`（canonical identity）、`name`（该形态的正式名称）、`is_alter: boolean`、`implementation_date: "YYYY-MM-DD" | null`。本体和异格名称都作为独立形态映射到 canonical identity；缺少实装日期不影响名称检索和角色页展示。本篇覆盖统计按有日期的形态分别统计，并以形态所属 canonical identity 是否登记过本篇作为覆盖条件。
 - instances：`id`、`character_id`、`episode_id`、`crop_url`；可选 `image_id`、`source_preview_url`、`sort_key`。每一项是当前有效、人类 confirmed/trusted、经发布筛选的 canonical 实例。
 - 三个数组允许为空；重复 ID、未知角色/篇目关联、无效公开资源路径会让清单加载失败并显示重试，防止静默出现错误统计。
 
@@ -20,7 +20,7 @@ crop_url 和 source_preview_url 只接受 `/media/` 下 WebP/PNG/JPEG/AVIF 相�
 | images: [{id}] | 发布涉及的源图目录，仅 ID，不带原图地址 |
 | overview.images | 无 images 目录时的显式来源图总数 |
 | instance.image_id | 两项都缺失时，若每张 crop 都有 image_id，按它去重计来源图数；覆盖不全显示 — |
-| characters[].home_episode_ids | 多对多本篇关系；统计还会将篇目标题去掉末尾“篇”后与角色正式名或别名完全相同的篇目视为本篇，并按 `stats.js` 中明确列出的异格篇名映射到同一 canonical character；这些明确映射的异格名也会作为该角色的搜索别名，不会创建第二个身份。其余已确认出场才计作客串，不根据一般出场反推本篇。不会使用模糊包含匹配 |
+| characters[].home_episode_ids | 多对多本篇关系；统计还会将篇目标题去掉末尾“篇”后与角色正式名、正式形态名或人工别名完全相同的篇目视为本篇。异格名从 `operator_forms` 映射到 canonical identity，不混入玩家别名。其余已确认出场才计作客串，不根据一般出场反推本篇。不会使用模糊包含匹配 |
 | episode.cast_character_ids / cast_complete | 仅为旧清单兼容字段；新清单优先使用 characters[].home_episode_ids |
 | episode.order / episode.published_at | 官方篇目顺序和发布时间；完整且唯一时启用久未出现榜 |
 | featured_instance_ids | 站长选定轮播实例，引用本发布包的 instance id |

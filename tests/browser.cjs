@@ -43,9 +43,9 @@ const publicationFixture = validate({
   ],
   instances: [],
   operator_forms: [
-    { character_id: "op", is_alter: false, implementation_date: "2019-04-29" },
-    { character_id: "op", is_alter: true, implementation_date: "2021-02-05" },
-    { character_id: "op", is_alter: false, implementation_date: null }
+    { character_id: "op", name: "测试干员", is_alter: false, implementation_date: "2019-04-29" },
+    { character_id: "op", name: "测试形态", is_alter: true, implementation_date: "2021-02-05" },
+    { character_id: "op", name: "测试干员其他形态", is_alter: false, implementation_date: null }
   ]
 });
 const publicationFixtureStats = analyze(publicationFixture).publication;
@@ -67,8 +67,8 @@ const browserData = {
   })),
   episodes: episodes.map((episode, index) => ({ ...episode, published_at: ["2022-01-14", "2022-01-15", "2023-02-20", "2026-09-05"][index] })),
   operator_forms: [
-    { character_id: "c0", is_alter: false, implementation_date: "2019-04-29" },
-    { character_id: "c0", is_alter: true, implementation_date: "2021-02-05" },
+    { character_id: "c0", name: "测试甲", is_alter: false, implementation_date: "2019-04-29" },
+    { character_id: "c0", name: "测试甲形态", is_alter: true, implementation_date: "2021-02-05" },
   ]
 };
 let servedData = browserData;
@@ -173,11 +173,11 @@ console.log("Statistics: counts, deduplication, cast, chronology, validation pas
     assert.equal(await page.locator(".character-gallery .expression-card").first().locator(".episode-button").textContent(), "057_维娜·维多利亚篇", "The first character gallery card should show its episode");
     servedData = {
       ...browserData,
-      characters: [...browserData.characters, { id: "chen", name: "陈", is_operator: true, aliases: ["假日威龙陈", "赤刃明霄陈"], home_episode_ids: [] }],
+      characters: [...browserData.characters, { id: "chen", name: "陈", is_operator: true, aliases: [], home_episode_ids: [] }],
       operator_forms: [...browserData.operator_forms,
-        { character_id: "chen", is_alter: false, implementation_date: "2019-07-09" },
-        { character_id: "chen", is_alter: true, implementation_date: "2021-08-03" },
-        { character_id: "chen", is_alter: true, implementation_date: "2026-02-10" },
+        { character_id: "chen", name: "陈", is_alter: false, implementation_date: "2019-07-09" },
+        { character_id: "chen", name: "假日威龙陈", is_alter: true, implementation_date: "2021-08-03" },
+        { character_id: "chen", name: "赤刃明霄陈", is_alter: true, implementation_date: "2026-02-10" },
       ],
       instances: [...browserData.instances, { id: "chen-instance", character_id: "chen", episode_id: "e0", image_id: "image0", crop_url: "/media/crops/test.webp", source_preview_url: "/media/source-previews/test.webp", sort_key: "999" }],
     };

@@ -78,7 +78,7 @@ try:
         path.write_bytes(data)
         (bundle / 'data').mkdir()
         release = {'release_id':'test', 'characters':[{'id':'c1','gender':'女','hair_color':'black'}], 'episodes':[], 'images':[],
-                   'operator_forms':[{'character_id':'c1','is_alter':False,'implementation_date':'2020-01-01'}],
+                   'operator_forms':[{'character_id':'c1','name':'测试角色','is_alter':False,'implementation_date':'2020-01-01'}],
                    'instances':[{'crop_url':'/' + asset, 'source_preview_url':'/' + asset}]}
         manifest = bundle / 'data/release.json'
         manifest.write_text(json.dumps(release), encoding='utf-8')

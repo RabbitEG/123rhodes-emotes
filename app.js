@@ -27,6 +27,9 @@
     const p = new URLSearchParams(location.search);
     return { mode: p.get("mode") === "episodes" ? "episodes" : "expressions", q: p.get("q") || "", character: p.get("character") || "", episode: p.get("episode") || "", pair: p.get("pair") || "", browse: p.get("browse") === "1" };
   }
+  function characterSearchNames(character) {
+    return [character.name, ...(character.alter_names ?? []), ...(character.aliases ?? []), ...(character.legacy_names ?? [])];
+  }
   function analyticsQueryInfo(query, mode) {
     const normalized = normalize(query);
     if (!stats) return { query_kind: normalized ? "free_text" : "empty" };
@@ -35,7 +38,7 @@
       if (state?.episode && stats.episodes.has(state.episode)) return { query_kind: "known_episode", object_type: "episode", object_id: state.episode };
       return { query_kind: state?.browse ? "browse" : "empty" };
     }
-    const exactCharacters = [...stats.characters.values()].filter(character => [character.name, ...(character.aliases ?? [])].some(name => normalize(name) === normalized));
+    const exactCharacters = [...stats.characters.values()].filter(character => characterSearchNames(character).some(name => normalize(name) === normalized));
     if (exactCharacters.length === 1) return { query_kind: "known_character", object_type: "character", object_id: exactCharacters[0].id };
     const episode = exactEpisode(query);
     if (episode) return { query_kind: "known_episode", object_type: "episode", object_id: episode.id };
@@ -67,7 +70,7 @@
     if (scroll && !$("#results-section").hidden) $("#results-section").scrollIntoView({ block: "start", behavior: motion.matches ? "instant" : "smooth" });
   }
   function matchesCharacter(c, query) {
-    return !query || [c.name, ...(c.aliases ?? [])].some(name => normalize(name).includes(query));
+    return !query || characterSearchNames(c).some(name => normalize(name).includes(query));
   }
   function matchesEpisode(e, query) {
     if (!query) return true;
@@ -98,15 +101,14 @@
   }
   function orderedCharacterAlterNames(character) {
     const names = characterAlterNames(character);
-    if (character.name !== "阿米娅") return names;
-    const order = new Map([["阿米娅（近卫）", 0], ["阿米娅（医疗）", 1]]);
-    const formKey = name => String(name).replace(/^阿米娅\((近卫|医疗)\)$/, "阿米娅（$1）");
+    const formOrder = new Map((release?.operator_forms ?? [])
+      .filter(form => form.character_id === character.id && form.is_alter)
+      .map((form, index) => [normalize(form.name), { date: form.implementation_date || "9999-99-99", index }]));
+    const originalOrder = new Map(names.map((name, index) => [normalize(name), index]));
     return names.sort((a, b) => {
-      const ai = order.get(formKey(a)), bi = order.get(formKey(b));
-      if (ai === undefined && bi === undefined) return 0;
-      if (ai === undefined) return 1;
-      if (bi === undefined) return -1;
-      return ai - bi;
+      const af = formOrder.get(normalize(a)), bf = formOrder.get(normalize(b));
+      const byDate = (af?.date ?? "9999-99-99").localeCompare(bf?.date ?? "9999-99-99");
+      return byDate || (af?.index ?? originalOrder.get(normalize(a))) - (bf?.index ?? originalOrder.get(normalize(b)));
     });
   }
   function characterDisplayName(character) {
@@ -150,7 +152,7 @@
   function exactCharacter(query) {
     const normalized = normalize(query);
     if (!normalized || !stats) return null;
-    const found = [...stats.characters.values()].filter(character => [character.name, ...(character.aliases ?? [])]
+    const found = [...stats.characters.values()].filter(character => characterSearchNames(character)
       .some(name => normalize(name) === normalized));
     return found.length === 1 ? found[0] : null;
   }
@@ -179,7 +181,7 @@
   function collectSuggestions(query, mode) {
     const characters = [...stats.characters.values()].map(character => {
       const alternateNames = new Set((character.alter_names ?? []).map(normalize));
-      const candidates = [character.name, ...(character.aliases ?? [])]
+      const candidates = characterSearchNames(character)
         .map(name => ({ name, score: suggestionScore(name, query, normalize(name) !== normalize(character.name)) }))
         .filter(candidate => Number.isFinite(candidate.score))
         .sort((a, b) => a.score - b.score);

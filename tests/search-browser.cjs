@@ -10,16 +10,11 @@ const release = {
     { id: "eyfl", name: "艾雅法拉", aliases: [], is_operator: true },
     { id: "star-source", name: "星源", aliases: [], is_operator: true },
     { id: "push", name: "推进之王", aliases: [], is_operator: true, stars: 6 },
-    { id: "vina", name: "维娜·维多利亚", aliases: [], is_operator: true, stars: 6 },
     { id: "phantom", name: "傀影", aliases: [], is_operator: true, stars: 6 },
-    { id: "booze", name: "酒神", aliases: [], is_operator: true, stars: 6 },
     { id: "lingzhi", name: "灵知", aliases: [], is_operator: true },
     { id: "sora", name: "空爆", aliases: [], is_operator: true, stars: 3 },
-    { id: "thunder-sora", name: "雷狼龙S空爆", aliases: [], is_operator: true, stars: 5 },
     { id: "empty-character", name: "暂无表情条目", aliases: [], is_operator: true },
     { id: "amiya", name: "阿米娅", aliases: [], is_operator: true, stars: 5 },
-    { id: "amiya-medic", name: "阿米娅（医疗）", aliases: [], is_operator: true, stars: 5 },
-    { id: "amiya-guard", name: "阿米娅（近卫）", aliases: [], is_operator: true, stars: 5 },
   ],
   episodes: [
     { id: "e1", name: "001_测试篇", order: 1, official_url: "https://comic.hypergryph.com/comic/6253/test" },
@@ -29,17 +24,24 @@ const release = {
     { id: "i1", character_id: "eyfl", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "001" },
     { id: "i2", character_id: "star-source", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "002" },
     { id: "i3", character_id: "push", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "003" },
-    { id: "i4", character_id: "vina", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "004" },
+    { id: "i4", character_id: "push", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "004" },
     { id: "i5", character_id: "phantom", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "005" },
-    { id: "i6", character_id: "booze", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "006" },
+    { id: "i6", character_id: "phantom", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "006" },
     { id: "i7", character_id: "lingzhi", episode_id: "e1", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "007" },
     { id: "i8", character_id: "sora", episode_id: "e2", image_id: "img1", crop_url: "/media/crops/test.webp", sort_key: "008" },
   ],
   operator_forms: [
-    { character_id: "push", is_alter: false, implementation_date: "2019-04-30" },
-    { character_id: "vina", is_alter: true, implementation_date: "2024-10-09" },
-    { character_id: "phantom", is_alter: false, implementation_date: "2020-04-21" },
-    { character_id: "booze", is_alter: true, implementation_date: "2025-06-05" },
+    { character_id: "push", name: "推进之王", is_alter: false, implementation_date: "2019-04-30" },
+    { character_id: "push", name: "维娜·维多利亚", is_alter: true, implementation_date: "2024-10-09" },
+    { character_id: "phantom", name: "傀影", is_alter: false, implementation_date: "2020-04-21" },
+    { character_id: "phantom", name: "酒神", is_alter: true, implementation_date: "2025-06-05" },
+    { character_id: "star-source", name: "星源", is_alter: false, implementation_date: "2021-11-01" },
+    { character_id: "star-source", name: "溯光星源", is_alter: true, implementation_date: "2025-11-01" },
+    { character_id: "sora", name: "空爆", is_alter: false, implementation_date: "2019-05-23" },
+    { character_id: "sora", name: "雷狼龙S空爆", is_alter: true, implementation_date: "2026-06-01" },
+    { character_id: "amiya", name: "阿米娅", is_alter: false, implementation_date: "2019-04-30" },
+    { character_id: "amiya", name: "阿米娅（近卫）", is_alter: true, implementation_date: "2020-11-01" },
+    { character_id: "amiya", name: "阿米娅（医疗）", is_alter: true, implementation_date: "2024-05-01" },
   ],
 };
 
@@ -144,6 +146,9 @@ const release = {
 
     await page.goto(base);
     await page.locator("#site-search").fill("维娜·维多利亚");
+    const vinaSuggestion = page.locator(".search-suggestion").filter({ hasText: "维娜·维多利亚" });
+    await vinaSuggestion.waitFor({ timeout: 10000 });
+    assert((await vinaSuggestion.textContent()).includes("推进之王"), "the official alter name should be shown as a distinct form while linking to its canonical character");
     await page.locator("#search-form button[type=submit]").click();
     await page.waitForURL("**/character.html?id=push");
     assert.equal(await page.locator(".character-heading h1").textContent(), "推进之王（维娜·维多利亚）");
@@ -156,7 +161,7 @@ const release = {
     assert.equal(await page.locator(".character-heading h1").textContent(), "傀影（酒神）");
     assert.equal(await page.locator(".character-gallery .expression-card").count(), 2);
 
-    await page.goto(base + "/character.html?id=vina");
+    await page.goto(base + "/character.html?id=60ae5aa63d1a0fbc");
     await page.waitForURL("**/character.html?id=push");
     await page.goto(base);
     await page.locator('[data-mode="episodes"]').click();

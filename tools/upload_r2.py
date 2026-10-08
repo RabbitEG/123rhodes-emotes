@@ -31,11 +31,11 @@ def files_for(bundle):
     if set(release) - allowed:
         raise ValueError('Unexpected manifest fields')
     allowed_rows = {
-        'characters': {'id', 'name', 'type', 'is_operator', 'stars', 'aliases', 'home_episode_ids', 'implementation_date', 'gender', 'hair_color'},
+        'characters': {'id', 'name', 'type', 'is_operator', 'stars', 'aliases', 'legacy_names', 'home_episode_ids', 'implementation_date', 'gender', 'hair_color'},
         'episodes': {'id', 'name', 'official_url', 'order', 'published_at', 'source_record_id', 'cast_character_ids'},
         'instances': {'id', 'character_id', 'episode_id', 'image_id', 'crop_url', 'source_preview_url', 'sort_key'},
         'images': {'id'},
-        'operator_forms': {'character_id', 'is_alter', 'implementation_date'}
+        'operator_forms': {'character_id', 'name', 'is_alter', 'implementation_date'}
     }
     for name, keys in allowed_rows.items():
         if name == 'operator_forms' and name not in release:
@@ -53,6 +53,7 @@ def files_for(bundle):
     character_ids = {str(row['id']) for row in release['characters']}
     for row in release.get('operator_forms', []):
         if (str(row.get('character_id')) not in character_ids or
+                not isinstance(row.get('name'), str) or not row['name'].strip() or
                 not isinstance(row.get('is_alter'), bool) or
                 (row.get('implementation_date') is not None and
                  not re.fullmatch(r'\d{4}-\d{2}-\d{2}', str(row['implementation_date'])))):

@@ -61,7 +61,7 @@
     const cached = variantCache.get(item);
     if (cached) return cached;
     const names = new Map();
-    for (const name of [item.name, ...(item.aliases ?? [])]) {
+    for (const name of [item.name, ...(item.alter_names ?? []), ...(item.aliases ?? []), ...(item.legacy_names ?? [])]) {
       const value = normalize(name);
       if (value && !names.has(value)) names.set(value, String(name));
     }
