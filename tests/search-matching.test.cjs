@@ -130,33 +130,39 @@ assert.equal(RhodesStats.analyze(canonicalMerge).characters.get("push").count, 2
 
 const monsterHunterAlterMerge = RhodesStats.validate({
   characters: [
-    { id: "sora", name: "空爆", aliases: [], is_operator: true, stars: 3, home_episode_ids: ["sora-home"] },
-    { id: "zilan", name: "梓兰", aliases: [], is_operator: true, stars: 3, home_episode_ids: ["zilan-home"] },
+    { id: "e9d3e19934919550", name: "空爆", aliases: [], is_operator: true, stars: 3, home_episode_ids: ["sora-home"] },
+    { id: "bd0ccb3a8c8eb5df", name: "雷狼龙S空爆", aliases: [], is_operator: true, stars: 5, home_episode_ids: ["sora-collab"], implementation_date: "2026-06-01" },
+    { id: "0c745df014c70d55", name: "梓兰", aliases: [], is_operator: true, stars: 3, home_episode_ids: ["zilan-home"] },
+    { id: "adf77042f1b6fce4", name: "焰狐龙梓兰", aliases: [], is_operator: true, stars: 6, home_episode_ids: ["zilan-collab"], implementation_date: "2026-06-01" },
   ],
   episodes: [
-    { id: "sora-home", name: "001_空爆篇", order: 1, cast_character_ids: ["sora"], official_url: "https://comic.hypergryph.com/comic/6253/sora-home" },
-    { id: "sora-collab", name: "002_空爆联动篇", order: 2, cast_character_ids: ["sora"], official_url: "https://comic.hypergryph.com/comic/6253/sora-collab" },
-    { id: "zilan-home", name: "003_梓兰篇", order: 3, cast_character_ids: ["zilan"], official_url: "https://comic.hypergryph.com/comic/6253/zilan-home" },
-    { id: "zilan-collab", name: "004_梓兰联动篇", order: 4, cast_character_ids: ["zilan"], official_url: "https://comic.hypergryph.com/comic/6253/zilan-collab" },
+    { id: "sora-home", name: "001_空爆篇", order: 1, cast_character_ids: ["e9d3e19934919550"], official_url: "https://comic.hypergryph.com/comic/6253/sora-home" },
+    { id: "sora-collab", name: "002_空爆联动篇", order: 2, cast_character_ids: ["bd0ccb3a8c8eb5df"], official_url: "https://comic.hypergryph.com/comic/6253/sora-collab" },
+    { id: "zilan-home", name: "003_梓兰篇", order: 3, cast_character_ids: ["0c745df014c70d55"], official_url: "https://comic.hypergryph.com/comic/6253/zilan-home" },
+    { id: "zilan-collab", name: "004_梓兰联动篇", order: 4, cast_character_ids: ["adf77042f1b6fce4"], official_url: "https://comic.hypergryph.com/comic/6253/zilan-collab" },
   ],
   instances: [
-    { id: "sora-base-crop", character_id: "sora", episode_id: "sora-home", crop_url: "/media/crops/test.webp" },
-    { id: "sora-alter-crop", character_id: "sora", episode_id: "sora-collab", crop_url: "/media/crops/test.webp" },
-    { id: "zilan-base-crop", character_id: "zilan", episode_id: "zilan-home", crop_url: "/media/crops/test.webp" },
-    { id: "zilan-alter-crop", character_id: "zilan", episode_id: "zilan-collab", crop_url: "/media/crops/test.webp" },
+    { id: "sora-base-crop", character_id: "e9d3e19934919550", episode_id: "sora-home", crop_url: "/media/crops/test.webp" },
+    { id: "sora-alter-crop", character_id: "bd0ccb3a8c8eb5df", episode_id: "sora-collab", crop_url: "/media/crops/test.webp" },
+    { id: "zilan-base-crop", character_id: "0c745df014c70d55", episode_id: "zilan-home", crop_url: "/media/crops/test.webp" },
+    { id: "zilan-alter-crop", character_id: "adf77042f1b6fce4", episode_id: "zilan-collab", crop_url: "/media/crops/test.webp" },
   ],
   operator_forms: [
-    { character_id: "sora", name: "空爆", is_alter: false, implementation_date: "2019-05-23" },
-    { character_id: "sora", name: "雷狼龙S空爆", is_alter: true, implementation_date: "2026-06-01" },
-    { character_id: "zilan", name: "梓兰", is_alter: false, implementation_date: "2019-04-30" },
-    { character_id: "zilan", name: "焰狐龙梓兰", is_alter: true, implementation_date: "2026-06-01" },
+    { character_id: "e9d3e19934919550", name: "空爆", is_alter: false, implementation_date: "2019-05-23" },
+    { character_id: "bd0ccb3a8c8eb5df", name: "雷狼龙S空爆", is_alter: false, implementation_date: "2026-06-01" },
+    { character_id: "0c745df014c70d55", name: "梓兰", is_alter: false, implementation_date: "2019-04-30" },
+    { character_id: "adf77042f1b6fce4", name: "焰狐龙梓兰", is_alter: false, implementation_date: "2026-06-01" },
   ],
 });
 assert.deepEqual(monsterHunterAlterMerge.characters.map(character => character.name), ["空爆", "梓兰"]);
 assert.deepEqual(monsterHunterAlterMerge.characters.map(character => character.alter_names), [["雷狼龙S空爆"], ["焰狐龙梓兰"]]);
-assert.deepEqual(monsterHunterAlterMerge.instances.map(item => item.character_id), ["sora", "thunder-sora", "zilan", "fox-zilan"]);
-assert.deepEqual(monsterHunterAlterMerge.episodes.map(episode => episode.cast_character_ids), [["sora"], ["thunder-sora"], ["zilan"], ["fox-zilan"]]);
-assert.deepEqual(monsterHunterAlterMerge.operator_forms.map(form => form.character_id), ["sora", "sora", "zilan", "zilan"]);
+assert.deepEqual(monsterHunterAlterMerge.instances.map(item => item.character_id), ["e9d3e19934919550", "e9d3e19934919550", "0c745df014c70d55", "0c745df014c70d55"]);
+assert.deepEqual(monsterHunterAlterMerge.episodes.map(episode => episode.cast_character_ids), [["e9d3e19934919550"], ["e9d3e19934919550"], ["0c745df014c70d55"], ["0c745df014c70d55"]]);
+assert.deepEqual(monsterHunterAlterMerge.operator_forms.map(form => [form.character_id, form.is_alter]), [
+  ["e9d3e19934919550", false], ["e9d3e19934919550", true], ["0c745df014c70d55", false], ["0c745df014c70d55", true],
+]);
+assert.deepEqual(monsterHunterAlterMerge.characters.map(character => character.home_episode_ids), [["sora-home", "sora-collab"], ["zilan-home", "zilan-collab"]]);
+assert.equal(RhodesStats.analyze(monsterHunterAlterMerge).rankings.noAppearance.some(character => ["焰狐龙梓兰", "雷狼龙S空爆"].includes(character.name)), false);
 
 const episodeMatches = find("aiyafala", "episodes");
 assert(episodeMatches.some(item => item.id === "057" && item.kind === "episode"), "pinyin in episode mode should match episode titles");

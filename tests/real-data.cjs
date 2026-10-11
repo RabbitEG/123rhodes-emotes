@@ -4,9 +4,25 @@ const path = require("node:path");
 const {chromium} = require(process.env.PLAYWRIGHT_MODULE || "playwright");
 const root = path.resolve(__dirname, "..");
 const data = JSON.parse(fs.readFileSync(path.join(root, "publish/site/data/release.json"), "utf8"));
-const canonicalDuplicateNames = [["维娜·维多利亚", "推进之王"], ["酒神", "傀影"]];
-const expectedCharacterCount = data.characters.filter(character => !canonicalDuplicateNames.some(([alias, owner]) =>
-  character.name === alias && data.characters.some(candidate => candidate.name === owner))).length;
+require("../stats.js");
+const RhodesStats = globalThis.RhodesStats;
+const normalizedRelease = RhodesStats.validate(data);
+const expectedCharacterCount = normalizedRelease.characters.length;
+const expectedAlterMappings = [
+  ["adf77042f1b6fce4", "0c745df014c70d55", "焰狐龙梓兰", "梓兰"],
+  ["bd0ccb3a8c8eb5df", "e9d3e19934919550", "雷狼龙S空爆", "空爆"],
+];
+for (const [sourceId, targetId, alterName, canonicalName] of expectedAlterMappings) {
+  assert.equal(normalizedRelease.canonical_id_redirects[sourceId], targetId);
+  assert(!normalizedRelease.characters.some(character => character.id === sourceId));
+  const canonical = normalizedRelease.characters.find(character => character.id === targetId);
+  assert.equal(canonical.name, canonicalName);
+  assert(canonical.alter_names.includes(alterName));
+  assert(normalizedRelease.operator_forms.some(form => form.character_id === targetId && form.name === alterName && form.is_alter));
+}
+const normalizedStats = RhodesStats.analyze(normalizedRelease);
+assert(!normalizedStats.rankings.noAppearance.some(character => ["焰狐龙梓兰", "雷狼龙S空爆"].includes(character.name)));
+assert(!normalizedStats.rankings.noRhodes.some(character => ["焰狐龙梓兰", "雷狼龙S空爆"].includes(character.name)));
 (async () => {
   const browser = await chromium.launch({headless:true, executablePath: process.env.CHROMIUM_EXECUTABLE, args:["--no-sandbox"]});
   try {
@@ -31,6 +47,8 @@ const expectedCharacterCount = data.characters.filter(character => !canonicalDup
     assert.equal(await page.locator("#ranking-kind option").count(), 4);
     assert.equal(await page.locator("#missing-ranking-kind option").count(), 2);
     assert.deepEqual(await page.locator("#totals strong").allTextContents(), [data.episodes.length,data.instances.length,expectedCharacterCount,data.images.length].map(n=>n.toLocaleString("zh-CN")));
+    const missingRankingText = await page.locator("#missing-ranking").innerText();
+    assert(!missingRankingText.includes("焰狐龙梓兰") && !missingRankingText.includes("雷狼龙S空爆"), "formal alters must not occupy separate missing-operator ranking rows");
     await page.waitForFunction(()=>[...document.querySelectorAll(".ribbon-group:first-child img")].every(i=>i.complete && i.naturalWidth>0));
     await page.screenshot({path:path.join(root,"test-results/real-home.png"),fullPage:true});
     await page.locator("#site-search").fill("幽灵鲨");
@@ -48,6 +66,17 @@ const expectedCharacterCount = data.characters.filter(character => !canonicalDup
     await page.locator(".source-toggle").first().click();
     await page.locator(".source-peek img").first().waitFor({state:"visible"});
     await page.screenshot({path:path.join(root,"test-results/real-search.png"),fullPage:true});
+    for (const [sourceId, canonicalName, alterName] of [
+      ["adf77042f1b6fce4", "梓兰", "焰狐龙梓兰"],
+      ["bd0ccb3a8c8eb5df", "空爆", "雷狼龙S空爆"],
+    ]) {
+      await page.goto(`http://127.0.0.1:4174/character.html?id=${sourceId}`);
+      await page.waitForFunction(([base, alter]) => {
+        const heading = document.querySelector(".character-heading h1")?.textContent || "";
+        return heading.includes(base) && heading.includes(alter);
+      }, [canonicalName, alterName]);
+      assert.equal(await page.locator(".character-heading h1").textContent(), `${canonicalName}（${alterName}）`);
+    }
     await page.goto("http://127.0.0.1:4174/search.html?mode=episodes&q=57");
     await page.waitForURL("**/episode.html?id=*");
     await page.waitForSelector(".episode-profile");

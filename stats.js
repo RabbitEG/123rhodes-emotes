@@ -13,10 +13,13 @@
     "三角初华", "丰川祥子", "八幡海铃", "祐天寺若麦", "若叶睦", "罗德岛隐秘队"
   ]);
   const normalizeHomeName = value => String(value).normalize("NFKC").replace(/\s+/g, "").replace(/篇$/, "");
-  // These IDs were public before the private database merged their canonical rows.
+  // Explicit public-release redirects. Historical rows and formal alter rows
+  // are folded into the earliest-implemented canonical operator at read time.
   const historicalPublicCharacterIdRedirects = {
     "60ae5aa63d1a0fbc": "d02df707d241b8fb", // 维娜·维多利亚 → 推进之王
-    "a2c0878923815ac9": "cf34a85641597783"  // 酒神 → 傀影
+    "a2c0878923815ac9": "cf34a85641597783", // 酒神 → 傀影
+    "adf77042f1b6fce4": "0c745df014c70d55", // 焰狐龙梓兰 → 梓兰 (PRTS alter)
+    "bd0ccb3a8c8eb5df": "e9d3e19934919550"  // 雷狼龙S空爆 → 空爆 (PRTS alter)
   };
   function assetPath(value) {
     if (typeof value !== "string" || !value.startsWith("/media/")) return "";
@@ -70,17 +73,44 @@
       if (c.implementation_date !== undefined && c.implementation_date !== null && isoDate(c.implementation_date) === null) throw new Error("Invalid implementation date");
     }
     const redirectedIds = new Map();
-    const characters = new Set(release.characters.map(character => character.id));
+    let characters = new Set(release.characters.map(character => character.id));
     for (const [source, target] of Object.entries(historicalPublicCharacterIdRedirects)) {
       if (characters.has(target)) redirectedIds.set(source, target);
     }
+    const remapCharacterId = value => redirectedIds.get(id(value)) ?? id(value);
+    const characterById = new Map(release.characters.map(character => [character.id, character]));
+    for (const [sourceId, targetId] of redirectedIds) {
+      const source = characterById.get(sourceId), target = characterById.get(targetId);
+      if (!source || !target || sourceId === targetId) continue;
+      const alterName = source.name.trim();
+      if (normalizeHomeName(alterName) !== normalizeHomeName(target.name)) {
+        target.alter_names = [...new Set([...(target.alter_names ?? []), alterName])];
+      }
+      target.home_episode_ids = [...new Set([...(target.home_episode_ids ?? []), ...(source.home_episode_ids ?? [])])];
+      target.alter_names = [...new Set(target.alter_names ?? [])];
+      const alterNames = new Set(target.alter_names.map(normalizeHomeName));
+      target.aliases = [...new Set([...(target.aliases ?? []), ...(source.aliases ?? [])])]
+        .filter(name => normalizeHomeName(name) !== normalizeHomeName(target.name) && !alterNames.has(normalizeHomeName(name)));
+      target.legacy_names = [...new Set([...(target.legacy_names ?? []), ...(source.legacy_names ?? [])])]
+        .filter(name => normalizeHomeName(name) !== normalizeHomeName(target.name) && !alterNames.has(normalizeHomeName(name)));
+      const dates = [target.implementation_date, source.implementation_date].filter(value => isoDate(value) !== null);
+      if (dates.length) target.implementation_date = dates.sort()[0];
+      if (source.is_operator === true) target.is_operator = true;
+    }
+    release.characters = release.characters.filter(character => !redirectedIds.has(character.id));
+    characters = new Set(release.characters.map(character => character.id));
     release.canonical_id_redirects = Object.fromEntries(redirectedIds);
     if (release.operator_forms !== undefined) {
       if (!Array.isArray(release.operator_forms)) throw new Error("Invalid operator forms");
       const seenForms = new Set();
       release.operator_forms = release.operator_forms.map(form => {
         if (!form || typeof form !== "object") throw new Error("Invalid operator form");
-        return { ...form, character_id: id(form.character_id) };
+        const sourceId = id(form.character_id);
+        return {
+          ...form,
+          character_id: remapCharacterId(sourceId),
+          is_alter: redirectedIds.has(sourceId) ? true : form.is_alter
+        };
       }).filter(form => {
         const key = JSON.stringify([form.character_id, form.name, form.is_alter, form.implementation_date ?? null]);
         if (seenForms.has(key)) return false;
@@ -101,7 +131,6 @@
         }
       }
     }
-    const remapCharacterId = value => redirectedIds.get(id(value)) ?? id(value);
     for (const e of release.episodes) {
       if (!officialURL(e.official_url)) throw new Error("Missing verified official episode URL");
       if (e.published_at !== undefined && e.published_at !== null && isoDate(e.published_at) === null) throw new Error("Invalid publication date");
